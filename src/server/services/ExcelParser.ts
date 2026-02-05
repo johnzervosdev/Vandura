@@ -128,8 +128,12 @@ export class ExcelParser {
     }
 
     // Validate duration
-    if (!isValidDuration(durationMinutes)) {
-      throw new Error(`Duration ${durationMinutes} is not a multiple of 15 minutes`);
+    if (durationMinutes <= 0) {
+      throw new Error('Duration must be greater than 0');
+    }
+
+    if (durationMinutes % 15 !== 0) {
+      throw new Error('Duration must be a multiple of 15 minutes');
     }
 
     // Parse start time (default to beginning of day if not provided)
@@ -166,24 +170,59 @@ export class ExcelParser {
     const result: any = {};
 
     for (const key of Object.keys(row)) {
-      const lowerKey = key.toLowerCase().trim();
+      const lowerKey = key.toLowerCase().trim().replace(/\s+/g, ' ');
       const value = row[key];
 
-      if (lowerKey.includes('developer') || lowerKey.includes('dev') || lowerKey.includes('name')) {
+      // Developer
+      if (
+        lowerKey === 'developer' ||
+        lowerKey === 'developer name' ||
+        lowerKey === 'dev' ||
+        lowerKey === 'resource' ||
+        lowerKey === 'employee'
+      ) {
         result.developer = value;
-      } else if (lowerKey.includes('project') || lowerKey === 'proj') {
+      }
+
+      // Project
+      else if (lowerKey === 'project' || lowerKey === 'project name' || lowerKey === 'proj') {
         result.project = value;
-      } else if (lowerKey.includes('task') || lowerKey.includes('activity')) {
+      }
+
+      // Task / Activity
+      else if (lowerKey === 'task' || lowerKey === 'task name' || lowerKey.includes('activity')) {
         result.task = value;
-      } else if (lowerKey.includes('date')) {
+      }
+
+      // Date
+      else if (lowerKey === 'date' || lowerKey.includes('work date')) {
         result.date = value;
-      } else if (lowerKey.includes('start')) {
+      }
+
+      // Times
+      else if (lowerKey === 'start' || lowerKey === 'start time' || lowerKey === 'begin') {
         result.startTime = value;
-      } else if (lowerKey.includes('end')) {
+      } else if (lowerKey === 'end' || lowerKey === 'end time' || lowerKey === 'finish') {
         result.endTime = value;
-      } else if (lowerKey.includes('duration') || lowerKey.includes('minutes') || lowerKey === 'mins') {
+      }
+
+      // Duration
+      else if (
+        lowerKey.includes('duration') ||
+        lowerKey.includes('minutes') ||
+        lowerKey === 'mins' ||
+        lowerKey === 'min'
+      ) {
         result.durationMinutes = value;
-      } else if (lowerKey.includes('note') || lowerKey.includes('desc') || lowerKey.includes('comment')) {
+      }
+
+      // Notes / Description
+      else if (
+        lowerKey.includes('note') ||
+        lowerKey.includes('desc') ||
+        lowerKey.includes('comment') ||
+        lowerKey === 'notes'
+      ) {
         result.notes = value;
       }
     }

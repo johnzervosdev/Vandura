@@ -48,3 +48,6 @@ next-env.d.ts
 
 # OS
 Thumbs.db
+
+# Local sample timesheets (real data, do not publish)
+/public/examples/

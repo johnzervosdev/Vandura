@@ -70,17 +70,22 @@ export class TimesheetService {
       description: input.description || null,
     }));
 
-    // Batch insert with transaction (1000 rows at a time)
-    const batchSize = 1000;
-    const results: TimeEntry[] = [];
+    if (entries.length === 0) return [];
 
-    for (let i = 0; i < entries.length; i += batchSize) {
-      const batch = entries.slice(i, i + batchSize);
-      const batchResults = await db.insert(timeEntries).values(batch).returning();
-      results.push(...batchResults);
-    }
+    // Batch insert inside a single transaction (atomic import)
+    // 1000 rows/batch keeps SQLite parameter counts reasonable.
+    return db.transaction((tx) => {
+      const batchSize = 1000;
+      const results: TimeEntry[] = [];
 
-    return results;
+      for (let i = 0; i < entries.length; i += batchSize) {
+        const batch = entries.slice(i, i + batchSize);
+        const batchResults = tx.insert(timeEntries).values(batch).returning();
+        results.push(...batchResults);
+      }
+
+      return results;
+    });
   }
 
   /**

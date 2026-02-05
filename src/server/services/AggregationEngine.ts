@@ -1,5 +1,5 @@
 import { db } from '../db';
-import { timeEntries, tasks, actualsCache, projects } from '../db/schema';
+import { timeEntries, tasks, actualsCache, projects, developers } from '../db/schema';
 import { eq, and, gte, lte, sql } from 'drizzle-orm';
 import { startOfDay, endOfDay } from '@/lib/date-utils';
 
@@ -187,7 +187,7 @@ export class AggregationEngine {
     const enriched: DeveloperSummary[] = [];
     for (const row of result) {
       const developer = await db.query.developers.findFirst({
-        where: eq(projects.id, row.developerId),
+        where: eq(developers.id, row.developerId),
       });
 
       enriched.push({
