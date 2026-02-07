@@ -15,7 +15,8 @@ export const createDeveloperSchema = z.object({
 export const createProjectSchema = z.object({
   name: z.string().min(1, 'Project name is required').max(200),
   description: z.string().optional(),
-  estimatedHours: z.number().positive().optional(),
+  // Allow 0 for MVP (explicit "0h" projects are valid)
+  estimatedHours: z.number().nonnegative().optional(),
   startDate: z.date().optional(),
   endDate: z.date().optional(),
   status: z.enum(['active', 'completed', 'on-hold', 'cancelled']).default('active'),
@@ -25,7 +26,8 @@ export const createTaskSchema = z.object({
   projectId: z.number().int().positive(),
   name: z.string().min(1, 'Task name is required').max(200),
   description: z.string().optional(),
-  estimatedHours: z.number().positive().optional(),
+  // Allow 0 for MVP (explicit "0h" tasks are valid)
+  estimatedHours: z.number().nonnegative().optional(),
   parentTaskId: z.number().int().positive().optional(),
   status: z.enum(['pending', 'in-progress', 'completed', 'blocked']).default('pending'),
 });

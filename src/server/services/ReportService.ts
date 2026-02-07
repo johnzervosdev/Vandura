@@ -197,12 +197,15 @@ export class ReportService {
    * Export report data to CSV format
    */
   exportToCSV(report: ActualsVsEstimates): string {
+    const csvEscape = (value: string) => value.replace(/"/g, '""');
+    const csvString = (value: string) => `"${csvEscape(value)}"`;
+
     const lines: string[] = [];
 
     // Header
     lines.push('Project Summary');
-    lines.push(`Project,${report.projectName}`);
-    lines.push(`Total Estimated Hours,${report.totalEstimatedHours || 'N/A'}`);
+    lines.push(`Project,${csvString(report.projectName)}`);
+    lines.push(`Total Estimated Hours,${report.totalEstimatedHours ?? 'N/A'}`);
     lines.push(`Total Actual Hours,${report.totalActualHours.toFixed(2)}`);
     lines.push(`Variance,${report.variance.toFixed(2)}`);
     lines.push(`Variance %,${report.variancePercentage.toFixed(1)}%`);
@@ -212,7 +215,7 @@ export class ReportService {
     lines.push('Task,Estimated Hours,Actual Hours,Variance,Variance %');
     for (const task of report.tasks) {
       lines.push(
-        `"${task.taskName}",${task.estimatedHours || 'N/A'},${task.actualHours.toFixed(2)},${task.variance.toFixed(2)},${task.variancePercentage.toFixed(1)}%`
+        `${csvString(task.taskName)},${task.estimatedHours ?? 'N/A'},${task.actualHours.toFixed(2)},${task.variance.toFixed(2)},${task.variancePercentage.toFixed(1)}%`
       );
     }
 

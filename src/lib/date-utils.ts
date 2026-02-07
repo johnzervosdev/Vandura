@@ -15,14 +15,13 @@ export function roundToNearestQuarter(date: Date): Date {
 
 /**
  * Calculates duration in minutes between two dates
- * Rounds to nearest 15-minute increment
  */
 export function calculateDuration(startTime: Date, endTime: Date): number {
   const diffMs = endTime.getTime() - startTime.getTime();
   const diffMinutes = Math.floor(diffMs / (1000 * 60));
-  
-  // Round to nearest 15-minute increment
-  return Math.round(diffMinutes / 15) * 15;
+
+  // Return raw minute difference; validation/rounding is handled by callers.
+  return diffMinutes;
 }
 
 /**

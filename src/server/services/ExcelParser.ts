@@ -112,7 +112,7 @@ export class ExcelParser {
     // Calculate duration
     let durationMinutes: number;
 
-    if (normalized.durationMinutes) {
+    if (normalized.durationMinutes !== undefined && normalized.durationMinutes !== null && normalized.durationMinutes !== '') {
       durationMinutes = parseInt(normalized.durationMinutes.toString(), 10);
     } else if (normalized.startTime && normalized.endTime) {
       const startTime = this.parseTime(date, normalized.startTime);
@@ -161,10 +161,10 @@ export class ExcelParser {
     developer?: string;
     project?: string;
     task?: string;
-    date?: string;
+    date?: unknown;
     startTime?: string;
     endTime?: string;
-    durationMinutes?: number;
+    durationMinutes?: unknown;
     notes?: string;
   } {
     const result: any = {};
@@ -233,38 +233,72 @@ export class ExcelParser {
   /**
    * Parse date string
    */
-  private parseDate(dateStr: string | Date): Date | null {
-    if (dateStr instanceof Date) {
-      return dateStr;
+  private parseDate(dateVal: unknown): Date | null {
+    // Excel serial date number (days since 1899-12-30)
+    if (typeof dateVal === 'number' && Number.isFinite(dateVal)) {
+      const ms = (dateVal - 25569) * 86400000;
+      const d = new Date(ms);
+      return isNaN(d.getTime()) ? null : d;
     }
 
-    try {
-      // Try ISO format
-      const iso = new Date(dateStr);
-      if (!isNaN(iso.getTime())) {
-        return iso;
-      }
+    if (dateVal instanceof Date) {
+      return dateVal;
+    }
 
-      // Try common formats
-      const formats = [
-        /^\d{4}-\d{2}-\d{2}$/, // YYYY-MM-DD
-        /^\d{2}\/\d{2}\/\d{4}$/, // MM/DD/YYYY
-        /^\d{2}-\d{2}-\d{4}$/, // MM-DD-YYYY
-      ];
-
-      for (const format of formats) {
-        if (format.test(dateStr)) {
-          const parsed = new Date(dateStr);
-          if (!isNaN(parsed.getTime())) {
-            return parsed;
-          }
-        }
-      }
-
-      return null;
-    } catch {
+    if (typeof dateVal !== 'string') {
       return null;
     }
+
+    const s = dateVal.trim();
+    if (!s) return null;
+
+    // Try native parsing first (handles ISO 8601 and many common variants)
+    const native = new Date(s);
+    if (!isNaN(native.getTime())) {
+      return native;
+    }
+
+    // Explicit slash formats: M/D/YYYY or D/M/YYYY (disambiguate when possible)
+    const slash = s.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+    if (slash) {
+      const a = parseInt(slash[1], 10);
+      const b = parseInt(slash[2], 10);
+      const y = parseInt(slash[3], 10);
+
+      let month: number;
+      let day: number;
+
+      // If the first part can't be a month, treat as D/M/YYYY
+      if (a > 12 && b >= 1 && b <= 12) {
+        day = a;
+        month = b;
+      }
+      // If the second part can't be a day, treat as M/D/YYYY
+      else if (b > 12 && a >= 1 && a <= 12) {
+        month = a;
+        day = b;
+      }
+      // Ambiguous: default to US-style M/D/YYYY
+      else {
+        month = a;
+        day = b;
+      }
+
+      const d = new Date(y, month - 1, day);
+      return isNaN(d.getTime()) ? null : d;
+    }
+
+    // Explicit YYYY-MM-DD
+    const ymd = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})$/);
+    if (ymd) {
+      const y = parseInt(ymd[1], 10);
+      const m = parseInt(ymd[2], 10);
+      const d = parseInt(ymd[3], 10);
+      const date = new Date(y, m - 1, d);
+      return isNaN(date.getTime()) ? null : date;
+    }
+
+    return null;
   }
 
   /**

@@ -561,6 +561,50 @@ See "Roadmap" section below for full Phase A & B breakdown.
 - Reporting filters and sorting UI needed for report tests
 - Example Excel template file provided and stored in `/public`
 
+### Existing Code QA Targets (Initial Setup)
+1. **ExcelParser (`src/server/services/ExcelParser.ts`)**
+   - Date parsing: ISO, US, EU, hyphen formats, ISO with time
+   - Excel serial dates (number)
+   - Time parsing: 24h, 12h (AM/PM), 4-digit (0900)
+   - Duration rules: > 0 and multiple of 15
+   - Strict failure on any row error
+   - Task matching is case-sensitive
+2. **TimesheetService + Validators**
+   - `createTimeEntrySchema` and `bulkCreate` validation align with 15-minute rule
+   - Zero-duration rows must error (import blocked)
+3. **Project/Task Validators**
+   - `createProjectSchema` and `createTaskSchema` allow estimatedHours = 0 or null (per decision)
+4. **AggregationEngine**
+   - Actuals vs estimates calculations with null/0 estimates
+   - Date range filtering (start/end boundaries)
+5. **ReportService**
+   - CSV export formatting and escaping
+   - CSV filename format matches AC (`actuals-report-{projectName}-{timestamp}.csv`)
+6. **tRPC Routers**
+   - `timesheet.parseExcel` returns preview + errors/warnings
+   - `timesheet.importExcel` blocks on any errors and imports all-or-nothing
+
+---
+
+## Automated Tests (Current) — for Murdock
+
+### How to run
+- **Command**: `npm test`
+- **Runner**: `scripts/run-tests.mjs` (runs every `tests/*.test.ts` via `node --import tsx --test`)
+- **Note**: Node's test runner does **not** auto-discover `*.test.ts` by directory alone, so we keep this runner to avoid missing tests.
+
+### Current test files
+- `tests/validators.test.ts`
+- `tests/report-service.test.ts`
+- `tests/report-router.test.ts`
+- `tests/date-utils.test.ts`
+- `tests/excel-parser.test.ts`
+
+### Next test targets (high value)
+- `timesheet.parseExcel` returns `{ entries, errors, warnings }` with correct row numbering
+- `timesheet.importExcel` blocks on any parse errors (no partial imports) and succeeds when `errors.length === 0`
+- ExcelParser negative cases: missing required columns, invalid durations (`<= 0`, not multiple of 15), unsupported date/time formats
+
 ---
 
 ## Implementation Notes (B.A.) — for QA targeting
@@ -607,12 +651,14 @@ vandura/
 ## Next Actions
 
 **B.A.:**
-- [ ] Validate Story 1.1 (dev environment)
-- [ ] Begin Story 2.1 (Project CRUD UI)
+- [x] Validate Story 1.1 (dev environment)
+- [ ] Finish Story 2.1 (Project CRUD: edit/delete/status)
+- [ ] Implement Story 2.2 (Tasks CRUD UI inside `/projects/[id]`)
+- [ ] Implement Story 3.2 parse preview step (parse → preview/errors → import)
 
 **Hannibal:**
 - [x] Create van.md (this document)
-- [ ] Answer Murdock's questions
+- [x] Answer Murdock's questions
 - [ ] Monitor Phase A progress
 
 **Murdock:**
@@ -631,4 +677,4 @@ _This section is for the team to log questions and blockers. Update as needed._
 ---
 
 **End of Document**  
-Last Updated: 2026-02-05 by Hannibal
+Last Updated: 2026-02-06 by B.A. + Murdock + Hannibal

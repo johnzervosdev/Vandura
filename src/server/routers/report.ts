@@ -76,8 +76,11 @@ export const reportRouter = createTRPCRouter({
 
       const csv = reportService.exportToCSV(report);
 
+      // Keep filename human-friendly; replace Windows-illegal characters.
+      const safeProjectName = report.projectName.replace(/[\\/:"*?<>|]/g, '-');
+
       return {
-        filename: `actuals-report-${input.projectId}-${Date.now()}.csv`,
+        filename: `actuals-report-${safeProjectName}-${Date.now()}.csv`,
         content: csv,
       };
     }),
