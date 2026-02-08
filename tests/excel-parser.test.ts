@@ -81,3 +81,21 @@ test('ExcelParser accepts ISO date-time format', async () => {
   assert.equal(result.errors.length, 0);
   assert.equal(result.entries.length, 1);
 });
+
+test('ExcelParser accepts EU date format D/M/YYYY', async () => {
+  const unique = Date.now();
+  const rows = [
+    {
+      Developer: `QA Dev ${unique}`,
+      Project: `QA Project ${unique}`,
+      Task: 'EU Date Single Digit',
+      Date: '5/2/2026',
+      Duration: 15,
+    },
+  ];
+
+  const result = await excelParser.parseRows(rows);
+
+  assert.equal(result.errors.length, 0);
+  assert.equal(result.entries.length, 1);
+});
