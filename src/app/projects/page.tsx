@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { trpc } from '@/lib/trpc-client';
+import { Modal } from './_components/Modal';
 
 export default function ProjectsPage() {
   const utils = trpc.useUtils();
@@ -166,8 +167,8 @@ export default function ProjectsPage() {
       </div>
 
       {confirmDelete ? (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-md rounded-lg border bg-card p-6 space-y-4">
+        <Modal onClose={() => setConfirmDelete(null)} maxWidthClassName="max-w-md">
+          <div className="space-y-4">
             <div className="text-lg font-semibold">Delete project?</div>
             <div className="text-sm text-muted-foreground">
               <div className="text-foreground font-medium">{confirmDelete.projectName}</div>
@@ -192,7 +193,7 @@ export default function ProjectsPage() {
               </button>
             </div>
           </div>
-        </div>
+        </Modal>
       ) : null}
     </div>
   );

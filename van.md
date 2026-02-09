@@ -190,18 +190,62 @@ See "Roadmap" section below for full Phase A & B breakdown.
 ---
 
 #### Story 2.2: Manage Tasks (P0) - 4-5h
-**Status:** Queued  
+**Status:** ✅ Complete  
 **Owner:** B.A.
 
-**Acceptance Criteria:**
-- [ ] View tasks table on `/projects/[id]` page
-- [ ] Create task (name, estimated hours, description, status)
-- [ ] Edit task details inline or modal
-- [ ] Delete task
-- [ ] Mark task status (pending/in-progress/completed/blocked)
-- [ ] Tasks filtered to current project only
+**Decisions (clarified):**
+- **Create**: modal
+- **Edit**: modal
+- **Delete**: confirmation modal
+- **Status**: both (in form + quick-edit dropdown in table)
+- **Parent/subtasks (`parentTaskId`)**: **OUT of scope** for Story 2.2 (keep tasks flat; always `null`)
+- **Actual hours column**: **OUT of scope** for Story 2.2 (avoid new aggregation work; focus on CRUD + status)
+
+**Acceptance Criteria (tightened):**
+- [x] View tasks in a table on `/projects/[id]` (filtered to current project only)
+- [x] Empty state: “No tasks yet. Add one to get started.”
+- [x] “Add Task” button opens a **create modal**
+- [x] Create task form fields:
+  - [x] Name (required)
+  - [x] Estimated hours (optional, \( \ge 0 \))
+  - [x] Description (optional)
+  - [x] Status (pending/in-progress/completed/blocked; default pending)
+- [x] After create, task appears in the table without navigation
+- [x] Edit task via **Edit** button → **edit modal** (same fields)
+- [x] Delete task via **Delete** button → **confirm modal**
+  - [x] Copy: “Delete this task? Time entries linked to this task will become unassigned.”
+- [x] Quick-edit status dropdown in table updates status immediately
+- [x] Validation: name required; estimated hours \( \ge 0 \) if provided
+
+**Definition of Done (Story 2.2):**
+- [ ] Navigate to a project detail page
+- [ ] Click “Add Task” → modal opens
+- [ ] Create task with name, estimated hours, description, status
+- [ ] See task appear in table
+- [ ] Click status dropdown in table → change status inline
+- [ ] Click “Edit” → modal opens with existing values
+- [ ] Update task → changes persist
+- [ ] Click “Delete” → confirmation modal → task removed
+- [ ] See empty state if no tasks exist
 
 **UI Location:** `/projects/[id]` (embedded tasks section)
+
+**QA Checklist (Murdock)**
+- [x] Create modal: empty name → inline error “Name is required”
+- [x] Create modal: negative estimated hours → inline error “Estimated hours must be 0 or greater”
+- [x] Create task: success → modal closes, task appears in table
+- [x] Status dropdown: change → disabled during save → updates on success
+- [x] Status dropdown: server error → reverts to original value, shows error toast
+- [x] Edit modal: pre-populates existing values
+- [x] Edit modal: update → persists changes
+- [x] Delete modal: shows exact copy: “Delete this task? Time entries linked to this task will become unassigned.”
+- [x] Delete task: removes from list; time entries become unassigned (`taskId = null`)
+- [x] Empty state shows when no tasks exist
+
+**Refactors completed (post-QA polish)**
+- ✅ Extracted shared `Modal` component: `src/app/projects/_components/Modal.tsx`
+- ✅ Extracted `TasksSection` to keep `/projects/[id]/page.tsx` focused: `src/app/projects/[id]/_components/TasksSection.tsx`
+- ✅ QA validated no regressions after refactor
 
 ---
 

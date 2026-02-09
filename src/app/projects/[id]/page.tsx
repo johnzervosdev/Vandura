@@ -1,7 +1,9 @@
 'use client';
 
 import { useParams } from 'next/navigation';
+import { useState } from 'react';
 import { trpc } from '@/lib/trpc-client';
+import { TasksSection } from './_components/TasksSection';
 
 export default function ProjectDetailPage() {
   const params = useParams();
@@ -12,6 +14,7 @@ export default function ProjectDetailPage() {
     { id: projectId },
     { enabled: Number.isFinite(projectId) }
   );
+  const [taskCount, setTaskCount] = useState<number>(0);
 
   if (!Number.isFinite(projectId)) {
     return <div className="text-destructive">Invalid project id.</div>;
@@ -65,39 +68,13 @@ export default function ProjectDetailPage() {
         </div>
         <div className="rounded-lg border bg-card p-4">
           <div className="text-sm text-muted-foreground">Tasks</div>
-          <div className="text-lg font-semibold mt-1">{data.tasks?.length ?? 0}</div>
+          <div className="text-lg font-semibold mt-1">{taskCount}</div>
         </div>
       </div>
 
-      <div className="rounded-lg border bg-card">
-        <div className="p-6 border-b">
-          <h2 className="text-lg font-semibold">Tasks</h2>
-        </div>
-        <div className="p-6">
-          {data.tasks?.length ? (
-            <ul className="space-y-2 text-sm">
-              {data.tasks.map((t) => (
-                <li key={t.id} className="flex items-center justify-between border rounded-md px-3 py-2">
-                  <div>
-                    <div className="font-medium">{t.name}</div>
-                    <div className="text-muted-foreground">{t.status}</div>
-                  </div>
-                  <div className="text-muted-foreground">
-                    {t.estimatedHours === null || t.estimatedHours === undefined
-                      ? 'N/A'
-                      : `${t.estimatedHours.toFixed(1)}h`}
-                  </div>
-                </li>
-              ))}
-            </ul>
-          ) : (
-            <div className="text-muted-foreground text-sm">
-              No tasks yet. They’ll be auto-created on Excel import (task names are unique per project).
-            </div>
-          )}
-        </div>
-      </div>
+      <TasksSection projectId={projectId} onTaskCountChange={setTaskCount} />
     </div>
   );
 }
+
 
