@@ -174,18 +174,18 @@ See "Roadmap" section below for full Phase A & B breakdown.
 ---
 
 #### Story 2.1: Manage Projects (P0) - 3-4h
-**Status:** In Progress  
+**Status:** ✅ Complete  
 **Owner:** B.A.
 
 **Acceptance Criteria:**
-- [ ] Create project with name, description, estimated hours, start/end dates
-- [ ] View list of all projects
-- [ ] Edit project details
-- [ ] Delete project (cascade deletes tasks/entries)
-- [ ] Mark project status (active/completed/on-hold/cancelled)
-- [ ] Form validation (name required, estimated hours > 0)
+- [x] Create project with name, description, estimated hours, start/end dates
+- [x] View list of all projects
+- [x] Edit project details
+- [x] Delete project (cascade deletes tasks/entries)
+- [x] Mark project status (active/completed/on-hold/cancelled)
+- [x] Form validation (name required, estimated hours >= 0)
 
-**UI Location:** `/projects`, `/projects/[id]` (edit/delete/status UI pending)
+**UI Location:** `/projects`, `/projects/new`, `/projects/[id]/edit`
 
 ---
 
@@ -355,6 +355,24 @@ See "Roadmap" section below for full Phase A & B breakdown.
 
 ---
 
+#### Story 1.2: Dev Server Stability (Windows/OneDrive) (P2 - Deferred) - 1-2h
+**Status:** Deferred (post-MVP)  
+**Owner:** B.A.
+
+**Problem:**
+- On Windows (especially under OneDrive), `next dev` can occasionally **bind port 3000 but stop responding** until processes are killed and `.next` is cleared.
+
+**Acceptance Criteria:**
+- [ ] Add an optional dev script `dev:win` that runs `next dev` with Watchpack polling enabled (Windows-friendly)
+- [ ] Add an optional dev script `dev:clean` that clears `.next` before starting dev server
+- [ ] Document recovery steps in README (kill stuck `node.exe`, delete `.next`, restart with polling)
+- [ ] Update `van.md` risk mitigation notes to reference these scripts
+
+**Notes:**
+- This is **operational hardening**, not core MVP functionality; do only when Hannibal prioritizes.
+
+---
+
 ## Roadmap & Timeline
 
 ### Phase A: Showcase Slice (24-31 hours / 3-4 dev days)
@@ -375,11 +393,16 @@ See "Roadmap" section below for full Phase A & B breakdown.
 
 ---
 
+### Optional (Deferred): Dev Environment Hardening (1-2 hours)
+**Sequence:** 1.2 (Dev Server Stability) can be done any time after MVP, especially if Windows/OneDrive instability recurs.
+
 ## Known Issues & Technical Debt
 
 ### Critical (Fix in Phase A)
 1. **Excel import UX** - Missing: parse preview step (parse → preview/errors → import)
 2. **Windows/OneDrive stability** - Occasional stuck `next dev` / chunk timeouts if polling not enabled or stale `.next`
+3. ~~**Next.js params Promise warning**~~ - ✅ **FIXED**: `/projects/[id]` and `/projects/[id]/edit` - Fixed params handling for Next.js 15 (handle `string | string[]`). Owner: B.A.
+4. ~~**Drizzle relations missing**~~ - ✅ **FIXED**: Added Drizzle relations to schema for `projects.tasks`, `tasks.project`, etc. Required for `with: { tasks: true }` queries. Owner: B.A.
 
 ### Minor (Fix in Phase B)
 3. **drizzle.config.ts** - Fixed: removed deprecated `driver` field (already resolved)
@@ -561,6 +584,12 @@ See "Roadmap" section below for full Phase A & B breakdown.
 - Reporting filters and sorting UI needed for report tests
 - Example Excel template file provided and stored in `/public`
 
+### QA Results (Initial)
+**Story 2.1 (Manage Projects):**
+- Automated tests (tRPC + validation) PASS
+- Code review PASS for create/edit/delete/status UI wiring
+- Manual UI pass: pending (requires browser run)
+
 ### Existing Code QA Targets (Initial Setup)
 1. **ExcelParser (`src/server/services/ExcelParser.ts`)**
    - Date parsing: ISO, US, EU, hyphen formats, ISO with time
@@ -652,7 +681,8 @@ vandura/
 
 **B.A.:**
 - [x] Validate Story 1.1 (dev environment)
-- [ ] Finish Story 2.1 (Project CRUD: edit/delete/status)
+- [x] Finish Story 2.1 (Project CRUD: edit/delete/status) - ✅ Complete with tests
+- [x] Fix Next.js params Promise warning (Murdock QA finding)
 - [ ] Implement Story 2.2 (Tasks CRUD UI inside `/projects/[id]`)
 - [ ] Implement Story 3.2 parse preview step (parse → preview/errors → import)
 

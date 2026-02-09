@@ -1,5 +1,6 @@
 import { sql } from 'drizzle-orm';
 import { integer, text, real, sqliteTable, index } from 'drizzle-orm/sqlite-core';
+import { relations } from 'drizzle-orm';
 
 /**
  * Developers Table
@@ -145,3 +146,65 @@ export type NewTimeEntry = typeof timeEntries.$inferInsert;
 
 export type ActualsCache = typeof actualsCache.$inferSelect;
 export type NewActualsCache = typeof actualsCache.$inferInsert;
+
+/**
+ * Drizzle Relations
+ * Define relationships between tables for relational queries
+ */
+export const projectsRelations = relations(projects, ({ many }) => ({
+  tasks: many(tasks),
+  timeEntries: many(timeEntries),
+  actualsCache: many(actualsCache),
+}));
+
+export const tasksRelations = relations(tasks, ({ one, many }) => ({
+  project: one(projects, {
+    fields: [tasks.projectId],
+    references: [projects.id],
+  }),
+  parentTask: one(tasks, {
+    fields: [tasks.parentTaskId],
+    references: [tasks.id],
+    relationName: 'subtasks',
+  }),
+  subtasks: many(tasks, {
+    relationName: 'subtasks',
+  }),
+  timeEntries: many(timeEntries),
+  actualsCache: many(actualsCache),
+}));
+
+export const developersRelations = relations(developers, ({ many }) => ({
+  timeEntries: many(timeEntries),
+  actualsCache: many(actualsCache),
+}));
+
+export const timeEntriesRelations = relations(timeEntries, ({ one }) => ({
+  project: one(projects, {
+    fields: [timeEntries.projectId],
+    references: [projects.id],
+  }),
+  task: one(tasks, {
+    fields: [timeEntries.taskId],
+    references: [tasks.id],
+  }),
+  developer: one(developers, {
+    fields: [timeEntries.developerId],
+    references: [developers.id],
+  }),
+}));
+
+export const actualsCacheRelations = relations(actualsCache, ({ one }) => ({
+  project: one(projects, {
+    fields: [actualsCache.projectId],
+    references: [projects.id],
+  }),
+  task: one(tasks, {
+    fields: [actualsCache.taskId],
+    references: [tasks.id],
+  }),
+  developer: one(developers, {
+    fields: [actualsCache.developerId],
+    references: [developers.id],
+  }),
+}));

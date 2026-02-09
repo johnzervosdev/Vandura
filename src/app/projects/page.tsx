@@ -1,93 +1,80 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { trpc } from '@/lib/trpc-client';
 
 export default function ProjectsPage() {
   const utils = trpc.useUtils();
-  const { data: projects, isLoading, error } = trpc.project.list.useQuery();
-  const createProject = trpc.project.create.useMutation({
+  const searchParams = useSearchParams();
+  const created = searchParams.get('created');
+  const updated = searchParams.get('updated');
+  const deleted = searchParams.get('deleted');
+
+  const { data: summaries, isLoading, error } = trpc.report.projectsSummary.useQuery();
+
+  const [toast, setToast] = useState<string | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState<{
+    projectId: number;
+    projectName: string;
+  } | null>(null);
+
+  useEffect(() => {
+    // Map query params to a one-time message (simple MVP pattern).
+    if (created) setToast('Project created successfully.');
+    else if (updated) setToast('Project updated successfully.');
+    else if (deleted) setToast('Project deleted successfully.');
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const deleteProject = trpc.project.delete.useMutation({
     onSuccess: async () => {
-      await utils.project.list.invalidate();
+      await utils.report.projectsSummary.invalidate();
+      setConfirmDelete(null);
+      setToast('Project deleted successfully.');
     },
+    onError: (e) => setToast(`Delete failed: ${e.message}`),
   });
 
-  const [name, setName] = useState('');
-  const [estimatedHours, setEstimatedHours] = useState<string>('');
-  const [description, setDescription] = useState('');
+  const updateProject = trpc.project.update.useMutation({
+    onSuccess: async () => {
+      await utils.report.projectsSummary.invalidate();
+      setToast('Status updated.');
+    },
+    onError: (e) => setToast(`Update failed: ${e.message}`),
+  });
 
-  const canCreate = name.trim().length > 0 && !createProject.isPending;
-
-  async function onCreate() {
-    if (!canCreate) return;
-    await createProject.mutateAsync({
-      name: name.trim(),
-      description: description.trim() ? description.trim() : undefined,
-      estimatedHours: estimatedHours.trim() ? Number(estimatedHours) : undefined,
-      status: 'active',
-    });
-    setName('');
-    setEstimatedHours('');
-    setDescription('');
-  }
+  const rows = summaries ?? [];
 
   return (
     <div className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold">Projects</h1>
-        <p className="text-muted-foreground mt-2">Create projects and track estimated vs actual hours.</p>
-      </div>
-
-      <div className="rounded-lg border bg-card p-6 space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">Create Project</h2>
-          {createProject.error ? (
-            <div className="text-sm text-destructive">{createProject.error.message}</div>
-          ) : null}
+      <div className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="text-3xl font-bold">Projects</h1>
+          <p className="text-muted-foreground mt-2">
+            Manage projects and track estimated vs actual hours.
+          </p>
         </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Name</label>
-            <input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-              placeholder="e.g. Project Alpha"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Estimated hours (optional)</label>
-            <input
-              value={estimatedHours}
-              onChange={(e) => setEstimatedHours(e.target.value)}
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-              placeholder="e.g. 120"
-              inputMode="decimal"
-            />
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Description (optional)</label>
-            <input
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-              placeholder="Short note"
-            />
-          </div>
-        </div>
-
-        <button
-          type="button"
-          onClick={onCreate}
-          disabled={!canCreate}
-          className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-primary-foreground disabled:opacity-50"
+        <a
+          href="/projects/new"
+          className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-primary-foreground"
         >
-          {createProject.isPending ? 'Creating…' : 'Create'}
-        </button>
+          New Project
+        </a>
       </div>
+
+      {toast ? (
+        <div className="rounded-md border bg-card p-3 text-sm flex items-start justify-between gap-3">
+          <div>{toast}</div>
+          <button
+            type="button"
+            className="text-muted-foreground hover:underline"
+            onClick={() => setToast(null)}
+          >
+            Dismiss
+          </button>
+        </div>
+      ) : null}
 
       <div className="rounded-lg border bg-card">
         <div className="p-6 border-b">
@@ -98,30 +85,77 @@ export default function ProjectsPage() {
           {isLoading ? <div>Loading…</div> : null}
           {error ? <div className="text-destructive">Failed to load: {error.message}</div> : null}
 
-          {projects && projects.length === 0 ? (
-            <div className="text-muted-foreground">No projects yet. Create one above.</div>
+          {rows.length === 0 && !isLoading ? (
+            <div className="text-muted-foreground">No projects yet. Create one to get started.</div>
           ) : null}
 
-          {projects && projects.length > 0 ? (
+          {rows.length > 0 ? (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b">
                     <th className="text-left py-3 px-4">Name</th>
                     <th className="text-left py-3 px-4">Status</th>
-                    <th className="text-right py-3 px-4">Estimated</th>
+                    <th className="text-right py-3 px-4">Estimated Hours</th>
+                    <th className="text-right py-3 px-4">Actual Hours</th>
+                    <th className="text-right py-3 px-4">Variance</th>
+                    <th className="text-right py-3 px-4">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {projects.map((p) => (
-                    <tr key={p.id} className="border-b last:border-b-0">
+                  {rows.map((p) => (
+                    <tr key={p.projectId} className="border-b last:border-b-0">
                       <td className="py-3 px-4">
-                        <a className="font-medium hover:underline" href={`/projects/${p.id}`}>
-                          {p.name}
+                        <a className="font-medium hover:underline" href={`/projects/${p.projectId}`}>
+                          {p.projectName}
                         </a>
                       </td>
-                      <td className="py-3 px-4">{p.status}</td>
-                      <td className="py-3 px-4 text-right">{p.estimatedHours?.toFixed(1) ?? 'N/A'}h</td>
+                      <td className="py-3 px-4">
+                        <select
+                          className="rounded-md border bg-background px-2 py-1 text-sm"
+                          value={p.status}
+                          onChange={(e) =>
+                            updateProject.mutate({
+                              id: p.projectId,
+                              data: {
+                                status: e.target.value as 'active' | 'completed' | 'on-hold' | 'cancelled',
+                              },
+                            })
+                          }
+                        >
+                          <option value="active">active</option>
+                          <option value="completed">completed</option>
+                          <option value="on-hold">on-hold</option>
+                          <option value="cancelled">cancelled</option>
+                        </select>
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        {p.estimatedHours === null || p.estimatedHours === undefined ? 'N/A' : `${p.estimatedHours.toFixed(1)}h`}
+                      </td>
+                      <td className="py-3 px-4 text-right">{p.actualHours.toFixed(1)}h</td>
+                      <td className={`py-3 px-4 text-right ${p.variance > 0 ? 'text-destructive' : 'text-green-600'}`}>
+                        {p.variance > 0 ? '+' : ''}
+                        {p.variance.toFixed(1)}h
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        <div className="inline-flex gap-2">
+                          <a
+                            className="rounded-md border px-3 py-1 hover:bg-muted"
+                            href={`/projects/${p.projectId}/edit`}
+                          >
+                            Edit
+                          </a>
+                          <button
+                            type="button"
+                            className="rounded-md border border-destructive/40 px-3 py-1 text-destructive hover:bg-destructive/10"
+                            onClick={() =>
+                              setConfirmDelete({ projectId: p.projectId, projectName: p.projectName })
+                            }
+                          >
+                            Delete
+                          </button>
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -130,6 +164,36 @@ export default function ProjectsPage() {
           ) : null}
         </div>
       </div>
+
+      {confirmDelete ? (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md rounded-lg border bg-card p-6 space-y-4">
+            <div className="text-lg font-semibold">Delete project?</div>
+            <div className="text-sm text-muted-foreground">
+              <div className="text-foreground font-medium">{confirmDelete.projectName}</div>
+              <div className="mt-1">This will delete all tasks and time entries. Continue?</div>
+            </div>
+            <div className="flex items-center justify-end gap-3">
+              <button
+                type="button"
+                className="rounded-md border px-4 py-2"
+                onClick={() => setConfirmDelete(null)}
+                disabled={deleteProject.isPending}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="rounded-md bg-destructive px-4 py-2 text-destructive-foreground disabled:opacity-50"
+                disabled={deleteProject.isPending}
+                onClick={() => deleteProject.mutate({ id: confirmDelete.projectId })}
+              >
+                {deleteProject.isPending ? 'Deleting…' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </div>
   );
 }

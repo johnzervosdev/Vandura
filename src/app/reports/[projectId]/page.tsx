@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import { useParams } from 'next/navigation';
 import { trpc } from '@/lib/trpc-client';
 
 function downloadTextFile(filename: string, content: string, mime = 'text/plain') {
@@ -15,7 +16,8 @@ function downloadTextFile(filename: string, content: string, mime = 'text/plain'
   URL.revokeObjectURL(url);
 }
 
-export default function ProjectReportPage({ params }: { params: { projectId: string } }) {
+export default function ProjectReportPage() {
+  const params = useParams();
   const projectId = Number(params.projectId);
   const enabled = Number.isFinite(projectId);
 

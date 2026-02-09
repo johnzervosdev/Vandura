@@ -1,9 +1,13 @@
 'use client';
 
+import { useParams } from 'next/navigation';
 import { trpc } from '@/lib/trpc-client';
 
-export default function ProjectDetailPage({ params }: { params: { id: string } }) {
-  const projectId = Number(params.id);
+export default function ProjectDetailPage() {
+  const params = useParams();
+  // Handle Next.js 15: params.id can be string | string[] | undefined
+  const idParam = Array.isArray(params?.id) ? params.id[0] : params?.id;
+  const projectId = Number(idParam);
   const { data, isLoading, error } = trpc.project.get.useQuery(
     { id: projectId },
     { enabled: Number.isFinite(projectId) }
@@ -25,6 +29,12 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
           {data.description ? <p className="text-muted-foreground mt-2">{data.description}</p> : null}
         </div>
         <div className="flex gap-3">
+            <a
+              href={`/projects/${data.id}/edit`}
+              className="inline-flex items-center rounded-md border px-4 py-2 hover:bg-muted"
+            >
+              Edit Project
+            </a>
           <a
             href={`/reports/${data.id}`}
             className="inline-flex items-center rounded-md bg-secondary px-4 py-2 text-secondary-foreground"
@@ -47,7 +57,11 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
         </div>
         <div className="rounded-lg border bg-card p-4">
           <div className="text-sm text-muted-foreground">Estimated hours</div>
-          <div className="text-lg font-semibold mt-1">{data.estimatedHours?.toFixed(1) ?? 'N/A'}h</div>
+          <div className="text-lg font-semibold mt-1">
+            {data.estimatedHours === null || data.estimatedHours === undefined
+              ? 'N/A'
+              : `${data.estimatedHours.toFixed(1)}h`}
+          </div>
         </div>
         <div className="rounded-lg border bg-card p-4">
           <div className="text-sm text-muted-foreground">Tasks</div>
@@ -69,7 +83,9 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
                     <div className="text-muted-foreground">{t.status}</div>
                   </div>
                   <div className="text-muted-foreground">
-                    {t.estimatedHours?.toFixed(1) ?? 'N/A'}h
+                    {t.estimatedHours === null || t.estimatedHours === undefined
+                      ? 'N/A'
+                      : `${t.estimatedHours.toFixed(1)}h`}
                   </div>
                 </li>
               ))}
