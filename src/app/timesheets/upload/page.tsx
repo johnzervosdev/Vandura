@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { trpc } from '@/lib/trpc-client';
+import { Modal } from '@/components/Modal';
 
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
@@ -15,25 +16,49 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
 
 export default function TimesheetUploadPage() {
   const [file, setFile] = useState<File | null>(null);
+  const [fileBuffer, setFileBuffer] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
+  const parseExcel = trpc.timesheet.parseExcel.useMutation();
   const importExcel = trpc.timesheet.importExcel.useMutation();
 
-  const canSubmit = useMemo(() => !!file && !importExcel.isPending, [file, importExcel.isPending]);
+  const canParse = useMemo(
+    () => !!file && !!fileBuffer && !parseExcel.isPending && !importExcel.isPending,
+    [file, fileBuffer, parseExcel.isPending, importExcel.isPending]
+  );
+
+  const canImport =
+    !!fileBuffer &&
+    !!parseExcel.data &&
+    parseExcel.data.errors.length === 0 &&
+    !importExcel.isPending;
+
+  async function onParse() {
+    setError(null);
+    setSuccess(null);
+
+    if (!file || !fileBuffer) return;
+
+    try {
+      await parseExcel.mutateAsync({ fileBuffer });
+      setPreviewOpen(true);
+    } catch (e) {
+      const message = e instanceof Error ? e.message : 'Parse failed';
+      setError(message);
+    }
+  }
 
   async function onImport() {
     setError(null);
     setSuccess(null);
-
-    if (!file) return;
+    if (!fileBuffer) return;
 
     try {
-      const buffer = await file.arrayBuffer();
-      const fileBuffer = arrayBufferToBase64(buffer);
-
       const result = await importExcel.mutateAsync({ fileBuffer });
       setSuccess(`Imported ${result.imported} time entries.`);
+      setPreviewOpen(false);
     } catch (e) {
       const message = e instanceof Error ? e.message : 'Import failed';
       setError(message);
@@ -67,10 +92,20 @@ export default function TimesheetUploadPage() {
           <input
             type="file"
             accept=".xlsx,.xls"
-            onChange={(e) => {
+            onChange={async (e) => {
               setError(null);
               setSuccess(null);
-              setFile(e.target.files?.[0] ?? null);
+              parseExcel.reset();
+              setPreviewOpen(false);
+
+              const f = e.target.files?.[0] ?? null;
+              setFile(f);
+              setFileBuffer(null);
+
+              if (f) {
+                const buffer = await f.arrayBuffer();
+                setFileBuffer(arrayBufferToBase64(buffer));
+              }
             }}
           />
           {file ? (
@@ -85,11 +120,11 @@ export default function TimesheetUploadPage() {
         <div className="flex items-center gap-3">
           <button
             type="button"
-            onClick={onImport}
-            disabled={!canSubmit}
+            onClick={onParse}
+            disabled={!canParse}
             className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-primary-foreground disabled:opacity-50"
           >
-            {importExcel.isPending ? 'Importing…' : 'Import'}
+            {parseExcel.isPending ? 'Parsing…' : 'Parse'}
           </button>
           <a href="/timesheets" className="text-sm hover:underline text-muted-foreground">
             Back to Timesheets
@@ -110,6 +145,96 @@ export default function TimesheetUploadPage() {
           </div>
         ) : null}
       </div>
+
+      {previewOpen && parseExcel.data ? (
+        <Modal onClose={() => setPreviewOpen(false)} closeOnBackdrop showCloseButton maxWidthClassName="max-w-3xl">
+          <div className="space-y-4">
+            <div className="text-lg font-semibold">Parse Preview</div>
+
+            <div className="text-sm text-muted-foreground">
+              Parsed <span className="text-foreground font-medium">{parseExcel.data.entryCount}</span> entries —{' '}
+              <span className={parseExcel.data.errors.length ? 'text-destructive font-medium' : ''}>
+                {parseExcel.data.errors.length} errors
+              </span>
+              , {parseExcel.data.warnings.length} warnings
+            </div>
+
+            {parseExcel.data.preview.length ? (
+              <div className="overflow-x-auto rounded-md border">
+                <table className="w-full text-sm">
+                  <thead>
+                    <tr className="border-b bg-muted/40">
+                      <th className="text-left py-2 px-3">Developer</th>
+                      <th className="text-left py-2 px-3">Project</th>
+                      <th className="text-left py-2 px-3">Task</th>
+                      <th className="text-left py-2 px-3">Date</th>
+                      <th className="text-right py-2 px-3">Duration</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {parseExcel.data.preview.map((r, idx) => (
+                      <tr key={idx} className="border-b last:border-b-0">
+                        <td className="py-2 px-3">{r.developer}</td>
+                        <td className="py-2 px-3">{r.project}</td>
+                        <td className="py-2 px-3">{r.task ?? ''}</td>
+                        <td className="py-2 px-3">{new Date(r.startTime).toLocaleString()}</td>
+                        <td className="py-2 px-3 text-right">{r.durationMinutes}m</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            ) : (
+              <div className="text-sm text-muted-foreground">No valid entries found to preview.</div>
+            )}
+
+            {parseExcel.data.errors.length ? (
+              <details className="rounded-md border border-destructive/40 bg-destructive/10 p-3">
+                <summary className="cursor-pointer text-sm font-medium text-destructive">
+                  Errors ({parseExcel.data.errors.length}) — import is blocked
+                </summary>
+                <ul className="mt-2 text-sm text-muted-foreground list-disc pl-5 space-y-1">
+                  {parseExcel.data.errors.map((e, i) => (
+                    <li key={i}>{e}</li>
+                  ))}
+                </ul>
+              </details>
+            ) : null}
+
+            {parseExcel.data.warnings.length ? (
+              <details className="rounded-md border p-3">
+                <summary className="cursor-pointer text-sm font-medium">
+                  Warnings ({parseExcel.data.warnings.length})
+                </summary>
+                <ul className="mt-2 text-sm text-muted-foreground list-disc pl-5 space-y-1">
+                  {parseExcel.data.warnings.map((w, i) => (
+                    <li key={i}>{w}</li>
+                  ))}
+                </ul>
+              </details>
+            ) : null}
+
+            <div className="flex items-center justify-end gap-3 pt-2">
+              <button
+                type="button"
+                className="rounded-md border px-4 py-2"
+                onClick={() => setPreviewOpen(false)}
+                disabled={importExcel.isPending}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="rounded-md bg-primary px-4 py-2 text-primary-foreground disabled:opacity-50"
+                onClick={onImport}
+                disabled={!canImport}
+              >
+                {importExcel.isPending ? 'Importing…' : 'Import'}
+              </button>
+            </div>
+          </div>
+        </Modal>
+      ) : null}
     </div>
   );
 }

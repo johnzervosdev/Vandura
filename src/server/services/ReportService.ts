@@ -54,45 +54,62 @@ export class ReportService {
    * Get summary for all projects
    */
   async getAllProjectsSummary(): Promise<ProjectSummary[]> {
-    const allProjects = await db.query.projects.findMany();
+    // PERF: avoid N+1 queries (and repeated AggregationEngine calls) by aggregating in SQL.
+    // The dashboard/projects/reports pages call this on initial load, so it must be fast.
 
-    const summaries: ProjectSummary[] = [];
+    const timeAgg = db
+      .select({
+        projectId: timeEntries.projectId,
+        totalMinutes: sql<number>`CAST(SUM(${timeEntries.durationMinutes}) AS INTEGER)`,
+        developerCount: sql<number>`CAST(COUNT(DISTINCT ${timeEntries.developerId}) AS INTEGER)`,
+      })
+      .from(timeEntries)
+      .groupBy(timeEntries.projectId)
+      .as('timeAgg');
 
-    for (const project of allProjects) {
-      try {
-        // Get actuals
-        const actuals = await aggregationEngine.getActualsVsEstimates(project.id);
+    const taskAgg = db
+      .select({
+        projectId: tasks.projectId,
+        taskCount: sql<number>`CAST(COUNT(*) AS INTEGER)`,
+      })
+      .from(tasks)
+      .groupBy(tasks.projectId)
+      .as('taskAgg');
 
-        // Count developers
-        const developerResult = await db
-          .selectDistinct({ developerId: timeEntries.developerId })
-          .from(timeEntries)
-          .where(eq(timeEntries.projectId, project.id));
+    const rows = await db
+      .select({
+        projectId: projects.id,
+        projectName: projects.name,
+        status: projects.status,
+        estimatedHours: projects.estimatedHours,
+        totalMinutes: timeAgg.totalMinutes,
+        developerCount: timeAgg.developerCount,
+        taskCount: taskAgg.taskCount,
+      })
+      .from(projects)
+      .leftJoin(timeAgg, eq(timeAgg.projectId, projects.id))
+      .leftJoin(taskAgg, eq(taskAgg.projectId, projects.id));
 
-        // Count tasks
-        const taskResult = await db
-          .select()
-          .from(tasks)
-          .where(eq(tasks.projectId, project.id));
+    return rows.map((r) => {
+      const actualHours = (r.totalMinutes ?? 0) / 60;
+      const estimatedHours = r.estimatedHours;
 
-        summaries.push({
-          projectId: project.id,
-          projectName: project.name,
-          status: project.status,
-          estimatedHours: project.estimatedHours,
-          actualHours: actuals.totalActualHours,
-          variance: actuals.variance,
-          variancePercentage: actuals.variancePercentage,
-          developerCount: developerResult.length,
-          taskCount: taskResult.length,
-        });
-      } catch (error) {
-        // Skip projects with errors
-        console.error(`Error processing project ${project.id}:`, error);
-      }
-    }
+      // Keep behavior consistent with AggregationEngine: when estimated hours is null/0, variance is 0.
+      const variance = estimatedHours ? actualHours - estimatedHours : 0;
+      const variancePercentage = estimatedHours ? (variance / estimatedHours) * 100 : 0;
 
-    return summaries;
+      return {
+        projectId: r.projectId,
+        projectName: r.projectName,
+        status: r.status,
+        estimatedHours,
+        actualHours,
+        variance,
+        variancePercentage,
+        developerCount: r.developerCount ?? 0,
+        taskCount: r.taskCount ?? 0,
+      };
+    });
   }
 
   /**

@@ -48,7 +48,13 @@ export const timesheetRouter = createTRPCRouter({
     )
     .mutation(async ({ input }) => {
       const buffer = Buffer.from(input.fileBuffer, 'base64');
-      return excelParser.parseFile(buffer);
+      const parseResult = await excelParser.parseFile(buffer);
+      return {
+        entryCount: parseResult.entries.length,
+        preview: parseResult.preview,
+        errors: parseResult.errors,
+        warnings: parseResult.warnings,
+      };
     }),
 
   // Import from Excel (parse and save)

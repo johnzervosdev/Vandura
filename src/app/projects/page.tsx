@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { trpc } from '@/lib/trpc-client';
-import { Modal } from './_components/Modal';
+import { Modal } from '@/components/Modal';
 
 export default function ProjectsPage() {
   const utils = trpc.useUtils();

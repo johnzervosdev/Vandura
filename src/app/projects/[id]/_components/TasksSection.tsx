@@ -8,7 +8,7 @@ import {
   type TaskFormValues,
   type TaskStatus,
 } from '../../_components/TaskForm';
-import { Modal } from '../../_components/Modal';
+import { Modal } from '@/components/Modal';
 
 export function TasksSection({
   projectId,

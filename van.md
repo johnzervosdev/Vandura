@@ -243,7 +243,7 @@ See "Roadmap" section below for full Phase A & B breakdown.
 - [x] Empty state shows when no tasks exist
 
 **Refactors completed (post-QA polish)**
-- ✅ Extracted shared `Modal` component: `src/app/projects/_components/Modal.tsx`
+- ✅ Extracted shared `Modal` component: `src/components/Modal.tsx`
 - ✅ Extracted `TasksSection` to keep `/projects/[id]/page.tsx` focused: `src/app/projects/[id]/_components/TasksSection.tsx`
 - ✅ QA validated no regressions after refactor
 
@@ -255,17 +255,37 @@ See "Roadmap" section below for full Phase A & B breakdown.
 
 **Acceptance Criteria:**
 - [x] Upload .xlsx file via `/timesheets/upload` page
-- [ ] Show parse preview: first 10 rows in table (parse-only step)
-- [ ] Show parse summary: "247 entries parsed, 3 errors, 5 warnings"
-- [ ] Expandable error/warning list with row numbers
-- [ ] "Import" button disabled if errors > 0
+- [x] Show parse preview: first 10 rows in table (parse-only step)
+- [x] Show parse summary: "X entries parsed, Y errors, Z warnings"
+- [x] Expandable error/warning list with row numbers
+- [x] "Import" button disabled if errors > 0
 - [x] Batch insert uses proper transaction
 - [x] Success message: "Imported 247 time entries"
 - [x] Auto-create missing developers/projects/tasks
 - [x] Apply timezone rule: treat as local time
 - [x] Apply dedupe rule: allow duplicates
+- [x] Weekly-grid timesheets supported (Mon–Fri weekday columns) when the sheet includes a **Week Ending** date and a sheet-level **Name/Developer** label (grid → row conversion)
+
+**QA Checklist (Murdock)**
+- [x] Parse: shows preview (max 10 rows) + summary counts
+- [x] Parse: errors/warnings expandable with row numbers
+- [x] Import disabled when errors exist
+- [x] Import succeeds when no errors and shows success banner
+- [x] Import blocks on errors (no partial import)
 
 **UI Location:** `/timesheets/upload`
+
+**Implementation Notes (for QA targeting)**
+- **tRPC**:
+  - Parse: `timesheet.parseExcel` → returns `{ entryCount, preview (first 10), errors, warnings }`
+  - Import: `timesheet.importExcel` → throws if any parse errors
+- **UI flow**:
+  - Click **Parse** → Modal shows preview + error/warning lists
+  - **Import** is disabled when `errors.length > 0`
+  - On successful import, modal closes and success banner shows imported count
+- **Excel parsing**:
+  - Parser: `src/server/services/ExcelParser.ts`
+  - Weekly grid conversion happens inside `ExcelParser.parseFile()` when the sheet looks like weekday columns (Mon/Tue/…)
 
 ---
 
@@ -443,8 +463,11 @@ See "Roadmap" section below for full Phase A & B breakdown.
 ## Known Issues & Technical Debt
 
 ### Critical (Fix in Phase A)
-1. **Excel import UX** - Missing: parse preview step (parse → preview/errors → import)
+1. ~~**Excel import UX**~~ - ✅ **FIXED**: parse preview step implemented (parse → preview/errors → import) using shared `Modal`.
 2. **Windows/OneDrive stability** - Occasional stuck `next dev` / chunk timeouts if polling not enabled or stale `.next`
+3. ~~**Excel parser weekly-grid timesheet layout**~~ - ✅ **IMPLEMENTED**: weekly grid (Mon/Tue/…) is converted to row-based entries when a sheet includes **Week Ending** + a sheet-level **Name/Developer** label.
+   - QA Note: Validate against a real-world file like `JZER240405.xlsx` to confirm sheet selection + header/date-row detection matches the actual layout.
+   - Owner: B.A. (Murdock: add 1-2 fixture-style tests if the real file reveals edge cases)
 3. ~~**Next.js params Promise warning**~~ - ✅ **FIXED**: `/projects/[id]` and `/projects/[id]/edit` - Fixed params handling for Next.js 15 (handle `string | string[]`). Owner: B.A.
 4. ~~**Drizzle relations missing**~~ - ✅ **FIXED**: Added Drizzle relations to schema for `projects.tasks`, `tasks.project`, etc. Required for `with: { tasks: true }` queries. Owner: B.A.
 
