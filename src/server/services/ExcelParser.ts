@@ -2,7 +2,7 @@ import * as XLSX from 'xlsx';
 import { calculateDuration } from '@/lib/date-utils';
 import { db } from '../db';
 import { developers, projects, tasks } from '../db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import type { TimeEntryInput } from './TimesheetService';
 
 /**
@@ -24,6 +24,21 @@ export interface ExcelRow {
 
 export interface ParseResult {
   entries: TimeEntryInput[];
+  sheetName?: string;
+  /**
+   * Detected developer for this file (single-developer assumption).
+   * If we cannot confidently detect a developer, this will be null.
+   */
+  detectedDeveloper: string | null;
+  /**
+   * Back-compat / debugging: list of developer candidates observed.
+   * For the MVP assumption (one developer per file), this is either [] or [detectedDeveloper].
+   */
+  developers: string[];
+  projects: {
+    all: string[];
+    invalid: string[];
+  };
   preview: Array<{
     developer: string;
     project: string;
@@ -37,11 +52,86 @@ export interface ParseResult {
 }
 
 export class ExcelParser {
+  private shouldIgnoreProjectToken(value: string): boolean {
+    const v = value.trim();
+    if (!v) return true;
+    const lower = v.toLowerCase();
+
+    // Common non-project row labels / headers
+    if (lower === 'project code') return true;
+    if (lower.startsWith('daily totals')) return true;
+    if (lower.includes('week ending')) return true;
+    if (lower.includes('total') || lower.includes('subtotal')) return true;
+
+    // Date-like strings that sometimes appear in the Project Code column in weekly-grid sheets
+    if (/^\d{4}-\d{2}-\d{2}$/.test(v)) return true; // YYYY-MM-DD
+    if (/^\d{1,2}\/\d{1,2}\/\d{2,4}$/.test(v)) return true; // M/D/YYYY or MM/DD/YY
+    if (/^\d{1,2}-\d{1,2}-\d{2,4}$/.test(v)) return true; // M-D-YYYY
+
+    // Label-ish values (often end with colon)
+    if (lower.endsWith(':') && (lower.includes('total') || lower.includes('subtotal') || lower.includes('daily'))) {
+      return true;
+    }
+
+    return false;
+  }
+
+  private extractProjectCodesFromMatrix(
+    matrix: any[][],
+    normalizeCell: (v: unknown) => string
+  ): string[] {
+    // Anchor on a "Project Code" header and collect the values beneath it.
+    // This is used for preview-only reporting and should work even if entry parsing yields 0 entries.
+    let headerRow = -1;
+    let projectCol = -1;
+
+    const scanRows = Math.min(40, matrix.length);
+    for (let r = 0; r < scanRows; r++) {
+      const row = matrix[r];
+      if (!Array.isArray(row)) continue;
+      for (let c = 0; c < row.length; c++) {
+        if (normalizeCell(row[c]) === 'project code') {
+          headerRow = r;
+          projectCol = c;
+          break;
+        }
+      }
+      if (headerRow >= 0) break;
+    }
+
+    if (headerRow < 0 || projectCol < 0) return [];
+
+    const codes = new Set<string>();
+    for (let r = headerRow + 1; r < matrix.length; r++) {
+      const row = matrix[r];
+      if (!Array.isArray(row)) continue;
+      const raw = row[projectCol];
+      const code =
+        typeof raw === 'string'
+          ? raw.trim()
+          : raw !== null && raw !== undefined
+            ? String(raw).trim()
+            : '';
+      if (!code) continue;
+      const lower = code.toLowerCase();
+      if (this.shouldIgnoreProjectToken(code)) continue;
+      codes.add(code);
+    }
+
+    return Array.from(codes).sort((a, b) => a.localeCompare(b));
+  }
+
   /**
    * Parse Excel file from buffer
    */
-  async parseFile(buffer: Buffer): Promise<ParseResult> {
+  async parseFile(
+    buffer: Buffer,
+    opts?: {
+      mode?: 'preview' | 'import';
+    }
+  ): Promise<ParseResult> {
     const workbook = XLSX.read(buffer, { type: 'buffer' });
+    const mode = opts?.mode ?? 'import';
 
     const headerTokens = [
       // Developer
@@ -162,22 +252,69 @@ export class ExcelParser {
           .slice(0, 20)
           .some((row) => Array.isArray(row) && row.map(normalizeCell).some((c) => weekdayTokens.includes(c)));
 
+      const hasWeekEndingLabel =
+        Array.isArray(matrix) &&
+        matrix
+          .slice(0, 20)
+          .some((row) => Array.isArray(row) && row.map(normalizeCell).some((c) => c.includes('week ending')));
+
+      const hasProjectCodeHeader =
+        Array.isArray(matrix) &&
+        matrix
+          .slice(0, 30)
+          .some((row) => Array.isArray(row) && row.map(normalizeCell).some((c) => c === 'project code'));
+
+      const hourLikeCount = (() => {
+        if (!Array.isArray(matrix)) return 0;
+        let count = 0;
+        const maxRows = Math.min(120, matrix.length);
+        for (let r = 0; r < maxRows; r++) {
+          const row = matrix[r];
+          if (!Array.isArray(row)) continue;
+          const maxCols = Math.min(30, row.length);
+          for (let c = 0; c < maxCols; c++) {
+            const v = row[c];
+            const n = typeof v === 'number' ? v : typeof v === 'string' ? Number(v) : NaN;
+            if (!Number.isFinite(n)) continue;
+            // Most timesheets have fractional hours (0.25, 1.5, 2, etc.). Cap to avoid picking lookup tables.
+            if (n > 0 && n <= 24) count++;
+          }
+        }
+        return count;
+      })();
+
       // Heuristic scoring: prefer sheets with header matches (row-based) or weekday columns (weekly grid).
       // Lightly penalize known "metadata" sheet names.
       const normalizedName = name.toLowerCase();
-      const namePenalty =
+      const isMetadataName =
         normalizedName.includes('variable') ||
         normalizedName.includes('lookup') ||
         normalizedName.includes('list') ||
         normalizedName.includes('config') ||
         normalizedName.includes('settings') ||
-        normalizedName.includes('meta')
-          ? 2
-          : 0;
+        normalizedName.includes('meta');
+      // Mild penalty only; some real-world timesheets legitimately put the working grid on a sheet named "Variable".
+      const namePenalty = isMetadataName ? 2 : 0;
 
-      const score = bestMatchCount + (looksLikeWeeklyGrid ? 3 : 0) + (defaultDeveloper ? 1 : 0) - namePenalty;
+      const score =
+        bestMatchCount +
+        (looksLikeWeeklyGrid ? 3 : 0) +
+        (hasWeekEndingLabel ? 2 : 0) +
+        (hasProjectCodeHeader ? 2 : 0) +
+        (hourLikeCount >= 3 ? 2 : 0) +
+        (defaultDeveloper ? 1 : 0) -
+        namePenalty;
 
-      return { name, sheet, matrix, bestHeaderRow, bestMatchCount, defaultDeveloper, looksLikeWeeklyGrid, score };
+      return {
+        name,
+        sheet,
+        matrix,
+        bestHeaderRow,
+        bestMatchCount,
+        defaultDeveloper,
+        looksLikeWeeklyGrid,
+        score,
+      };
     };
 
     const sheetNames = (workbook.SheetNames ?? []).filter(Boolean);
@@ -197,6 +334,46 @@ export class ExcelParser {
     const bestHeaderRow = selected.bestHeaderRow;
     const bestMatchCount = selected.bestMatchCount;
     const defaultDeveloper: string | undefined = selected.defaultDeveloper;
+    const projectCodesFromMatrix = Array.isArray(matrix)
+      ? this.extractProjectCodesFromMatrix(matrix, normalizeCell)
+      : [];
+
+    const finalize = async (parsed: ParseResult): Promise<ParseResult> => {
+      // If we failed to detect projects from parsed rows (common for weekly grids),
+      // fall back to extracting "Project Code" values directly from the sheet matrix.
+      let mergedAllProjects = parsed.projects?.all ?? [];
+      if (mergedAllProjects.length === 0 && projectCodesFromMatrix.length > 0) {
+        mergedAllProjects = projectCodesFromMatrix;
+      } else if (projectCodesFromMatrix.length > 0) {
+        mergedAllProjects = Array.from(new Set([...mergedAllProjects, ...projectCodesFromMatrix])).sort((a, b) =>
+          a.localeCompare(b)
+        );
+      }
+
+      // In preview mode, validate the merged project list against DB (even if entry parsing yielded 0).
+      let invalid = parsed.projects?.invalid ?? [];
+      if (mode === 'preview' && mergedAllProjects.length > 0) {
+        const existing = await db.query.projects.findMany({
+          where: inArray(projects.name, mergedAllProjects),
+          columns: { name: true },
+        });
+        const existingSet = new Set(existing.map((p) => p.name));
+        invalid = mergedAllProjects.filter((p) => !existingSet.has(p));
+      }
+
+      const filteredErrors = parsed.errors.filter((e) => !e.startsWith('Invalid projects ('));
+      const errors =
+        mode === 'preview' && invalid.length > 0
+          ? [`Invalid projects (${invalid.length}/${mergedAllProjects.length}): ${invalid.join(', ')}`, ...filteredErrors]
+          : filteredErrors;
+
+      return {
+        ...parsed,
+        sheetName,
+        projects: { all: mergedAllProjects, invalid },
+        errors,
+      };
+    };
 
     // Convert to JSON using detected header row when confidence is reasonable.
     // If we can't detect a header row, we still try default sheet_to_json but will validate headers before parsing.
@@ -242,20 +419,47 @@ export class ExcelParser {
     const looksLikeWeeklyGridByKeys =
       hasWeekdayColumns && !hasDateColumn && !hasDurationColumn && !(hasStartColumn && hasEndColumn);
 
-    if (looksLikeWeeklyGridByKeys && Array.isArray(matrix)) {
+      // Some real-world weekly grids have weekday headers that become `__EMPTY*` keys after `sheet_to_json`,
+      // or have non-standard day headers. Fall back to matrix-based detection when (a) the sheet has a
+      // Project Code header or weekday tokens and (b) it does not appear to have row-based date/duration columns.
+      const matrixHasProjectCodeHeader =
+        Array.isArray(matrix) &&
+        matrix
+          .slice(0, 30)
+          .some((row) => Array.isArray(row) && row.map(normalizeCell).some((c) => c === 'project code'));
+
+      const looksLikeWeeklyGridByMatrix =
+        (selected.looksLikeWeeklyGrid || matrixHasProjectCodeHeader) &&
+        !hasDateColumn &&
+        !hasDurationColumn &&
+        !(hasStartColumn && hasEndColumn);
+
+      if ((looksLikeWeeklyGridByKeys || looksLikeWeeklyGridByMatrix) && Array.isArray(matrix)) {
       const converted = this.convertWeeklyGridToRowObjects(matrix, {
         defaultDeveloper,
         normalizeCell,
       });
 
       if (converted.errors.length > 0) {
-        return { entries: [], preview: [], errors: converted.errors, warnings: converted.warnings };
+          return {
+            entries: [],
+            sheetName,
+            detectedDeveloper: converted.defaultDeveloper ?? defaultDeveloper ?? null,
+            developers: (converted.defaultDeveloper ?? defaultDeveloper) ? [String(converted.defaultDeveloper ?? defaultDeveloper)] : [],
+            projects: { all: projectCodesFromMatrix, invalid: projectCodesFromMatrix },
+            preview: [],
+            errors: converted.errors,
+            warnings: converted.warnings,
+          };
       }
 
-      return this.parseRows(converted.rows, {
-        defaultDeveloper: converted.defaultDeveloper ?? defaultDeveloper,
-        firstDataRowNumber: converted.firstDataRowNumber,
-      });
+      return finalize(
+        await this.parseRows(converted.rows, {
+          defaultDeveloper: converted.defaultDeveloper ?? defaultDeveloper,
+          firstDataRowNumber: converted.firstDataRowNumber,
+          mode,
+        })
+      );
     }
 
     if (!hasRecognizableHeaders) {
@@ -272,17 +476,33 @@ export class ExcelParser {
         });
 
         if (converted.errors.length > 0) {
-          return { entries: [], preview: [], errors: converted.errors, warnings: converted.warnings };
+          return {
+            entries: [],
+            sheetName,
+            detectedDeveloper: converted.defaultDeveloper ?? defaultDeveloper ?? null,
+            developers: (converted.defaultDeveloper ?? defaultDeveloper) ? [String(converted.defaultDeveloper ?? defaultDeveloper)] : [],
+            projects: { all: projectCodesFromMatrix, invalid: projectCodesFromMatrix },
+            preview: [],
+            errors: converted.errors,
+            warnings: converted.warnings,
+          };
         }
 
-        return this.parseRows(converted.rows, {
-          defaultDeveloper: converted.defaultDeveloper ?? defaultDeveloper,
-          firstDataRowNumber: converted.firstDataRowNumber,
-        });
+        return finalize(
+          await this.parseRows(converted.rows, {
+            defaultDeveloper: converted.defaultDeveloper ?? defaultDeveloper,
+            firstDataRowNumber: converted.firstDataRowNumber,
+            mode,
+          })
+        );
       }
 
       return {
         entries: [],
+        sheetName,
+        detectedDeveloper: defaultDeveloper ?? null,
+        developers: defaultDeveloper ? [defaultDeveloper] : [],
+        projects: { all: projectCodesFromMatrix, invalid: projectCodesFromMatrix },
         preview: [],
         errors: [
           'Could not detect a header row with the expected columns. Expected columns like Developer, Project, Task, Date, Duration (or Start/End), Notes.',
@@ -294,7 +514,7 @@ export class ExcelParser {
       };
     }
 
-    return this.parseRows(rows, { defaultDeveloper, firstDataRowNumber });
+    return finalize(await this.parseRows(rows, { defaultDeveloper, firstDataRowNumber, mode }));
   }
 
   private convertWeeklyGridToRowObjects(
@@ -373,13 +593,39 @@ export class ExcelParser {
     }
 
     if (headerRow < 0 || dayCols.length === 0) {
-      return {
-        rows: [],
-        errors: ['Weekly grid detected, but could not find a header row with weekday columns (Mon..Fri).'],
-        warnings,
-        defaultDeveloper: opts.defaultDeveloper,
-        firstDataRowNumber: 2,
-      };
+      // Fallback: JZER-style sheets sometimes label the grid by "Project Code" and may not have
+      // clean weekday strings in the header row. Anchor on "Project Code" and assume columns E–K
+      // represent Sat–Fri (7 days) like the characterization test.
+      const scanRows2 = Math.min(40, matrix.length);
+      for (let r = 0; r < scanRows2; r++) {
+        const row = matrix[r];
+        if (!Array.isArray(row)) continue;
+        const normalized = row.map(opts.normalizeCell);
+        const projectCodeCol = normalized.findIndex((c) => c === 'project code');
+        if (projectCodeCol < 0) continue;
+        headerRow = r;
+        // Column indices: C=2 project code, D=3 task label, E–K=4..10 day columns
+        dayCols = [
+          { dayIndex: 5, col: 4 }, // Sat
+          { dayIndex: 6, col: 5 }, // Sun
+          { dayIndex: 0, col: 6 }, // Mon
+          { dayIndex: 1, col: 7 }, // Tue
+          { dayIndex: 2, col: 8 }, // Wed
+          { dayIndex: 3, col: 9 }, // Thu
+          { dayIndex: 4, col: 10 }, // Fri
+        ];
+        break;
+      }
+
+      if (headerRow < 0 || dayCols.length === 0) {
+        return {
+          rows: [],
+          errors: ['Weekly grid detected, but could not find a header row with weekday columns (Mon..Fri) or a Project Code header.'],
+          warnings,
+          defaultDeveloper: opts.defaultDeveloper,
+          firstDataRowNumber: 2,
+        };
+      }
     }
 
     // 2) Attempt to extract a "week ending" / "week of" date (preferred).
@@ -438,15 +684,12 @@ export class ExcelParser {
         };
       }
 
-      const includesSun = dayCols.some((d) => d.dayIndex === 6);
-      const includesSat = dayCols.some((d) => d.dayIndex === 5);
-      const includesFri = dayCols.some((d) => d.dayIndex === 4);
-
-      // Heuristic: if Sun column exists, weekEnding is Sun; else if Fri exists, weekEnding is Fri; else use last available day.
-      const endingDayIndex = includesSun ? 6 : includesFri ? 4 : includesSat ? 5 : dayCols[dayCols.length - 1]!.dayIndex;
-
-      for (const { dayIndex } of dayCols) {
-        const deltaDays = dayIndex - endingDayIndex;
+      // Use column-position deltas relative to the rightmost day column (assumed to be the "week ending" day).
+      // This works for both Mon–Fri and Sat–Fri grids without relying on weekday index wraparound.
+      const ordered = [...dayCols].sort((a, b) => a.col - b.col);
+      const endingCol = ordered[ordered.length - 1]!.col;
+      for (const { dayIndex, col } of ordered) {
+        const deltaDays = col - endingCol;
         const d = new Date(weekEnding);
         d.setDate(d.getDate() + deltaDays);
         dayDates[dayIndex] = d;
@@ -459,9 +702,24 @@ export class ExcelParser {
     const projectCol =
       findCol((s) => s.includes('project') || s.includes('client') || s.includes('job')) ??
       -1;
-    const taskCol =
-      findCol((s) => s.includes('task') || s.includes('activity') || s.includes('work item') || s.includes('description')) ??
-      -1;
+    let taskCol =
+      findCol(
+        (s) =>
+          s.includes('task') ||
+          s.includes('activity') ||
+          s.includes('work item') ||
+          s.includes('workitem') ||
+          s.includes('description') ||
+          // JZER-style sheets often label the task column as "ROLE AND STORY CARD NUMBER"
+          s.includes('role') ||
+          s.includes('story') ||
+          s.includes('card')
+      ) ?? -1;
+
+    // Fallback: if we found a project column but not a task column, assume the adjacent column is the task label.
+    if (taskCol < 0 && projectCol >= 0 && projectCol + 1 < header.length) {
+      taskCol = projectCol + 1;
+    }
 
     if (projectCol < 0) {
       errors.push('Weekly grid detected, but could not detect the Project column in the header row.');
@@ -590,18 +848,45 @@ export class ExcelParser {
    */
   async parseRows(
     rows: any[],
-    opts?: { defaultDeveloper?: string; firstDataRowNumber?: number }
+    opts?: { defaultDeveloper?: string; firstDataRowNumber?: number; mode?: 'preview' | 'import' }
   ): Promise<ParseResult> {
     const entries: TimeEntryInput[] = [];
+    const developerCandidates = new Set<string>();
+    const projectCandidates = new Set<string>();
     const preview: ParseResult['preview'] = [];
     const errors: string[] = [];
     const warnings: string[] = [];
     const firstDataRowNumber = opts?.firstDataRowNumber ?? 2;
+    const mode = opts?.mode ?? 'import';
 
     for (let i = 0; i < rows.length; i++) {
       const rowNum = firstDataRowNumber + i;
       try {
-        const parsed = await this.parseRow(rows[i], rowNum, { defaultDeveloper: opts?.defaultDeveloper });
+        // Developer detection should not depend on whether a row parses successfully.
+        // Prefer sheet-level defaultDeveloper; otherwise, capture per-row dev candidates.
+        const normalizedForDev = this.normalizeColumnNames(rows[i]);
+        const devCandidateRaw = opts?.defaultDeveloper ?? normalizedForDev.developer;
+        const devCandidate =
+          typeof devCandidateRaw === 'string'
+            ? devCandidateRaw.trim()
+            : devCandidateRaw !== null && devCandidateRaw !== undefined
+              ? String(devCandidateRaw).trim()
+              : '';
+        if (devCandidate) developerCandidates.add(devCandidate);
+
+        const projRaw = normalizedForDev.project;
+        const proj =
+          typeof projRaw === 'string'
+            ? projRaw.trim()
+            : projRaw !== null && projRaw !== undefined
+              ? String(projRaw).trim()
+              : '';
+        if (proj && !this.shouldIgnoreProjectToken(proj)) projectCandidates.add(proj);
+
+        const parsed = await this.parseRow(rows[i], rowNum, {
+          defaultDeveloper: opts?.defaultDeveloper,
+          mode,
+        });
         if (parsed) {
           entries.push(parsed.entry);
           if (preview.length < 10) {
@@ -613,7 +898,41 @@ export class ExcelParser {
       }
     }
 
-    return { entries, preview, errors, warnings };
+    const sheetDev =
+      typeof opts?.defaultDeveloper === 'string' && opts.defaultDeveloper.trim()
+        ? opts.defaultDeveloper.trim()
+        : null;
+
+    const detectedDeveloper =
+      sheetDev ??
+      (developerCandidates.size === 1 ? Array.from(developerCandidates)[0]! : null);
+
+    const allProjects = Array.from(projectCandidates).sort((a, b) => a.localeCompare(b));
+    let invalidProjects: string[] = [];
+    if (mode === 'preview' && allProjects.length > 0) {
+      const existing = await db.query.projects.findMany({
+        where: inArray(projects.name, allProjects),
+        columns: { name: true },
+      });
+      const existingSet = new Set(existing.map((p) => p.name));
+      invalidProjects = allProjects.filter((p) => !existingSet.has(p));
+
+      if (invalidProjects.length > 0) {
+        errors.unshift(
+          `Invalid projects (${invalidProjects.length}/${allProjects.length}): ${invalidProjects.join(', ')}`
+        );
+      }
+    }
+
+    return {
+      entries,
+      detectedDeveloper,
+      developers: detectedDeveloper ? [detectedDeveloper] : [],
+      projects: { all: allProjects, invalid: invalidProjects },
+      preview,
+      errors,
+      warnings,
+    };
   }
 
   /**
@@ -623,7 +942,7 @@ export class ExcelParser {
     row: any,
     rowNum: number
     ,
-    opts?: { defaultDeveloper?: string }
+    opts?: { defaultDeveloper?: string; mode?: 'preview' | 'import' }
   ): Promise<{ entry: TimeEntryInput; preview: ParseResult['preview'][number] } | null> {
     // Normalize column names (case-insensitive, flexible naming)
     const normalized = this.normalizeColumnNames(row);
@@ -656,15 +975,16 @@ export class ExcelParser {
     }
 
     // Get or create developer
-    const developerId = await this.getOrCreateDeveloper(developerName);
+    const mode = opts?.mode ?? 'import';
+    const developerId = mode === 'import' ? await this.getOrCreateDeveloper(developerName) : 0;
 
     // Get or create project
-    const projectId = await this.getOrCreateProject(normalized.project);
+    const projectId = mode === 'import' ? await this.getOrCreateProject(normalized.project) : 0;
 
     // Get or create task (optional)
     let taskId: number | undefined;
     if (normalized.task) {
-      taskId = await this.getOrCreateTask(projectId, normalized.task);
+      taskId = mode === 'import' ? await this.getOrCreateTask(projectId, normalized.task) : undefined;
     }
 
     // Calculate duration
@@ -754,7 +1074,12 @@ export class ExcelParser {
       }
 
       // Project
-      else if (lowerKey === 'project' || lowerKey === 'project name' || lowerKey === 'proj') {
+      else if (
+        lowerKey === 'project' ||
+        lowerKey === 'project name' ||
+        lowerKey === 'proj' ||
+        lowerKey === 'project code'
+      ) {
         result.project = value;
       }
 

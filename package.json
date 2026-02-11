@@ -4,7 +4,7 @@
   "description": "Automated time-tracking and actuals report generator",
   "private": true,
   "scripts": {
-    "dev": "next dev",
+    "dev": "node scripts/dev.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",

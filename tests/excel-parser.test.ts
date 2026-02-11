@@ -24,6 +24,58 @@ test('ExcelParser accepts EU date format DD/MM/YYYY', async () => {
   assert.equal(result.entries.length, 1);
 });
 
+test('ExcelParser reports detectedDeveloper from sheet-level defaultDeveloper even when all rows error', async () => {
+  const result = await excelParser.parseRows(
+    [
+      {
+        // missing project => row error
+        Developer: '',
+        Date: '2026-02-05',
+        Duration: 15,
+      },
+    ],
+    { defaultDeveloper: 'Sheet Dev' }
+  );
+
+  assert.equal(result.entries.length, 0);
+  assert.equal(result.detectedDeveloper, 'Sheet Dev');
+  assert.deepEqual(result.developers, ['Sheet Dev']);
+});
+
+test('ExcelParser reports detectedDeveloper as null when no developer can be determined', async () => {
+  const result = await excelParser.parseRows([
+    {
+      // missing developer => row error
+      Project: 'Proj',
+      Date: '2026-02-05',
+      Duration: 15,
+    },
+  ]);
+
+  assert.equal(result.entries.length, 0);
+  assert.equal(result.detectedDeveloper, null);
+  assert.deepEqual(result.developers, []);
+});
+
+test('ExcelParser (preview mode) detects projects on sheet and reports invalid projects (not in DB)', async () => {
+  const unique = Date.now();
+  const existingName = `Existing Project ${unique}`;
+  const missingName = `Missing Project ${unique}`;
+
+  await db.insert(projects).values({ name: existingName, status: 'active' as any });
+
+  const rows = [
+    { Developer: `Dev ${unique}`, Project: existingName, Task: 'T1', Date: '2026-02-05', Duration: 15 },
+    { Developer: `Dev ${unique}`, Project: missingName, Task: 'T2', Date: '2026-02-05', Duration: 15 },
+  ];
+
+  const result = await excelParser.parseRows(rows, { mode: 'preview' });
+
+  assert.deepEqual(result.projects.all, [existingName, missingName].sort((a, b) => a.localeCompare(b)));
+  assert.deepEqual(result.projects.invalid, [missingName]);
+  assert.ok(result.errors.some((e) => e.includes('Invalid projects')));
+});
+
 test('ExcelParser supports Excel serial date numbers', async () => {
   const unique = Date.now();
   const target = new Date(Date.UTC(2026, 1, 5));
@@ -269,6 +321,7 @@ test('ExcelParser.parseFile selects the correct sheet when the first sheet is me
 
   const result = await excelParser.parseFile(buf);
 
+  assert.equal(result.sheetName, 'Timesheet');
   assert.equal(result.errors.length, 0);
   assert.equal(result.entries.length, 1);
   assert.equal(result.preview.length, 1);

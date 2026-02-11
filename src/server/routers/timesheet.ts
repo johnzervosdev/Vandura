@@ -48,9 +48,13 @@ export const timesheetRouter = createTRPCRouter({
     )
     .mutation(async ({ input }) => {
       const buffer = Buffer.from(input.fileBuffer, 'base64');
-      const parseResult = await excelParser.parseFile(buffer);
+      const parseResult = await excelParser.parseFile(buffer, { mode: 'preview' });
       return {
+        sheetName: parseResult.sheetName,
         entryCount: parseResult.entries.length,
+        detectedDeveloper: parseResult.detectedDeveloper,
+        developers: parseResult.developers,
+        projects: parseResult.projects,
         preview: parseResult.preview,
         errors: parseResult.errors,
         warnings: parseResult.warnings,
@@ -66,7 +70,7 @@ export const timesheetRouter = createTRPCRouter({
     )
     .mutation(async ({ input }) => {
       const buffer = Buffer.from(input.fileBuffer, 'base64');
-      const parseResult = await excelParser.parseFile(buffer);
+      const parseResult = await excelParser.parseFile(buffer, { mode: 'import' });
 
       if (parseResult.errors.length > 0) {
         throw new Error(`Parse errors: ${parseResult.errors.join(', ')}`);
@@ -76,6 +80,8 @@ export const timesheetRouter = createTRPCRouter({
 
       return {
         imported: entries.length,
+        detectedDeveloper: parseResult.detectedDeveloper,
+        developers: parseResult.developers,
         errors: parseResult.errors,
         warnings: parseResult.warnings,
       };

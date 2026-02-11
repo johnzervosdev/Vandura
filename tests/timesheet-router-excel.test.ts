@@ -10,6 +10,7 @@ test('Story 3.2: parseExcel returns preview (first 10) and does not throw on row
   try {
     excelParser.parseFile = async () =>
       ({
+        sheetName: 'Sheet1',
         entries: Array.from({ length: 12 }, (_, i) => ({
           developerId: 1,
           projectId: 1,
@@ -18,6 +19,9 @@ test('Story 3.2: parseExcel returns preview (first 10) and does not throw on row
           durationMinutes: 15,
           description: undefined,
         })),
+        detectedDeveloper: 'Dev A',
+        developers: ['Dev A'],
+        projects: { all: ['Proj 1'], invalid: [] },
         preview: Array.from({ length: 10 }, (_, i) => ({
           developer: `Dev ${i}`,
           project: `Proj ${i}`,
@@ -33,7 +37,9 @@ test('Story 3.2: parseExcel returns preview (first 10) and does not throw on row
     const caller = timesheetRouter.createCaller({ headers: new Headers() });
     const result = await caller.parseExcel({ fileBuffer: 'AAAA' });
 
+    assert.equal(result.sheetName, 'Sheet1');
     assert.equal(result.entryCount, 12);
+    assert.equal(result.detectedDeveloper, 'Dev A');
     assert.equal(result.preview.length, 10);
     assert.equal(result.errors.length, 1);
     assert.equal(result.warnings.length, 1);
@@ -61,6 +67,9 @@ test('Story 3.2: importExcel blocks when parse errors exist (no partial import)'
             description: undefined,
           },
         ],
+        detectedDeveloper: 'Dev 1',
+        developers: ['Dev 1'],
+        projects: { all: ['Proj 1'], invalid: ['Proj 1'] },
         preview: [],
         errors: ['Row 2: Duration must be greater than 0'],
         warnings: [],
@@ -107,6 +116,9 @@ test('Story 3.2: importExcel calls bulkCreate and returns imported count when no
     excelParser.parseFile = async () =>
       ({
         entries,
+        detectedDeveloper: 'Dev 1',
+        developers: ['Dev 1'],
+        projects: { all: ['Proj 1'], invalid: [] },
         preview: [],
         errors: [],
         warnings: [],
@@ -146,6 +158,9 @@ test('Story 3.2: duplicate imports call bulkCreate each time (no dedupe)', async
     excelParser.parseFile = async () =>
       ({
         entries,
+        detectedDeveloper: 'Dev 1',
+        developers: ['Dev 1'],
+        projects: { all: ['Proj 1'], invalid: [] },
         preview: [],
         errors: [],
         warnings: [],

@@ -437,6 +437,35 @@ See "Roadmap" section below for full Phase A & B breakdown.
 
 ---
 
+#### Story 3.4: Parse Preview Remediation Tools (P2 - Deferred) - 4-8h
+**Status:** Deferred (post-MVP)  
+**Owner:** TBD (B.A. likely)
+
+**Goal:**
+- Reduce friction when Excel parse preview finds **invalid projects** or obvious timesheet mistakes by providing guided fixes and/or easy feedback to the developer.
+
+**Scope (post-MVP ideas):**
+- **Invalid project quick-add**:
+  - Add a link/button in parse preview next to each invalid project (or in the invalid list): **“Add project”**
+  - Opens a modal to create a project pre-filled with the detected project code/name
+  - After create, re-validate and update parse preview state (without re-upload if possible)
+- **On-the-fly correction (optional)**:
+  - Allow selecting an invalid project and mapping it to an existing project (misspelling/alias correction)
+  - Optionally maintain an alias table / normalization rules so repeated mistakes don’t reappear
+- **Developer feedback export (optional)**:
+  - Provide a “Copy/Download” formatted message summarizing issues found (invalid projects, missing fields, formatting problems)
+  - (Later) If developer emails exist, optionally support generating an email draft (no auto-send in MVP)
+
+**Acceptance Criteria:**
+- [ ] Parse preview shows invalid projects with an **Add project** action
+- [ ] Adding a project updates the invalid list without a full page reload
+- [ ] (Optional) Provide a “Copy message” action containing a clean list of issues for the developer
+
+**Notes:**
+- Explicitly **post-MVP**: MVP remains strict (import blocked on errors) and does not include remediation workflows.
+
+---
+
 ## Roadmap & Timeline
 
 ### Phase A: Showcase Slice (24-31 hours / 3-4 dev days)

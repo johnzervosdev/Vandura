@@ -159,6 +159,38 @@ export default function TimesheetUploadPage() {
               , {parseExcel.data.warnings.length} warnings
             </div>
 
+            <div className="text-sm text-muted-foreground">
+              Sheet selected:{' '}
+              <span className="text-foreground font-medium">
+                {parseExcel.data.sheetName ? parseExcel.data.sheetName : 'Unknown'}
+              </span>
+            </div>
+
+            <div className="text-sm text-muted-foreground">
+              Developer detected:{' '}
+              <span className="text-foreground font-medium">
+                {parseExcel.data.detectedDeveloper ? parseExcel.data.detectedDeveloper : 'Not detected'}
+              </span>
+            </div>
+
+            <div className="text-sm text-muted-foreground">
+              Projects on sheet:{' '}
+              <span className="text-foreground font-medium">{parseExcel.data.projects.all.length}</span>
+              {parseExcel.data.projects.invalid.length ? (
+                <>
+                  {' '}
+                  — Invalid:{' '}
+                  <span className="text-destructive font-medium">
+                    {parseExcel.data.projects.invalid.length}
+                  </span>
+                  <span className="text-muted-foreground">
+                    {' '}
+                    ({parseExcel.data.projects.invalid.join(', ')})
+                  </span>
+                </>
+              ) : null}
+            </div>
+
             {parseExcel.data.preview.length ? (
               <div className="overflow-x-auto rounded-md border">
                 <table className="w-full text-sm">
