@@ -41,6 +41,36 @@ test('ExcelParser imports weekly grid (Mon-Fri) using Week Ending date + Name la
   }
 });
 
+test('ExcelParser weekly grid conversion is not blocked by a generic Hours column', async () => {
+  const unique = Date.now();
+
+  // This mirrors the weekly-grid "template" shape where a generic Hours/Total Hours column exists.
+  // We should still infer per-day dates from Week Ending and generate row-based entries.
+  const aoa = [
+    ['Name:', `QA Dev ${unique}`],
+    ['Week Ending:', '2024-04-05'],
+    [],
+    ['Project', 'Task', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Hours'],
+    ['QA Project Grid', 'Build parser', 1, 0, 0.25, '', 2, 3.25],
+  ];
+
+  const ws = XLSX.utils.aoa_to_sheet(aoa);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
+  const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }) as Buffer;
+
+  const result = await excelParser.parseFile(buf);
+
+  assert.equal(result.errors.length, 0);
+  assert.equal(result.detectedDeveloper, `QA Dev ${unique}`);
+  assert.equal(result.entries.length, 3);
+
+  for (const e of result.entries) {
+    assert.ok(e.startTime instanceof Date);
+    assert.equal(Number.isNaN(e.startTime.getTime()), false);
+  }
+});
+
 test('ExcelParser detects projects on JZER-style weekly grid (Project Code + ROLE AND STORY CARD NUMBER) and flags missing projects in preview', async () => {
   const unique = Date.now();
   const aoa: any[][] = [];

@@ -14,6 +14,10 @@
 | **Lead Developer** | B.A. Baracus | Implementation, technical decisions, code quality, timeline execution |
 | **QA Engineer** | Murdock | Testing strategy, edge cases, failure scenarios, quality gates |
 
+### QA Responsibilities (Murdock)
+- **Do:** reproduce issues, gather runtime evidence, write failing tests, validate fixes, update `van.md` with evidence/status.
+- **Don't:** implement fixes or refactors unless explicitly asked; change production behavior to “solve” bugs; merge/push without request.
+
 ---
 
 ## Project Vision
@@ -497,8 +501,11 @@ See "Roadmap" section below for full Phase A & B breakdown.
 3. ~~**Excel parser weekly-grid timesheet layout**~~ - ✅ **IMPLEMENTED**: weekly grid (Mon/Tue/…) is converted to row-based entries when a sheet includes **Week Ending** + a sheet-level **Name/Developer** label.
    - QA Note: Validate against a real-world file like `JZER240405.xlsx` to confirm sheet selection + header/date-row detection matches the actual layout.
    - Owner: B.A. (Murdock: add 1-2 fixture-style tests if the real file reveals edge cases)
-3. ~~**Next.js params Promise warning**~~ - ✅ **FIXED**: `/projects/[id]` and `/projects/[id]/edit` - Fixed params handling for Next.js 15 (handle `string | string[]`). Owner: B.A.
-4. ~~**Drizzle relations missing**~~ - ✅ **FIXED**: Added Drizzle relations to schema for `projects.tasks`, `tasks.project`, etc. Required for `with: { tasks: true }` queries. Owner: B.A.
+4. ~~**Projects list fails to load (SQL alias error)**~~ - ✅ **FIXED**: `/projects` aliasing issue resolved (see `tests/report-projects-summary-error.test.ts`).
+5. ~~**Template timesheet missing date errors**~~ - ✅ **FIXED**: weekly-grid conversion now supplies per-row dates; template parse no longer fails on missing date.
+6. **Test run status** - Full suite green: 59/59 passed (latest run).
+7. ~~**Next.js params Promise warning**~~ - ✅ **FIXED**: `/projects/[id]` and `/projects/[id]/edit` - Fixed params handling for Next.js 15 (handle `string | string[]`). Owner: B.A.
+8. ~~**Drizzle relations missing**~~ - ✅ **FIXED**: Added Drizzle relations to schema for `projects.tasks`, `tasks.project`, etc. Required for `with: { tasks: true }` queries. Owner: B.A.
 
 ### Minor (Fix in Phase B)
 3. **drizzle.config.ts** - Fixed: removed deprecated `driver` field (already resolved)

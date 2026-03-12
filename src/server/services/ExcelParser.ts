@@ -404,14 +404,11 @@ export class ExcelParser {
     const normalizedKeyList = Array.from(keysFromFirstRows).map(normalizeCell);
     const hasWeekdayColumns = normalizedKeyList.some((k) => weekdayTokens.includes(k.split(' ')[0] ?? k));
     const hasDateColumn = normalizedKeyList.some((k) => k === 'date' || k.includes('work date'));
+    // IMPORTANT: do NOT treat generic "Hours/Hrs" columns as a row-based duration column.
+    // Weekly grids often include an "Hours" / "Total Hours" column, but they still need
+    // weekday->date inference (and they do not provide per-row dates).
     const hasDurationColumn = normalizedKeyList.some(
-      (k) =>
-        k.includes('duration') ||
-        k.includes('minutes') ||
-        k === 'mins' ||
-        k === 'min' ||
-        k.includes('hours') ||
-        k === 'hrs'
+      (k) => k.includes('duration') || k.includes('minutes') || k === 'mins' || k === 'min'
     );
     const hasStartColumn = normalizedKeyList.some((k) => k === 'start' || k === 'start time' || k === 'begin');
     const hasEndColumn = normalizedKeyList.some((k) => k === 'end' || k === 'end time' || k === 'finish');

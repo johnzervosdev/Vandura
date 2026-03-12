@@ -60,8 +60,13 @@ export class ReportService {
     const timeAgg = db
       .select({
         projectId: timeEntries.projectId,
-        totalMinutes: sql<number>`CAST(SUM(${timeEntries.durationMinutes}) AS INTEGER)`,
-        developerCount: sql<number>`CAST(COUNT(DISTINCT ${timeEntries.developerId}) AS INTEGER)`,
+        totalMinutes: sql<number>`CAST(SUM(${timeEntries.durationMinutes}) AS INTEGER)`.as(
+          'totalMinutes'
+        ),
+        developerCount:
+          sql<number>`CAST(COUNT(DISTINCT ${timeEntries.developerId}) AS INTEGER)`.as(
+            'developerCount'
+          ),
       })
       .from(timeEntries)
       .groupBy(timeEntries.projectId)
@@ -70,46 +75,50 @@ export class ReportService {
     const taskAgg = db
       .select({
         projectId: tasks.projectId,
-        taskCount: sql<number>`CAST(COUNT(*) AS INTEGER)`,
+        taskCount: sql<number>`CAST(COUNT(*) AS INTEGER)`.as('taskCount'),
       })
       .from(tasks)
       .groupBy(tasks.projectId)
       .as('taskAgg');
 
-    const rows = await db
-      .select({
-        projectId: projects.id,
-        projectName: projects.name,
-        status: projects.status,
-        estimatedHours: projects.estimatedHours,
-        totalMinutes: timeAgg.totalMinutes,
-        developerCount: timeAgg.developerCount,
-        taskCount: taskAgg.taskCount,
-      })
-      .from(projects)
-      .leftJoin(timeAgg, eq(timeAgg.projectId, projects.id))
-      .leftJoin(taskAgg, eq(taskAgg.projectId, projects.id));
+    try {
+      const rows = await db
+        .select({
+          projectId: projects.id,
+          projectName: projects.name,
+          status: projects.status,
+          estimatedHours: projects.estimatedHours,
+          totalMinutes: timeAgg.totalMinutes,
+          developerCount: timeAgg.developerCount,
+          taskCount: taskAgg.taskCount,
+        })
+        .from(projects)
+        .leftJoin(timeAgg, eq(timeAgg.projectId, projects.id))
+        .leftJoin(taskAgg, eq(taskAgg.projectId, projects.id));
 
-    return rows.map((r) => {
-      const actualHours = (r.totalMinutes ?? 0) / 60;
-      const estimatedHours = r.estimatedHours;
+      return rows.map((r) => {
+        const actualHours = (r.totalMinutes ?? 0) / 60;
+        const estimatedHours = r.estimatedHours;
 
-      // Keep behavior consistent with AggregationEngine: when estimated hours is null/0, variance is 0.
-      const variance = estimatedHours ? actualHours - estimatedHours : 0;
-      const variancePercentage = estimatedHours ? (variance / estimatedHours) * 100 : 0;
+        // Keep behavior consistent with AggregationEngine: when estimated hours is null/0, variance is 0.
+        const variance = estimatedHours ? actualHours - estimatedHours : 0;
+        const variancePercentage = estimatedHours ? (variance / estimatedHours) * 100 : 0;
 
-      return {
-        projectId: r.projectId,
-        projectName: r.projectName,
-        status: r.status,
-        estimatedHours,
-        actualHours,
-        variance,
-        variancePercentage,
-        developerCount: r.developerCount ?? 0,
-        taskCount: r.taskCount ?? 0,
-      };
-    });
+        return {
+          projectId: r.projectId,
+          projectName: r.projectName,
+          status: r.status,
+          estimatedHours,
+          actualHours,
+          variance,
+          variancePercentage,
+          developerCount: r.developerCount ?? 0,
+          taskCount: r.taskCount ?? 0,
+        };
+      });
+    } catch (error) {
+      throw error;
+    }
   }
 
   /**
