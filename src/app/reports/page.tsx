@@ -1,9 +1,16 @@
 'use client';
 
+import { useMemo, useState } from 'react';
 import { trpc } from '@/lib/trpc-client';
 
 export default function ReportsPage() {
   const { data, isLoading, error } = trpc.report.projectsSummary.useQuery();
+  const [selectedProjectId, setSelectedProjectId] = useState<string>('');
+
+  const sortedProjects = useMemo(() => {
+    if (!data) return [];
+    return [...data].sort((a, b) => a.projectName.localeCompare(b.projectName));
+  }, [data]);
 
   return (
     <div className="space-y-6">
@@ -14,6 +21,33 @@ export default function ReportsPage() {
 
       {isLoading ? <div>Loading…</div> : null}
       {error ? <div className="text-destructive">Failed to load: {error.message}</div> : null}
+
+      {sortedProjects.length ? (
+        <div className="rounded-lg border bg-card p-4 space-y-2">
+          <label className="text-sm font-medium">Project</label>
+          <div className="flex flex-col sm:flex-row gap-3 sm:items-center">
+            <select
+              className="rounded-md border bg-background px-3 py-2 text-sm"
+              value={selectedProjectId}
+              onChange={(e) => {
+                const next = e.target.value;
+                setSelectedProjectId(next);
+                if (next) window.location.href = `/reports/${next}`;
+              }}
+            >
+              <option value="">Select a project…</option>
+              {sortedProjects.map((p) => (
+                <option key={p.projectId} value={String(p.projectId)}>
+                  {p.projectName}
+                </option>
+              ))}
+            </select>
+            <div className="text-sm text-muted-foreground">
+              Or click a project in the table below.
+            </div>
+          </div>
+        </div>
+      ) : null}
 
       {data ? (
         <div className="rounded-lg border bg-card overflow-x-auto">

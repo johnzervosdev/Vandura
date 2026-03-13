@@ -135,30 +135,30 @@
 ---
 
 ### Story 4.2: Actuals vs Estimates Report (P0) — 4-6h
-**Status:** In Progress  
+**Status:** ✅ Complete  
 **Owner:** B.A.
 
 **Acceptance Criteria:**
-- [ ] Select project from dropdown
-- [ ] Date range presets: "Last 7 Days", "Last 30 Days", "This Month", "All Time"
-- [ ] Custom date inputs (start/end date pickers)
-- [ ] Project-level summary: total estimated, total actual, variance, variance %
-- [ ] Task-level breakdown table: task name, estimated, actual, variance, variance %
-- [ ] Color-coded variance (green if under, red if over)
-- [ ] Sortable table columns
-- [ ] Empty state if no time entries
+- [x] Select project from dropdown
+- [x] Date range presets: "Last 7 Days", "Last 30 Days", "This Month", "All Time"
+- [x] Custom date inputs (start/end date pickers)
+- [x] Project-level summary: total estimated, total actual, variance, variance %
+- [x] Task-level breakdown table: task name, estimated, actual, variance, variance %
+- [x] Color-coded variance (green if under, red if over)
+- [x] Sortable table columns
+- [x] Empty state if no time entries
 
 **UI Location:** `/reports`, `/reports/[projectId]`
 
 ---
 
 ### Story 4.4: Export CSV (P0) — 1-2h
-**Status:** In Progress  
+**Status:** ✅ Complete  
 **Owner:** B.A.
 
 **Acceptance Criteria:**
 - [x] "Export CSV" button on actuals report page
-- [ ] Filename format: `actuals-report-{projectName}-{timestamp}.csv`
+- [x] Filename format: `actuals-report-{projectName}-{timestamp}.csv`
 - [x] CSV includes project summary + task breakdown
 - [x] Opens correctly in Excel (proper escaping)
 

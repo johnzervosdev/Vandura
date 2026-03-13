@@ -90,3 +90,28 @@ export function endOfWeek(date: Date): Date {
   result.setHours(23, 59, 59, 999);
   return result;
 }
+
+export type DatePreset = 'Last 7 Days' | 'Last 30 Days' | 'This Month' | 'All Time';
+
+export function getPresetRange(
+  preset: DatePreset,
+  now: Date = new Date()
+): { startDate?: Date; endDate?: Date } {
+  const endDate = endOfDay(now);
+
+  if (preset === 'All Time') {
+    return { startDate: undefined, endDate: undefined };
+  }
+
+  if (preset === 'This Month') {
+    const start = new Date(now);
+    start.setDate(1);
+    return { startDate: startOfDay(start), endDate };
+  }
+
+  const days = preset === 'Last 7 Days' ? 7 : 30;
+  const start = new Date(now);
+  // Inclusive: "Last 7 Days" includes today, so subtract 6 days.
+  start.setDate(start.getDate() - (days - 1));
+  return { startDate: startOfDay(start), endDate };
+}
