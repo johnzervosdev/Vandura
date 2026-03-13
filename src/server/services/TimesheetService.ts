@@ -80,7 +80,9 @@ export class TimesheetService {
 
       for (let i = 0; i < entries.length; i += batchSize) {
         const batch = entries.slice(i, i + batchSize);
-        const batchResults = tx.insert(timeEntries).values(batch).returning();
+        // In better-sqlite3 transactions, the callback must be synchronous.
+        // Drizzle queries are "thenable", so use .all() to execute synchronously.
+        const batchResults = tx.insert(timeEntries).values(batch).returning().all();
         results.push(...batchResults);
       }
 

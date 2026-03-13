@@ -254,7 +254,7 @@ See "Roadmap" section below for full Phase A & B breakdown.
 ---
 
 #### Story 3.2: Excel Import (P0) - 4-5h
-**Status:** In Progress  
+**Status:** Complete ✅  
 **Owner:** B.A.
 
 **Acceptance Criteria:**
@@ -506,6 +506,8 @@ See "Roadmap" section below for full Phase A & B breakdown.
 6. **Test run status** - Full suite green: 59/59 passed (latest run).
 7. ~~**Next.js params Promise warning**~~ - ✅ **FIXED**: `/projects/[id]` and `/projects/[id]/edit` - Fixed params handling for Next.js 15 (handle `string | string[]`). Owner: B.A.
 8. ~~**Drizzle relations missing**~~ - ✅ **FIXED**: Added Drizzle relations to schema for `projects.tasks`, `tasks.project`, etc. Required for `with: { tasks: true }` queries. Owner: B.A.
+9. ~~**Import fails with spread error during bulk insert**~~ - ✅ **FIXED**: `TimesheetService.bulkCreateEntries` now executes batch inserts synchronously inside the transaction and always returns an array.
+   - Regression test: `tests/timesheet-bulkCreate.test.ts`
 
 ### Minor (Fix in Phase B)
 3. **drizzle.config.ts** - Fixed: removed deprecated `driver` field (already resolved)
@@ -786,8 +788,8 @@ vandura/
 - [x] Validate Story 1.1 (dev environment)
 - [x] Finish Story 2.1 (Project CRUD: edit/delete/status) - ✅ Complete with tests
 - [x] Fix Next.js params Promise warning (Murdock QA finding)
-- [ ] Implement Story 2.2 (Tasks CRUD UI inside `/projects/[id]`)
-- [ ] Implement Story 3.2 parse preview step (parse → preview/errors → import)
+- [x] Implement Story 2.2 (Tasks CRUD UI inside `/projects/[id]`)
+- [x] Implement Story 3.2 parse preview step (parse → preview/errors → import)
 
 **Hannibal:**
 - [x] Create van.md (this document)
