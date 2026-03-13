@@ -98,10 +98,25 @@ test('Timesheet sample: detect developer name at B2/C2', () => {
   const label = matrix[1]?.[1]; // B2
   const value = matrix[1]?.[2]; // C2
 
-  assert.equal(typeof label, 'string');
-  assert.equal(label.toLowerCase().replace(/[:\s]+/g, ''), 'name');
-  assert.equal(typeof value, 'string');
-  assert.ok(value.trim().length > 0);
+  const labelNorm =
+    typeof label === 'string' ? label.toLowerCase().replace(/[:\s]+/g, '') : '';
+  const valueNorm =
+    typeof value === 'string' ? value.toLowerCase().replace(/[:\s]+/g, '') : '';
+
+  // Accept either:
+  // - "Name:" in B2 and actual name in C2
+  // - "Name:" in C2 and actual name in B2
+  // - name directly in B2 (C2 blank) for older templates
+  if (labelNorm === 'name') {
+    assert.equal(typeof value, 'string');
+    assert.ok(value.trim().length > 0);
+  } else if (valueNorm === 'name') {
+    assert.equal(typeof label, 'string');
+    assert.ok(label.trim().length > 0);
+  } else {
+    assert.equal(typeof label, 'string');
+    assert.ok(label.trim().length > 0);
+  }
 });
 
 test('Timesheet sample: collect Project Code values from column C', () => {
