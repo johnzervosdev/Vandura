@@ -78,9 +78,10 @@ export class AggregationEngine {
     const taskVariances = taskEstimates.map((task) => {
       const actual = actuals.find((a) => a.taskId === task.id);
       const actualHours = actual?.totalHours || 0;
-      const estimatedHours = task.estimatedHours || 0;
-      const variance = actualHours - estimatedHours;
-      const variancePercentage = estimatedHours > 0 ? (variance / estimatedHours) * 100 : 0;
+      const estimatedHours = task.estimatedHours ?? null;
+      const variance = estimatedHours === null ? 0 : actualHours - estimatedHours;
+      const variancePercentage =
+        estimatedHours !== null && estimatedHours > 0 ? (variance / estimatedHours) * 100 : 0;
 
       return {
         taskId: task.id,
