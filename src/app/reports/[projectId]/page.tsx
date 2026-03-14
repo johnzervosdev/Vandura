@@ -54,10 +54,11 @@ export default function ProjectReportPage() {
 
   const totals = useMemo(() => {
     if (!data) return null;
-    const estimated = data.totalEstimatedHours ?? 0;
+    const estimated = data.totalEstimatedHours;
     const actual = data.totalActualHours;
-    const variance = actual - estimated;
-    return { estimated, actual, variance };
+    const hasEstimate = estimated !== null && estimated !== undefined;
+    const variance = hasEstimate ? actual - estimated : null;
+    return { estimated, actual, variance, hasEstimate };
   }, [data]);
 
   const sortedTasks = useMemo(() => {
@@ -203,15 +204,27 @@ export default function ProjectReportPage() {
       </div>
 
       {isLoading ? <div>Loading…</div> : null}
-      {error ? <div className="text-destructive">Failed to load: {error.message}</div> : null}
-      {exportError ? <div className="text-destructive">Export failed: {exportError}</div> : null}
+      {error ? (
+        <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm">
+          <div className="font-medium text-destructive">Failed to load report</div>
+          <div className="text-muted-foreground mt-1">{error.message}</div>
+        </div>
+      ) : null}
+      {exportError ? (
+        <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm">
+          <div className="font-medium text-destructive">Export failed</div>
+          <div className="text-muted-foreground mt-1">{exportError}</div>
+        </div>
+      ) : null}
 
       {data && totals ? (
         <>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="rounded-lg border bg-card p-4">
               <div className="text-sm text-muted-foreground">Estimated</div>
-              <div className="text-2xl font-bold mt-1">{(data.totalEstimatedHours ?? 0).toFixed(1)}h</div>
+              <div className="text-2xl font-bold mt-1">
+                {totals.hasEstimate ? `${totals.estimated!.toFixed(1)}h` : 'N/A'}
+              </div>
             </div>
             <div className="rounded-lg border bg-card p-4">
               <div className="text-sm text-muted-foreground">Actual</div>
@@ -219,11 +232,23 @@ export default function ProjectReportPage() {
             </div>
             <div className="rounded-lg border bg-card p-4">
               <div className="text-sm text-muted-foreground">Variance</div>
-              <div className={`text-2xl font-bold mt-1 ${data.variance > 0 ? 'text-destructive' : 'text-green-600'}`}>
-                {data.variance > 0 ? '+' : ''}
-                {data.variance.toFixed(1)}h
-                <span className="text-sm ml-2">({data.variancePercentage.toFixed(1)}%)</span>
-              </div>
+              {totals.hasEstimate ? (
+                <div
+                  className={`text-2xl font-bold mt-1 ${
+                    data.variance > 0 ? 'text-destructive' : 'text-green-600'
+                  }`}
+                >
+                  {data.variance > 0 ? '+' : ''}
+                  {data.variance.toFixed(1)}h
+                  <span className="text-sm ml-2">
+                    ({data.variancePercentage.toFixed(1)}%)
+                  </span>
+                </div>
+              ) : (
+                <div className="text-2xl font-bold mt-1 text-muted-foreground">
+                  N/A
+                </div>
+              )}
             </div>
           </div>
 
@@ -261,18 +286,42 @@ export default function ProjectReportPage() {
                     </td>
                   </tr>
                 ) : (
-                  sortedTasks.map((t) => (
-                    <tr key={t.taskId} className="border-b last:border-b-0">
-                      <td className="py-3 px-4">{t.taskName}</td>
-                      <td className="py-3 px-4 text-right">{t.estimatedHours?.toFixed(1) ?? 'N/A'}h</td>
-                      <td className="py-3 px-4 text-right">{t.actualHours.toFixed(1)}h</td>
-                      <td className={`py-3 px-4 text-right ${t.variance > 0 ? 'text-destructive' : 'text-green-600'}`}>
-                        {t.variance > 0 ? '+' : ''}
-                        {t.variance.toFixed(1)}h
-                        <span className="text-xs ml-1">({t.variancePercentage.toFixed(0)}%)</span>
-                      </td>
-                    </tr>
-                  ))
+                  sortedTasks.map((t) => {
+                    const taskHasEstimate =
+                      t.estimatedHours !== null && t.estimatedHours !== undefined;
+                    const varianceClass = taskHasEstimate
+                      ? t.variance > 0
+                        ? 'text-destructive'
+                        : 'text-green-600'
+                      : 'text-muted-foreground';
+
+                    return (
+                      <tr key={t.taskId} className="border-b last:border-b-0">
+                        <td className="py-3 px-4">{t.taskName}</td>
+                        <td className="py-3 px-4 text-right">
+                          {taskHasEstimate
+                            ? `${t.estimatedHours!.toFixed(1)}h`
+                            : 'N/A'}
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          {t.actualHours.toFixed(1)}h
+                        </td>
+                        <td className={`py-3 px-4 text-right ${varianceClass}`}>
+                          {taskHasEstimate ? (
+                            <>
+                              {t.variance > 0 ? '+' : ''}
+                              {t.variance.toFixed(1)}h
+                              <span className="text-xs ml-1">
+                                ({t.variancePercentage.toFixed(0)}%)
+                              </span>
+                            </>
+                          ) : (
+                            'N/A'
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })
                 )}
               </tbody>
             </table>

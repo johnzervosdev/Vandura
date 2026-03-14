@@ -4,7 +4,7 @@ import { useMemo, useState } from 'react';
 import { trpc } from '@/lib/trpc-client';
 
 export default function ReportsPage() {
-  const { data, isLoading, error } = trpc.report.projectsSummary.useQuery();
+  const { data, isLoading, error, refetch } = trpc.report.projectsSummary.useQuery();
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
 
   const sortedProjects = useMemo(() => {
@@ -20,7 +20,19 @@ export default function ReportsPage() {
       </div>
 
       {isLoading ? <div>Loading…</div> : null}
-      {error ? <div className="text-destructive">Failed to load: {error.message}</div> : null}
+      {error && !isLoading && !data ? (
+        <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm">
+          <div className="font-medium text-destructive">Failed to load reports</div>
+          <div className="text-muted-foreground mt-1">{error.message}</div>
+          <button
+            type="button"
+            className="mt-2 inline-flex items-center rounded-md border px-3 py-1.5 text-xs"
+            onClick={() => refetch()}
+          >
+            Retry
+          </button>
+        </div>
+      ) : null}
 
       {sortedProjects.length ? (
         <div className="rounded-lg border bg-card p-4 space-y-2">
@@ -68,23 +80,50 @@ export default function ReportsPage() {
                   </td>
                 </tr>
               ) : (
-                data.map((p) => (
-                  <tr key={p.projectId} className="border-b last:border-b-0">
-                    <td className="py-3 px-4">
-                      <a className="font-medium hover:underline" href={`/reports/${p.projectId}`}>
-                        {p.projectName}
-                      </a>
-                      <div className="text-xs text-muted-foreground">{p.status}</div>
-                    </td>
-                    <td className="py-3 px-4 text-right">{p.estimatedHours?.toFixed(1) ?? 'N/A'}h</td>
-                    <td className="py-3 px-4 text-right">{p.actualHours.toFixed(1)}h</td>
-                    <td className={`py-3 px-4 text-right ${p.variance > 0 ? 'text-destructive' : 'text-green-600'}`}>
-                      {p.variance > 0 ? '+' : ''}
-                      {p.variance.toFixed(1)}h
-                      <span className="text-xs ml-1">({p.variancePercentage.toFixed(0)}%)</span>
-                    </td>
-                  </tr>
-                ))
+                data.map((p) => {
+                  const hasEstimate =
+                    p.estimatedHours !== null && p.estimatedHours !== undefined;
+                  const varianceClass = hasEstimate
+                    ? p.variance > 0
+                      ? 'text-destructive'
+                      : 'text-green-600'
+                    : 'text-muted-foreground';
+
+                  return (
+                    <tr key={p.projectId} className="border-b last:border-b-0">
+                      <td className="py-3 px-4">
+                        <a
+                          className="font-medium hover:underline"
+                          href={`/reports/${p.projectId}`}
+                        >
+                          {p.projectName}
+                        </a>
+                        <div className="text-xs text-muted-foreground">
+                          {p.status}
+                        </div>
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        {hasEstimate ? `${p.estimatedHours!.toFixed(1)}h` : 'N/A'}
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        {p.actualHours.toFixed(1)}h
+                      </td>
+                      <td className={`py-3 px-4 text-right ${varianceClass}`}>
+                        {hasEstimate ? (
+                          <>
+                            {p.variance > 0 ? '+' : ''}
+                            {p.variance.toFixed(1)}h
+                            <span className="text-xs ml-1">
+                              ({p.variancePercentage.toFixed(0)}%)
+                            </span>
+                          </>
+                        ) : (
+                          'N/A'
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })
               )}
             </tbody>
           </table>
