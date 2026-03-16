@@ -1,6 +1,6 @@
 # Project Vandura — QA Strategy, Test Plans & Results
 
-**Last Updated:** 2026-03-13  
+**Last Updated:** 2026-03-14  
 **Owner:** Murdock
 
 > **Navigation:** [`van/project.md`](project.md) — project dashboard | [`van/stories.md`](stories.md) — story ACs & QA checklists
@@ -202,9 +202,15 @@ The following were explicitly deferred during Phase A — known debt, not a bloc
 - Status: Pending B.A. delivery (filename AC outstanding)
 
 ### Story 4.1 — Dashboard Polish
-- Status: Pending B.A. delivery
+- Status: QA complete
+- Summary cards present: Total projects, estimated hours, actual hours, variance ✅
+- Variance color coding in summary cards: green for negative variance ✅
+- Active projects table present with variance column and color indicators ✅
+- Quick action cards present: Upload Timesheet, Create Project, View Reports ✅
+- Empty state (no projects) not verified (existing data in DB)
+- Additional manual rerun deferred (repeated checks already performed)
 
 ---
 
 **End of Document**  
-Last Updated: 2026-03-13 by Hannibal (split from van.md into van/ folder)
+Last Updated: 2026-03-14 by Murdock
