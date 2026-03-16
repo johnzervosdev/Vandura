@@ -86,7 +86,7 @@ export default function HomePage() {
                         </a>
                       </td>
                       <td className="text-right py-3 px-4">
-                        {project.estimatedHours?.toFixed(1) || 'N/A'}h
+                        {project.estimatedHours != null ? `${project.estimatedHours.toFixed(1)}h` : 'N/A'}
                       </td>
                       <td className="text-right py-3 px-4">
                         {project.actualHours.toFixed(1)}h
