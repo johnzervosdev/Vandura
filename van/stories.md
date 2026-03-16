@@ -167,15 +167,15 @@
 ---
 
 ### Story 4.1: Dashboard Polish (P0) — 1-2h
-**Status:** In Progress  
+**Status:** ✅ Complete  
 **Owner:** B.A.
 
 **Acceptance Criteria:**
-- [ ] Summary cards: Total projects, estimated hours, actual hours, variance
-- [ ] Active projects table with variance indicators
-- [ ] Empty state: "No projects yet. Create one to get started."
-- [ ] Quick action cards: Upload, Create Project, View Reports
-- [ ] Color-coded variance throughout
+- [x] Summary cards: Total projects, estimated hours, actual hours, variance
+- [x] Active projects table with variance indicators
+- [x] Empty state: "No projects yet. Create one to get started."
+- [x] Quick action cards: Upload, Create Project, View Reports
+- [x] Color-coded variance throughout
 
 **UI Location:** `/` (homepage)
 

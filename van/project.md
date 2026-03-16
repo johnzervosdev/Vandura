@@ -65,6 +65,7 @@
 - ✅ Story 3.2 — Excel Import (parse preview + bulk insert)
 - ✅ Story 4.2 — Actuals vs Estimates Report
 - ✅ Story 4.4 — Export CSV
+- ✅ Story 4.1 — Dashboard Polish
 
 **Frontend (MVP Slice — still incomplete vs full AC):**
 - ✅ Dashboard (`/`) project variance summary + quick actions
@@ -81,7 +82,7 @@
 ### What's IN PROGRESS 🚧
 
 **Phase A - Showcase Slice:**
-- Story 4.1: Dashboard Polish
+— (none)
 
 ### What's PLANNED 📋
 See Roadmap section below. Full story details in [`van/stories.md`](stories.md).

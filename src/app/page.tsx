@@ -9,7 +9,9 @@ export default function HomePage() {
     return <div>Loading dashboard...</div>;
   }
 
-  const activeProjects = projects?.filter((p) => p.status === 'active') || [];
+  const allProjects = projects || [];
+  const activeProjects = allProjects.filter((p) => p.status === 'active');
+  const hasAnyProjects = allProjects.length > 0;
   const totalEstimated = activeProjects.reduce((sum, p) => sum + (p.estimatedHours || 0), 0);
   const totalActual = activeProjects.reduce((sum, p) => sum + p.actualHours, 0);
   const totalVariance = totalActual - totalEstimated;
@@ -58,7 +60,9 @@ export default function HomePage() {
         <div className="p-6">
           {activeProjects.length === 0 ? (
             <p className="text-muted-foreground text-center py-8">
-              No active projects. Create one to get started.
+              {hasAnyProjects
+                ? 'No active projects. Create one to get started.'
+                : 'No projects yet. Create one to get started.'}
             </p>
           ) : (
             <div className="overflow-x-auto">
@@ -115,10 +119,10 @@ export default function HomePage() {
         </a>
 
         <a
-          href="/projects"
+          href="/projects/new"
           className="bg-secondary text-secondary-foreground rounded-lg p-6 hover:bg-secondary/80 transition-colors"
         >
-          <h3 className="font-semibold text-lg">Manage Projects</h3>
+          <h3 className="font-semibold text-lg">Create Project</h3>
           <p className="text-sm mt-1">Create and configure projects</p>
         </a>
 
