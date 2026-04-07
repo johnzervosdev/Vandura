@@ -1,69 +1,22 @@
-# Project Vandura - Architecture Plan
+# Vandura — Technical Architecture
 
-**Mission**: Automated Time-Tracking & Actuals Report Generator  
-**Status**: Architecture Phase  
-**Budget**: $0 (beyond Cursor Pro)  
-**Target**: Public GitHub Showcase
-
----
-
-## Executive Summary
-
-Vandura replaces manual Excel-based time tracking with an automated system that:
-- Ingests 15-minute increment timesheet entries
-- Generates Actuals vs. Estimates reports
-- Provides a searchable PM dashboard
-- Maintains professional, modular architecture
+**Stack:** Next.js 15 · TypeScript · tRPC · SQLite (better-sqlite3) · Drizzle ORM  
+**Status:** Phase A complete. Phase B in progress.  
+**For context on project status and stories, see** [`van/project.md`](van/project.md)
 
 ---
 
-## Tech Stack Recommendation
+## System Overview
 
-### Core Language: **TypeScript**
-**Why**: Your Java/C# background translates perfectly. Strong typing, interfaces, classes, compile-time checks. Modern ecosystem with massive tooling support.
+Vandura is a full-stack TypeScript web application built on Next.js 15 App Router. The frontend is React (server + client components). The backend is a tRPC API layer backed by a SQLite database. There is no separate API server — Next.js handles both.
 
-### Backend Framework: **Node.js + Express + tRPC**
-- **Express**: Lightweight, battle-tested HTTP server
-- **tRPC**: End-to-end type safety (TypeScript types shared between client/server)
-- Familiar OOP patterns available
-- Zero-cost hosting options available
+The core data pipeline:
 
-### Frontend: **Next.js 15 (App Router) + React**
-- **Next.js**: Full-stack React framework with server components
-- Server-side rendering + Static generation options
-- Built-in API routes (though we'll use tRPC)
-- Easy deployment to Vercel (free tier)
-- TypeScript-first approach
-
-### Database: **SQLite + Better-SQLite3**
-- **Why**: Zero cost, zero infrastructure, embedded
-- Synchronous API (better performance for small-scale)
-- Perfect for 15-minute increment tracking (handles millions of rows)
-- Easy backup (single file)
-- Migration path to PostgreSQL if needed (via SQL compatibility)
-
-### ORM: **Drizzle ORM**
-- TypeScript-native ORM
-- SQL-like syntax (familiar for Java/Hibernate users)
-- Best-in-class type inference
-- Lightweight, no runtime overhead
-- Built-in migration system
-
-### UI Library: **shadcn/ui + Tailwind CSS**
-- **shadcn/ui**: Copy-paste component library (no npm bloat)
-- **Tailwind**: Utility-first CSS (fast development)
-- Professional, modern design system
-- Highly customizable
-
-### Excel Parsing: **xlsx** library
-- Industry standard for Excel file parsing
-- Handles .xlsx, .xls formats
-- Zero cost
-
-### Deployment Stack (All Free Tier):
-- **Vercel**: Frontend + API hosting (Next.js optimized)
-- **Turso**: SQLite edge hosting (10GB free) - optional upgrade from local SQLite
-- **GitHub Actions**: CI/CD automation
+```
+Excel Upload → ExcelParser → TimesheetService (bulk insert) → SQLite
+                                                                  ↓
+Dashboard / Reports ← React Components ← tRPC ← ReportService ← AggregationEngine
+```
 
 ---
 
@@ -71,387 +24,273 @@ Vandura replaces manual Excel-based time tracking with an automated system that:
 
 ```
 vandura/
-├── README.md                          # Project overview & setup
-├── VANDURA_ARCHITECTURE.md            # This document
-├── package.json                       # Node.js dependencies
-├── tsconfig.json                      # TypeScript configuration
-├── next.config.js                     # Next.js configuration
-├── drizzle.config.ts                  # Database configuration
-├── .env.example                       # Environment variables template
-├── .gitignore                         # Git ignore rules
+├── README.md
+├── VANDURA_ARCHITECTURE.md
+├── package.json
+├── tsconfig.json
+├── next.config.ts
+├── drizzle.config.ts
+├── tailwind.config.ts
+├── .env.example
+│
+├── data/
+│   └── vandura.db                     # SQLite database file (gitignored)
 │
 ├── src/
-│   ├── app/                           # Next.js App Router (Frontend)
+│   ├── app/                           # Next.js App Router (pages + API)
 │   │   ├── layout.tsx                 # Root layout
-│   │   ├── page.tsx                   # Dashboard homepage
-│   │   ├── timesheets/                # Timesheet management pages
-│   │   │   ├── page.tsx               # List view
-│   │   │   ├── upload/page.tsx        # Excel upload
-│   │   │   └── [id]/page.tsx          # Detail view
-│   │   ├── reports/                   # Reports pages
-│   │   │   ├── page.tsx               # Reports list
-│   │   │   └── actuals/page.tsx       # Actuals vs Estimates
-│   │   ├── projects/                  # Project management
-│   │   │   ├── page.tsx
-│   │   │   └── [id]/page.tsx
-│   │   └── api/trpc/[trpc]/route.ts   # tRPC API endpoint
+│   │   ├── page.tsx                   # Dashboard (/)
+│   │   ├── api/trpc/[trpc]/route.ts   # tRPC HTTP handler
+│   │   ├── projects/
+│   │   │   ├── page.tsx               # Project list (/projects)
+│   │   │   ├── new/page.tsx           # Create project
+│   │   │   ├── _components/           # Shared project UI components
+│   │   │   └── [id]/
+│   │   │       ├── page.tsx           # Project detail + tasks
+│   │   │       ├── edit/page.tsx      # Edit project
+│   │   │       └── _components/       # TasksSection modal components
+│   │   ├── timesheets/
+│   │   │   ├── page.tsx               # Time entries list (/timesheets)
+│   │   │   └── upload/page.tsx        # Excel import UI (/timesheets/upload)
+│   │   └── reports/
+│   │       ├── page.tsx               # Project summaries (/reports)
+│   │       └── [projectId]/page.tsx   # Actuals vs Estimates + CSV export
 │   │
-│   ├── server/                        # Backend Logic (Core Engine)
-│   │   ├── db/
-│   │   │   ├── schema.ts              # Drizzle schema definitions
-│   │   │   ├── index.ts               # Database client
-│   │   │   └── migrations/            # SQL migrations
-│   │   ├── routers/                   # tRPC routers (API endpoints)
-│   │   │   ├── timesheet.ts
-│   │   │   ├── project.ts
-│   │   │   ├── report.ts
-│   │   │   └── index.ts               # Root router
-│   │   ├── services/                  # Business Logic Layer
-│   │   │   ├── TimesheetService.ts    # Timesheet operations
-│   │   │   ├── ReportService.ts       # Report generation
-│   │   │   ├── ExcelParser.ts         # Excel ingestion
-│   │   │   └── AggregationEngine.ts   # Core aggregation logic
-│   │   └── trpc.ts                    # tRPC initialization
+│   ├── components/
+│   │   └── ui/                        # shadcn/ui primitives (Button, Modal, etc.)
 │   │
-│   ├── lib/                           # Shared utilities
-│   │   ├── utils.ts                   # Common helpers
-│   │   ├── date-utils.ts              # 15-min increment helpers
-│   │   └── validators.ts              # Input validation (Zod)
+│   ├── lib/
+│   │   ├── date-utils.ts              # Duration validation, preset ranges, week helpers
+│   │   └── trpc.ts                    # tRPC React client setup
 │   │
-│   └── components/                    # React components
-│       ├── ui/                        # shadcn/ui components
-│       ├── dashboard/
-│       │   ├── StatsCard.tsx
-│       │   └── RecentActivity.tsx
-│       ├── timesheets/
-│       │   ├── TimesheetTable.tsx
-│       │   ├── TimesheetUpload.tsx
-│       │   └── TimeEntryForm.tsx
-│       └── reports/
-│           ├── ActualsChart.tsx
-│           └── VarianceTable.tsx
+│   └── server/
+│       ├── db/
+│       │   ├── schema.ts              # Drizzle schema — 5 tables
+│       │   ├── index.ts               # Database client singleton
+│       │   └── migrations/            # SQL migration files (Drizzle Kit generated)
+│       ├── routers/
+│       │   ├── index.ts               # Root router (appRouter)
+│       │   ├── project.ts
+│       │   ├── task.ts
+│       │   ├── developer.ts
+│       │   ├── timesheet.ts
+│       │   └── report.ts
+│       ├── services/
+│       │   ├── ExcelParser.ts         # .xlsx ingestion, validation, weekly-grid conversion
+│       │   ├── TimesheetService.ts    # Time entry CRUD + bulk insert transaction
+│       │   ├── AggregationEngine.ts   # Actuals aggregation + variance calculation
+│       │   └── ReportService.ts       # Report formatting + CSV generation
+│       └── trpc.ts                    # tRPC server initialization + context
 │
-├── cli/                               # CLI Tools (optional)
-│   ├── import.ts                      # Import Excel via CLI
-│   └── export.ts                      # Export reports via CLI
+├── scripts/
+│   └── seed.ts                        # Sample data seeding
 │
-├── scripts/                           # Utility scripts
-│   ├── seed.ts                        # Database seeding
-│   └── migrate.ts                     # Manual migrations
-│
-└── tests/                             # Test suites
-    ├── unit/
-    │   ├── services/
-    │   └── lib/
-    └── integration/
-        └── api/
+└── tests/
+    ├── date-utils.test.ts
+    ├── report-projects-summary-error.test.ts
+    ├── timesheet-bulkCreate.test.ts
+    └── timesheet-sample-extract.test.ts
 ```
 
 ---
 
-## Core Engine Design: The "Aggregation Engine"
+## Database Schema
 
-### Problem: 15-Minute Granularity Without DB Bottleneck
+Five tables. Defined in `src/server/db/schema.ts` using Drizzle ORM.
 
-**Challenge**: Storing millions of 15-minute increments and aggregating them efficiently.
+```
+┌─────────────┐      ┌─────────────┐      ┌──────────────┐
+│  developers │      │  projects   │      │    tasks     │
+│─────────────│      │─────────────│      │──────────────│
+│ id (PK)     │      │ id (PK)     │      │ id (PK)      │
+│ name        │      │ name        │      │ project_id →─┼──→ projects.id
+│ email       │      │ description │      │ name         │    (cascade delete)
+│ hourly_rate │      │ est_hours   │      │ est_hours    │
+│ is_active   │      │ start_date  │      │ status       │
+│ created_at  │      │ end_date    │      │ parent_task  │    (self-ref, unused M1)
+│ updated_at  │      │ status      │      │ created_at   │
+└─────────────┘      └─────────────┘      └──────────────┘
+       │                    │                     │
+       │                    └──────────┬──────────┘
+       │                               │
+       ▼                               ▼
+┌──────────────────────────────────────────────────────┐
+│                    time_entries                       │
+│──────────────────────────────────────────────────────│
+│ id (PK)                                              │
+│ project_id → projects.id (cascade delete)            │
+│ task_id    → tasks.id    (set null on delete)        │
+│ developer_id → developers.id (cascade delete)        │
+│ start_time (indexed)                                 │
+│ duration_minutes  — always a multiple of 15          │
+│ description                                          │
+│ created_at / updated_at                              │
+└──────────────────────────────────────────────────────┘
 
-**Solution**: Hybrid Storage + In-Memory Aggregation
+┌───────────────────────────────────────────┐
+│               actuals_cache               │
+│───────────────────────────────────────────│
+│ id (PK)                                   │
+│ project_id, task_id, developer_id (FKs)   │
+│ period_start / period_end                 │
+│ total_minutes, entry_count                │
+│ calculated_at                             │
+└───────────────────────────────────────────┘
+```
 
-### Database Schema
+**Indexes on `time_entries`:** composite `(project_id, start_time)`, composite `(developer_id, start_time)`, `task_id`, `start_time` — these are the hot paths for report queries.
+
+**Cascade behavior:**
+- Deleting a project cascades to tasks and time entries
+- Deleting a task sets `task_id` to null on orphaned time entries (entries are preserved)
+- Deleting a developer cascades to their time entries
+
+---
+
+## Service Layer
+
+Four services in `src/server/services/`. They do not depend on tRPC — they are plain TypeScript classes callable from anywhere.
+
+### ExcelParser.ts
+
+Ingests `.xlsx` / `.xls` files uploaded via the web UI.
+
+1. Reads the workbook using the `xlsx` library
+2. **Layout detection:** checks for a weekly-grid format (Mon/Tue/Wed/Thu/Fri as column headers with a duration row per developer/project/task combination). If detected, converts to standard row-per-entry format before processing.
+3. Maps column headers case-insensitively to expected fields
+4. Validates each row: required fields, duration as multiple of 15, valid dates
+5. Lookups by name for developer, project, task — creates missing entities if not found
+6. Returns a parse result: `{ rows, errors, warnings }` for the preview step before committing
+
+### TimesheetService.ts
+
+CRUD for time entries. The key method is `bulkCreateEntries`:
 
 ```typescript
-// Time Entries (Raw 15-min increments)
-table: time_entries
-- id: INTEGER PRIMARY KEY
-- project_id: INTEGER (FK)
-- developer_id: INTEGER (FK)
-- task_id: INTEGER (FK)
-- start_time: DATETIME (indexed)
-- duration_minutes: INTEGER (always 15, 30, 45, 60, etc.)
-- description: TEXT
-- created_at: DATETIME
-
-// Projects
-table: projects
-- id: INTEGER PRIMARY KEY
-- name: TEXT
-- estimated_hours: REAL
-- start_date: DATE
-- end_date: DATE
-- status: TEXT ('active', 'completed', 'on-hold')
-
-// Developers
-table: developers
-- id: INTEGER PRIMARY KEY
-- name: TEXT
-- hourly_rate: REAL (optional, for cost tracking)
-
-// Tasks
-table: tasks
-- id: INTEGER PRIMARY KEY
-- project_id: INTEGER (FK)
-- name: TEXT
-- estimated_hours: REAL
-- parent_task_id: INTEGER (self-referential, optional)
-
-// Aggregated Actuals (Materialized View Pattern)
-table: actuals_cache
-- id: INTEGER PRIMARY KEY
-- project_id: INTEGER
-- task_id: INTEGER (nullable)
-- developer_id: INTEGER (nullable)
-- period_start: DATE
-- period_end: DATE
-- total_minutes: INTEGER
-- calculated_at: DATETIME
+// Inserts up to N entries in batched transactions (1000 rows/batch)
+// Uses better-sqlite3's synchronous API: .returning().all() within db.transaction()
+// This avoids the async/iterator mismatch that would occur with the promise-based driver
+bulkCreateEntries(entries: NewTimeEntry[]): TimeEntry[]
 ```
 
-### Aggregation Strategy
+The synchronous transaction pattern is important — `better-sqlite3` uses a blocking synchronous API by design. Attempting to use `async/await` or spread a Drizzle `.returning()` promise inside the transaction causes a runtime error. The fix is `.returning().all()` to force synchronous execution and get back an array.
 
-**Real-time Aggregation** (for dashboard/reports):
-1. Query time_entries with appropriate filters (project, date range)
-2. SQLite SUM() aggregation (extremely fast for < 1M rows)
-3. In-memory TypeScript mapping for grouping/pivoting
-4. Cache results in `actuals_cache` table for heavy queries
+### AggregationEngine.ts
 
-**Performance Optimizations**:
-- **Indexes**: Composite indexes on (project_id, start_time), (developer_id, start_time)
-- **Batch Inserts**: Excel imports use transactions (1000 rows/batch)
-- **Query Optimization**: Use SQLite EXPLAIN QUERY PLAN during development
-- **Incremental Updates**: Only re-aggregate changed date ranges
+Queries `time_entries` for a given project and date range, joins with task estimates, and calculates variance.
 
-**Why This Works**:
-- SQLite handles 100K+ 15-min entries easily (< 100ms queries)
-- In-memory aggregation for final transformations (TypeScript)
-- Materialized cache for historical reports (pre-computed)
-
-### Example Query Flow
+Key design decision: `task.estimatedHours` is preserved as `null` (not coerced to `0`) when no estimate exists. This allows the UI to distinguish between "estimated 0 hours" and "no estimate set" — a real difference in meaning. Using `|| 0` was a bug that caused all unestimated tasks to show a false 0-variance.
 
 ```typescript
-// services/AggregationEngine.ts
-class AggregationEngine {
-  async getActualsVsEstimates(projectId: number, startDate: Date, endDate: Date) {
-    // 1. Check cache first
-    const cached = await this.checkCache(projectId, startDate, endDate);
-    if (cached && !this.isStale(cached)) return cached;
-
-    // 2. Aggregate from raw entries
-    const actuals = await db
-      .select({
-        taskId: timeEntries.taskId,
-        totalMinutes: sql<number>`SUM(${timeEntries.durationMinutes})`,
-      })
-      .from(timeEntries)
-      .where(
-        and(
-          eq(timeEntries.projectId, projectId),
-          gte(timeEntries.startTime, startDate),
-          lte(timeEntries.startTime, endDate)
-        )
-      )
-      .groupBy(timeEntries.taskId);
-
-    // 3. Join with estimates
-    const estimates = await this.getTaskEstimates(projectId);
-
-    // 4. Calculate variance
-    const report = this.calculateVariance(actuals, estimates);
-
-    // 5. Cache result
-    await this.updateCache(projectId, startDate, endDate, report);
-
-    return report;
-  }
-}
+const estimatedHours = task.estimatedHours ?? null;
+const variance = estimatedHours === null ? 0 : actualHours - estimatedHours;
+const variancePercentage =
+  estimatedHours !== null && estimatedHours > 0
+    ? (variance / estimatedHours) * 100
+    : 0;
 ```
 
----
+### ReportService.ts
 
-## Data Flow Architecture
-
-```
-┌─────────────────┐
-│  Excel Upload   │ (Web UI or CLI)
-└────────┬────────┘
-         │
-         ▼
-┌─────────────────────┐
-│  ExcelParser.ts     │ Validates & parses .xlsx
-└────────┬────────────┘
-         │
-         ▼
-┌─────────────────────┐
-│ TimesheetService.ts │ Batch insert (transaction)
-└────────┬────────────┘
-         │
-         ▼
-┌─────────────────────┐
-│   SQLite Database   │ Stores time_entries
-└────────┬────────────┘
-         │
-         ▼
-┌─────────────────────┐
-│ AggregationEngine   │ Queries + aggregates
-└────────┬────────────┘
-         │
-         ▼
-┌─────────────────────┐
-│  ReportService.ts   │ Formats for display
-└────────┬────────────┘
-         │
-         ▼
-┌─────────────────────┐
-│  tRPC API Response  │ JSON to frontend
-└────────┬────────────┘
-         │
-         ▼
-┌─────────────────────┐
-│  React Components   │ Charts, tables, search
-└─────────────────────┘
-```
+Formats aggregation output for the tRPC response and handles CSV generation. The CSV export uses string formatting (no third-party CSV library) with correct comma escaping for fields that may contain commas or quotes.
 
 ---
 
-## Excel Ingestion Format
+## API Layer (tRPC)
 
-**Expected Excel Structure**:
+All API calls go through tRPC, served at `/api/trpc/[trpc]`. The client uses React Query under the hood (`useQuery`, `useMutation`). `superjson` is used as the transformer to preserve `Date` objects across the network boundary (plain JSON would serialize them as strings).
 
-| Developer | Project | Task | Date | Start Time | End Time | Duration (min) | Notes |
-|-----------|---------|------|------|------------|----------|----------------|-------|
-| John Doe  | ProjectA| API  | 2026-02-05 | 09:00 | 09:15 | 15 | Initial setup |
-| Jane Smith| ProjectA| UI   | 2026-02-05 | 09:00 | 09:30 | 30 | Design review |
+### Routers
 
-**Parser Logic**:
-1. Read all rows
-2. Validate required columns
-3. Parse dates (ISO 8601)
-4. Calculate duration (or use provided)
-5. Lookup/create developer, project, task IDs
-6. Insert in batches with transaction
+**`project`**
+- `list` — all projects with aggregated actuals summary
+- `get` — single project with tasks
+- `create` / `update` / `delete`
 
----
+**`task`**
+- `list` — tasks for a project
+- `create` / `update` / `delete`
 
-## API Design (tRPC Routers)
+**`developer`**
+- `list` — all developers (active filter available)
+- `create` / `update`
 
-### Timesheet Router
-- `timesheet.create` - Add single entry
-- `timesheet.bulkCreate` - Import from Excel
-- `timesheet.list` - Get entries (paginated, filtered)
-- `timesheet.update` - Edit entry
-- `timesheet.delete` - Remove entry
+**`timesheet`**
+- `list` — paginated time entries with filters (project, developer, date range)
+- `create` / `update` / `delete`
+- `parseExcel` — parses an uploaded file, returns preview data (no DB write)
+- `importExcel` — takes the validated parse result and calls `bulkCreateEntries`
 
-### Project Router
-- `project.create` - New project
-- `project.list` - All projects
-- `project.get` - Single project details
-- `project.update` - Edit project
-- `project.getActuals` - Get actuals for project
-
-### Report Router
-- `report.actualsVsEstimates` - Main report
-- `report.developerSummary` - Per-developer breakdown
-- `report.taskVariance` - Task-level variance
-- `report.export` - Export to CSV/Excel
+**`report`**
+- `projectsSummary` — all projects with total estimated/actual hours and variance (dashboard + reports list)
+- `actualsVsEstimates` — task-level breakdown for a single project with date range filter
+- `exportCsv` — formatted CSV string for the active report view
 
 ---
 
-## Development Phases
+## Key Engineering Decisions
 
-### Phase 1: Foundation (Week 1)
-- ✅ Architecture plan
-- Initialize Next.js + TypeScript project
-- Setup Drizzle ORM + SQLite
-- Define database schema
-- Create tRPC boilerplate
+**SQLite over PostgreSQL**
+Zero cost, zero infrastructure, single-file backup. SQLite handles the required data scale (100K+ time entries) with sub-100ms aggregation queries. The migration path to Turso/libSQL (SQLite-compatible, cloud-hosted) is a config change — no schema changes required.
 
-### Phase 2: Core Engine (Week 2)
-- Implement ExcelParser service
-- Build AggregationEngine
-- Create TimesheetService
-- Write ReportService
-- Add database seeding
+**tRPC over REST**
+The frontend and backend share TypeScript types automatically. No OpenAPI spec, no Swagger, no manual type definitions for API responses. If a backend return type changes, the TypeScript compiler catches every broken frontend usage at build time.
 
-### Phase 3: API Layer (Week 3)
-- Build all tRPC routers
-- Add input validation (Zod schemas)
-- Implement error handling
-- Create API tests
+**Drizzle over Prisma**
+`better-sqlite3` uses a synchronous blocking API (intentional — SQLite is single-writer). Drizzle's query builder works naturally with this model. Prisma's async-first design creates friction with `better-sqlite3` synchronous transactions. Drizzle also has a smaller runtime footprint and SQL-like syntax that maps more directly to what the database executes.
 
-### Phase 4: Frontend (Week 4)
-- Setup shadcn/ui components
-- Build dashboard homepage
-- Create timesheet upload UI
-- Build actuals report page
-- Add search/filter functionality
+**`superjson` as tRPC transformer**
+JSON serialization loses JavaScript `Date` objects (they become ISO strings). Without a transformer, every date coming from the API would need to be re-parsed on the client. `superjson` handles this transparently — dates arrive as `Date` objects.
 
-### Phase 5: Polish (Week 5)
-- Add charts (recharts library)
-- Implement export functionality
-- Write documentation
-- Performance optimization
-- Deploy to Vercel
+**Parse preview before commit**
+The Excel import is a two-step operation: parse (validate + preview) → import (commit). The user sees a summary of what will be imported, any errors that would block the import, and any warnings (duplicates, timezone assumptions) before a single row is written to the database. Errors block the import entirely; warnings allow proceeding with acknowledgment.
+
+**Weekly-grid layout detection**
+Real client Excel files often use a weekly-grid format: one row per developer/project/task, with Monday through Friday as columns containing duration values. The parser detects this layout heuristically (looking for day-of-week headers) and converts each cell to a standard row-based entry before validation.
+
+**No import deduplication in M1**
+Allowing duplicate imports keeps the parser simple and avoids false-positive dedup logic. A developer uploading the same file twice is an operator error, not a system problem to solve in M1. An import history / audit log is planned for M2.
 
 ---
 
-## Cost Breakdown (All Free Tier)
+## Date and Duration Handling
 
-| Service | Free Tier | Usage Estimate |
-|---------|-----------|----------------|
-| Vercel | 100GB bandwidth, unlimited sites | < 10GB/month |
-| SQLite (local) | Unlimited | Single file |
-| Turso (optional) | 10GB storage, 1B row reads | Not needed initially |
-| GitHub | Unlimited public repos | 1 repo |
-| GitHub Actions | 2000 minutes/month | < 100 min/month |
-| **Total Cost** | **$0** | **$0** |
+All dates are treated as **local machine time** — no UTC conversion, no timezone offset. This matches how Excel stores dates (as floating-point numbers with no timezone) and how the target users expect the data to behave.
+
+Duration is always stored as `duration_minutes` (integer, always a multiple of 15). The `date-utils.ts` module provides:
+- `isValidDuration(minutes)` — validates the 15-minute increment rule
+- `getPresetRange(preset)` — returns `{ start, end }` for named presets (Last 7 Days, This Month, etc.)
+- `startOfDay` / `endOfDay` — date boundary helpers used in report filtering
 
 ---
 
-## Migration Path (Future Growth)
+## Testing Strategy
 
-If Vandura grows beyond SQLite:
+**Runner:** Node.js built-in test runner (`node --import tsx --test`)  
+**Philosophy:** Critical paths only — no framework overhead, no test coverage theater.
 
-1. **Database**: SQLite → Turso (still free) → PostgreSQL (Supabase free tier)
-2. **Hosting**: Vercel free → Vercel Pro ($20/month)
-3. **Architecture**: Monolith → Microservices (if needed)
+| File | What it covers |
+|------|---------------|
+| `date-utils.test.ts` | Duration validation, preset range calculation, week boundary helpers |
+| `timesheet-bulkCreate.test.ts` | Regression for the bulk insert spread error; confirms `bulkCreateEntries` returns an array |
+| `timesheet-sample-extract.test.ts` | ExcelParser weekly-grid detection; synthetic workbook validates layout conversion without needing a real client file in CI |
+| `report-projects-summary-error.test.ts` | Regression for the SQL alias error that caused the project summary query to fail on load |
 
-Current architecture supports 100K+ time entries with sub-second query times.
-
----
-
-## Development Tools
-
-- **Cursor Pro**: Primary IDE (already owned)
-- **Node.js v20+**: Runtime
-- **pnpm**: Fast package manager (vs npm)
-- **Drizzle Kit**: Database migrations
-- **tRPC Panel**: API testing (dev mode)
-- **Zod**: Runtime type validation
+Integration tests for `parseExcel` / `importExcel` (end-to-end with a real file) are deferred to Phase B.
 
 ---
 
-## Why This Stack Wins
+## What's Built vs. Planned
 
-✅ **Strongly Typed**: TypeScript end-to-end (Java/C# dev-friendly)  
-✅ **Zero Cost**: All free tier services  
-✅ **Modern**: 2026 best practices (Next.js 15, React Server Components)  
-✅ **Performant**: SQLite + efficient aggregation  
-✅ **Scalable**: Easy migration path to PostgreSQL  
-✅ **Professional**: shadcn/ui for polished UI  
-✅ **Type-Safe APIs**: tRPC eliminates API bugs  
-✅ **Fast Development**: Hot reload, component library, ORM  
+**Phase A — Complete**
+Full demo path operational: project management, task management, Excel import with preview, Actuals vs. Estimates report, CSV export, dashboard.
 
----
+**Phase B — In Progress**
+Manual time entry UI (Story 3.1), developer management UI (Story 2.3), developer productivity report (Story 4.3), Excel format documentation + template (Story 3.3), error handling hardening (Story 5.1), README screenshots + architecture review (Story 5.2).
 
-## Next Steps
-
-1. **Approve architecture** ✓
-2. **Initialize project structure** (next)
-3. **Setup database schema** (next)
-4. **Build core engine** (next)
-5. **Iterate and deploy**
+**Deferred (Post-MVP)**
+Import deduplication + audit log, dev server stability scripts (Windows/OneDrive), parse preview remediation tools.
 
 ---
 
-**"I love it when a plan comes together."** — Hannibal Smith
-
-Let's build Vandura.
+*Last Updated: 2026-03-15*

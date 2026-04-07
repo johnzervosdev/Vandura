@@ -184,15 +184,42 @@
 ## Phase B: Production Ready (P1 - Polish)
 
 ### Story 3.1: Manual Time Entry (P1) — 5-7h
-**Status:** Not Started
+**Status:** 🚧 In Progress  
+**Owner:** B.A.
+
+**Decisions (pre-made):**
+- **Create/Edit:** modal (consistent with Tasks pattern)
+- **Delete:** confirmation modal
+- **Duration:** dropdown of 15-min increments (15, 30, 45 … 480 min / 8h max)
+- **Date + Time:** separate date picker + time picker (not a combined datetime; keeps it simple)
+- **Task dropdown:** filtered by selected project; required; no inline task creation
+- **Developer dropdown:** active developers only; required
+- **Pagination:** 100 entries per page, most recent first
 
 **Acceptance Criteria:**
-- [ ] Form: project dropdown, task dropdown (filtered), developer dropdown, start time, duration, notes
-- [ ] Validation: duration multiple of 15 minutes
-- [ ] View time entries list with filters (project, developer, date range)
-- [ ] Edit existing time entry
-- [ ] Delete time entry
-- [ ] Pagination (100 entries per page)
+
+*List View:*
+- [ ] `/timesheets` shows all time entries, most recent first
+- [ ] Columns: Date, Developer, Project, Task, Duration, Description
+- [ ] Filters: Project (dropdown), Developer (dropdown), Date range (presets + custom) — above the table
+- [ ] Empty state (no entries, or no entries match filter): `"No time entries found."`
+- [ ] "Add Entry" button (top-right) opens create modal
+- [ ] Pagination: 100 rows per page with prev/next controls
+
+*Create Modal:*
+- [ ] Fields: Developer (required, active-only dropdown), Project (required, active-only dropdown), Task (required, dropdown filtered by selected project), Date (required, date picker), Start Time (required, HH:MM time picker), Duration (required, 15-min increment dropdown), Description (optional, textarea)
+- [ ] Task dropdown resets when project changes
+- [ ] Inline validation: required fields shown in red before submit
+- [ ] After successful create, entry appears in list (top), modal closes
+
+*Edit Modal:*
+- [ ] Edit button on each row opens edit modal pre-filled with existing values
+- [ ] Same fields and validation as create
+- [ ] After save, row updates in place
+
+*Delete:*
+- [ ] Delete button on each row opens confirm modal: `"Delete this time entry? This cannot be undone."`
+- [ ] After confirm, row is removed from list
 
 **UI Location:** `/timesheets` (list + create/edit/delete UI)
 

@@ -58,7 +58,7 @@
 
 **tRPC API Routers:** Project, Developer, Task, Timesheet, Report
 
-**Phase A Stories Complete:**
+**Phase A Stories Complete ✅ (Gate Cleared 2026-03-15):**
 - ✅ Story 1.1 — Local Dev Environment
 - ✅ Story 2.1 — Manage Projects
 - ✅ Story 2.2 — Manage Tasks
@@ -74,15 +74,18 @@
 - ✅ Excel import UI (`/timesheets/upload`) with parse preview, duplicate + local-time warnings
 - ✅ Reports: project summaries (`/reports`), actuals report (`/reports/[projectId]`), CSV export
 
-**Still Missing (per MVP AC):**
-- ⚠️ Developers CRUD UI (`/developers`)
-- ⚠️ Manual time entry UI (create/edit/delete + filters)
-- ⚠️ Report date range presets + custom range + sorting UX improvements
+**Still Missing (Phase B scope):**
+- ⚠️ Manual time entry UI (create/edit/delete + filters) — Story 3.1
+- ⚠️ Developers CRUD UI (`/developers`) — Story 2.3
+- ⚠️ Developer productivity report — Story 4.3
+- ⚠️ Excel format docs + template — Story 3.3
+- ⚠️ Error handling hardening — Story 5.1
+- ⚠️ README + screenshots + architecture doc — Story 5.2
 
 ### What's IN PROGRESS 🚧
 
-**Phase A - Showcase Slice:**
-— (none)
+**Phase B - Production Ready:**
+- 🚧 Story 3.1 — Manual Time Entry UI
 
 ### What's PLANNED 📋
 See Roadmap section below. Full story details in [`van/stories.md`](stories.md).

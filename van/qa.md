@@ -1,6 +1,6 @@
 # Project Vandura — QA Strategy, Test Plans & Results
 
-**Last Updated:** 2026-03-14  
+**Last Updated:** 2026-03-15  
 **Owner:** Murdock
 
 > **Navigation:** [`van/project.md`](project.md) — project dashboard | [`van/stories.md`](stories.md) — story ACs & QA checklists
@@ -195,11 +195,38 @@ The following were explicitly deferred during Phase A — known debt, not a bloc
 - Weekly-grid JZER-style layout validation (`tests/timesheet-sample-extract.test.ts`): PASS
 - Suite: 60/60 green
 
-### Story 4.2 — Actuals vs Estimates Report
-- Status: Pending B.A. delivery
+### Story 4.2 — Actuals vs Estimates Report ✅
+- Status: QA complete
+- Test data: Seeded project `OPS` (projectId: 408)
+- Expected totals baseline:
+  - Time entries: 3
+  - Total minutes: 45
+  - Total hours: 0.75 (UI rounds to 0.8h)
+- What was tested:
+  - Presets: Last 7 Days, Last 30 Days, This Month, All Time
+  - Custom range: 2001-11-30 → 2001-12-01
+  - Variance color coding (under = green, over = red)
+  - Sorting on task table columns
+  - Empty state when no entries in range
+- Initial failures found:
+  - Reports list showed error toast on load
+  - OPS custom range showed empty state / zero actuals despite known entries
+  - Summary variance was inconsistent with task variance when estimates were null
+- Fix verification:
+  - Reports list loads without error toast
+  - OPS custom range shows actuals (0.8h) and task row present
+  - Summary variance aligns with task-level variance and handles null estimates
 
-### Story 4.4 — Export CSV
-- Status: Pending B.A. delivery (filename AC outstanding)
+### Story 4.4 — Export CSV ✅
+- Status: QA complete
+- What was tested:
+  - Filename format: `actuals-report-{projectName}-{timestamp}.csv`
+  - CSV contains project summary + task breakdown
+  - CSV opens in Excel with correct escaping
+- Results (OPS, custom range 2001-11-30 → 2001-12-01):
+  - Total Estimated Hours: N/A
+  - Total Actual Hours: 0.75
+  - Task row: "Timesheet", estimated 0, actual 0.75, variance 0.75
 
 ### Story 4.1 — Dashboard Polish
 - Status: QA complete
@@ -207,10 +234,9 @@ The following were explicitly deferred during Phase A — known debt, not a bloc
 - Variance color coding in summary cards: green for negative variance ✅
 - Active projects table present with variance column and color indicators ✅
 - Quick action cards present: Upload Timesheet, Create Project, View Reports ✅
-- Empty state (no projects) not verified (existing data in DB)
-- Additional manual rerun deferred (repeated checks already performed)
+- Empty state verified: "No active projects. Create one to get started." ✅
 
 ---
 
 **End of Document**  
-Last Updated: 2026-03-14 by Murdock
+Last Updated: 2026-03-15 by Murdock
