@@ -8,7 +8,7 @@ import { taskRouter } from '../src/server/routers/task';
 import path from 'path';
 import fs from 'fs';
 
-function createTestDb(): { db: ReturnType<typeof drizzle>; sqlite: Database; path: string } {
+function createTestDb() {
   const testDbPath = path.join(__dirname, `task-test-${Date.now()}.db`);
   const sqlite = new Database(testDbPath);
   sqlite.pragma('journal_mode = WAL');
