@@ -27,12 +27,14 @@ jobs:
       - name: Create database
         run: npm run db:migrate
         env:
-          DATABASE_URL: ./data/vandura.db
+          DATABASE_URL: ./data/ci-${{ github.run_id }}-${{ github.run_attempt }}.db
 
       - name: Type check
         run: npm run type-check
+        env:
+          DATABASE_URL: ./data/ci-${{ github.run_id }}-${{ github.run_attempt }}.db
 
       - name: Run tests
         run: npm test
         env:
-          DATABASE_URL: ./data/vandura.db
+          DATABASE_URL: ./data/ci-${{ github.run_id }}-${{ github.run_attempt }}.db
