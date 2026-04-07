@@ -238,5 +238,13 @@ The following were explicitly deferred during Phase A — known debt, not a bloc
 
 ---
 
+## Portfolio QA Checklist (Phase A)
+
+- CI is green for `npm test` on the main branch
+- Demo path works end-to-end (create project → add tasks → import Excel → view report → export CSV)
+- Known limitations and Phase B scope are documented
+- Real-data samples are gitignored and no PII is committed
+- QA results per story are captured with pass/fail status
+
 **End of Document**  
 Last Updated: 2026-03-15 by Murdock

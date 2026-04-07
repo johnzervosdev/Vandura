@@ -127,6 +127,9 @@ The full showcase path is functional: create a project → add tasks with estima
 **Phase B — In Progress 🚧**
 Manual time entry UI, developer management, developer productivity report, Excel format documentation, error handling hardening, and README screenshots.
 
+**Quality Checks**
+Automated checks run in GitHub on every push to keep the project stable.
+
 ---
 
 ## Scripts
