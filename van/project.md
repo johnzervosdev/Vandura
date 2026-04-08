@@ -74,8 +74,10 @@
 - ✅ Excel import UI (`/timesheets/upload`) with parse preview, duplicate + local-time warnings
 - ✅ Reports: project summaries (`/reports`), actuals report (`/reports/[projectId]`), CSV export
 
+**Phase B Stories Complete:**
+- ✅ Story 3.1 — Manual Time Entry UI (create/edit/delete + filters)
+
 **Still Missing (Phase B scope):**
-- ⚠️ Manual time entry UI (create/edit/delete + filters) — Story 3.1
 - ⚠️ Developers CRUD UI (`/developers`) — Story 2.3
 - ⚠️ Developer productivity report — Story 4.3
 - ⚠️ Excel format docs + template — Story 3.3
@@ -85,7 +87,7 @@
 ### What's IN PROGRESS 🚧
 
 **Phase B - Production Ready:**
-- 🚧 Story 3.1 — Manual Time Entry UI
+- 🚧 Story 2.3 — Manage Developers
 
 ### What's PLANNED 📋
 See Roadmap section below. Full story details in [`van/stories.md`](stories.md).

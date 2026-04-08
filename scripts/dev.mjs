@@ -4,17 +4,26 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { spawn } from 'node:child_process';
 
-function isPortInUse(port) {
+function isPortInUseOnHost(port, host) {
   return new Promise((resolve) => {
     const server = net.createServer();
     server.unref();
     server.on('error', (err) => {
-      resolve(err && err.code === 'EADDRINUSE');
+      resolve(Boolean(err && err.code === 'EADDRINUSE'));
     });
-    server.listen(port, '127.0.0.1', () => {
+    server.listen(port, host, () => {
       server.close(() => resolve(false));
     });
   });
+}
+
+async function isPortInUse(port) {
+  // On Windows, a listener bound to 0.0.0.0 / :: can still allow binding to 127.0.0.1
+  // depending on dual-stack behavior. Check both stacks to avoid false negatives.
+  const ipv4InUse = await isPortInUseOnHost(port, '0.0.0.0');
+  if (ipv4InUse) return true;
+  const ipv6InUse = await isPortInUseOnHost(port, '::');
+  return ipv6InUse;
 }
 
 function looksLikeNextHtml(html) {

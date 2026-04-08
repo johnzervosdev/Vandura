@@ -1,6 +1,6 @@
 # Project Vandura — QA Strategy, Test Plans & Results
 
-**Last Updated:** 2026-03-15  
+**Last Updated:** 2026-04-07  
 **Owner:** Murdock
 
 > **Navigation:** [`van/project.md`](project.md) — project dashboard | [`van/stories.md`](stories.md) — story ACs & QA checklists
@@ -58,7 +58,7 @@
 | `tests/timesheet-sample-extract.test.ts` | Weekly-grid parser: JZER-style layout (B2/C2 developer, Project Code column, weekday hours E–K); synthetic workbook fallback for CI | ✅ Passing — addresses Known Issue #3 |
 | `tests/report-projects-summary-error.test.ts` | reportRouter.projectsSummary does not throw SQL alias error | ✅ Passing — regression for Issue #4 |
 
-**Suite status:** 60/60 passing (last run: 2026-03-13)
+**Suite status:** 67/67 passing (last run: 2026-04-07)
 
 ### Next Test Targets (Deferred to Phase B)
 The following were explicitly deferred during Phase A — known debt, not a blocker:
@@ -236,6 +236,20 @@ The following were explicitly deferred during Phase A — known debt, not a bloc
 - Quick action cards present: Upload Timesheet, Create Project, View Reports ✅
 - Empty state verified: "No active projects. Create one to get started." ✅
 
+### Story 3.1 — Manual Time Entry ✅
+- Status: QA complete
+- List view: columns correct; most recent first; pagination controls disabled with < 100 rows ✅
+- Filters verified:
+  - Project filter reduces rows ✅
+  - Developer filter reduces rows ✅
+  - Presets: Last 7 Days, All Time ✅
+  - Custom date range overrides preset ✅
+  - Empty state text: "No time entries found." ✅
+- Create modal: required validation, active-only developer dropdown, task filter/reset, duration increments (15–480), manage developers link ✅
+- Edit modal: pre-filled fields and successful update ✅
+- Delete modal: exact confirm copy ("Delete this time entry? This cannot be undone.") and removal ✅
+- Developer dropdown fix verified: modal shows active developers only; list filter retains all developers for historical filtering ✅
+
 ---
 
 ## Portfolio QA Checklist (Phase A)
@@ -246,5 +260,10 @@ The following were explicitly deferred during Phase A — known debt, not a bloc
 - Real-data samples are gitignored and no PII is committed
 - QA results per story are captured with pass/fail status
 
+## Phase B QA Notes (Pending PM)
+
+- Pagination scale test (>100 entries) is out of scope for 3.1 and should be scheduled if needed.
+- Description length limits are not specified; PM should confirm expected maximum for validation.
+
 **End of Document**  
-Last Updated: 2026-03-15 by Murdock
+Last Updated: 2026-04-07 by Murdock

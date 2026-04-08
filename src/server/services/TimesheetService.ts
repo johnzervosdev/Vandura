@@ -1,5 +1,12 @@
 import { db } from '../db';
-import { timeEntries, type NewTimeEntry, type TimeEntry } from '../db/schema';
+import {
+  timeEntries,
+  projects,
+  tasks,
+  developers,
+  type NewTimeEntry,
+  type TimeEntry,
+} from '../db/schema';
 import { eq, and, gte, lte, desc } from 'drizzle-orm';
 import { isValidDuration } from '@/lib/date-utils';
 
@@ -24,6 +31,19 @@ export interface TimeEntryFilter {
   taskId?: number;
   startDate?: Date;
   endDate?: Date;
+}
+
+export interface TimeEntryListItem {
+  id: number;
+  projectId: number;
+  projectName: string;
+  taskId: number | null;
+  taskName: string | null;
+  developerId: number;
+  developerName: string;
+  startTime: Date;
+  durationMinutes: number;
+  description: string | null;
 }
 
 export class TimesheetService {
@@ -93,7 +113,11 @@ export class TimesheetService {
   /**
    * Get time entries with optional filters
    */
-  async getEntries(filter: TimeEntryFilter = {}, limit = 100, offset = 0): Promise<TimeEntry[]> {
+  async getEntries(
+    filter: TimeEntryFilter = {},
+    limit = 100,
+    offset = 0
+  ): Promise<TimeEntryListItem[]> {
     const conditions = [];
 
     if (filter.projectId) {
@@ -118,13 +142,41 @@ export class TimesheetService {
 
     const whereClause = conditions.length > 0 ? and(...conditions) : undefined;
 
-    return db
-      .select()
+    const rows = await db
+      .select({
+        id: timeEntries.id,
+        projectId: timeEntries.projectId,
+        projectName: projects.name,
+        taskId: timeEntries.taskId,
+        taskName: tasks.name,
+        developerId: timeEntries.developerId,
+        developerName: developers.name,
+        startTime: timeEntries.startTime,
+        durationMinutes: timeEntries.durationMinutes,
+        description: timeEntries.description,
+      })
       .from(timeEntries)
+      .leftJoin(projects, eq(timeEntries.projectId, projects.id))
+      .leftJoin(tasks, eq(timeEntries.taskId, tasks.id))
+      .leftJoin(developers, eq(timeEntries.developerId, developers.id))
       .where(whereClause)
       .orderBy(desc(timeEntries.startTime))
       .limit(limit)
       .offset(offset);
+
+    // These joins should always resolve project/developer; keep it defensive to avoid runtime crashes.
+    return rows.map((r) => ({
+      id: r.id,
+      projectId: r.projectId,
+      projectName: r.projectName ?? `Project #${r.projectId}`,
+      taskId: r.taskId ?? null,
+      taskName: r.taskName ?? null,
+      developerId: r.developerId,
+      developerName: r.developerName ?? `Developer #${r.developerId}`,
+      startTime: r.startTime,
+      durationMinutes: r.durationMinutes,
+      description: r.description ?? null,
+    }));
   }
 
   /**

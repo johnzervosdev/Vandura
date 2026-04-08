@@ -184,7 +184,7 @@
 ## Phase B: Production Ready (P1 - Polish)
 
 ### Story 3.1: Manual Time Entry (P1) — 5-7h
-**Status:** 🚧 In Progress  
+**Status:** ✅ Complete  
 **Owner:** B.A.
 
 **Decisions (pre-made):**
@@ -193,33 +193,62 @@
 - **Duration:** dropdown of 15-min increments (15, 30, 45 … 480 min / 8h max)
 - **Date + Time:** separate date picker + time picker (not a combined datetime; keeps it simple)
 - **Task dropdown:** filtered by selected project; required; no inline task creation
-- **Developer dropdown:** active developers only; required
+- **Developer dropdown:** active developers only; required; no inline developer creation (consistent with "dropdowns only" UI pattern)
+- **Developer management link:** a `"Manage developers →"` text link below the developer dropdown navigates to `/developers` (same tab). No auto-refresh on return — user reopens the modal. `/developers` will be a dead link until Story 2.3 is complete; this is expected and not a bug.
 - **Pagination:** 100 entries per page, most recent first
 
 **Acceptance Criteria:**
 
 *List View:*
-- [ ] `/timesheets` shows all time entries, most recent first
-- [ ] Columns: Date, Developer, Project, Task, Duration, Description
-- [ ] Filters: Project (dropdown), Developer (dropdown), Date range (presets + custom) — above the table
-- [ ] Empty state (no entries, or no entries match filter): `"No time entries found."`
-- [ ] "Add Entry" button (top-right) opens create modal
-- [ ] Pagination: 100 rows per page with prev/next controls
+- [x] `/timesheets` shows all time entries, most recent first
+- [x] Columns: Date, Developer, Project, Task, Duration, Description
+- [x] Filters: Project (dropdown), Developer (dropdown), Date range (presets + custom) — above the table
+- [x] Empty state (no entries, or no entries match filter): `"No time entries found."`
+- [x] "Add Entry" button (top-right) opens create modal
+- [x] Pagination: 100 rows per page with prev/next controls
 
 *Create Modal:*
-- [ ] Fields: Developer (required, active-only dropdown), Project (required, active-only dropdown), Task (required, dropdown filtered by selected project), Date (required, date picker), Start Time (required, HH:MM time picker), Duration (required, 15-min increment dropdown), Description (optional, textarea)
-- [ ] Task dropdown resets when project changes
-- [ ] Inline validation: required fields shown in red before submit
-- [ ] After successful create, entry appears in list (top), modal closes
+- [x] Fields: Developer (required, active-only dropdown), Project (required, active-only dropdown), Task (required, dropdown filtered by selected project), Date (required, date picker), Start Time (required, HH:MM time picker), Duration (required, 15-min increment dropdown), Description (optional, textarea)
+- [x] Task dropdown resets when project changes
+- [x] Inline validation: required fields shown in red before submit
+- [x] After successful create, entry appears in list (top), modal closes
 
 *Edit Modal:*
-- [ ] Edit button on each row opens edit modal pre-filled with existing values
-- [ ] Same fields and validation as create
-- [ ] After save, row updates in place
+- [x] Edit button on each row opens edit modal pre-filled with existing values
+- [x] Same fields and validation as create
+- [x] After save, row updates in place
 
 *Delete:*
-- [ ] Delete button on each row opens confirm modal: `"Delete this time entry? This cannot be undone."`
-- [ ] After confirm, row is removed from list
+- [x] Delete button on each row opens confirm modal: `"Delete this time entry? This cannot be undone."`
+- [x] After confirm, row is removed from list
+
+**QA Checklist (Murdock):**
+- [ ] **Prep (clean dev list)**: If the Developer dropdown is polluted with `QA Dev ...`, run `node scripts/mark-qa-developers-inactive.mjs` (local-only helper) and refresh.
+- [x] **List renders**: Visit `/timesheets` and confirm rows are **most recent first**; table columns are **Date, Developer, Project, Task, Duration, Description**.
+- [x] **Empty state**: With filters that match zero entries, verify empty row text is exactly `"No time entries found."`
+- [x] **Filters**:
+  - [x] Project filter reduces rows; clearing returns full list.
+  - [x] Developer filter reduces rows; clearing returns full list.
+  - [x] Date presets work: `Last 7 Days`, `Last 30 Days`, `This Month`, `All Time`.
+  - [x] Custom Start/End date fields work and override preset selection.
+- [x] **Pagination**: Page size is 100. `Prev` disabled on first page; `Next` disabled when no more.
+- [x] **Create**:
+  - [x] Click `Add Entry` → create modal opens.
+  - [x] Required validation shows red errors if you hit Save with blank required fields.
+  - [x] Developer dropdown shows **active developers only**.
+  - [x] Project dropdown shows **active projects only**.
+  - [x] Task dropdown is disabled until a project is selected; once selected it shows tasks for that project only.
+  - [x] Changing Project resets Task selection.
+  - [x] Duration options are 15-minute increments (15…480).
+  - [x] After save, modal closes and entry appears at the top of the list.
+- [x] **Edit**:
+  - [x] Click `Edit` on a row → modal is pre-filled and saves update; row updates in list.
+- [x] **Delete**:
+  - [x] Click `Delete` → confirm modal message is exactly `"Delete this time entry? This cannot be undone."`
+  - [x] Confirm removes the row from list.
+- [x] **Manage developers link**:
+  - [x] In create/edit modal, verify `"Manage developers →"` appears directly below developer dropdown.
+  - [x] Clicking navigates to `/developers` (expected to 404 until Story 2.3 ships; **not a bug**).
 
 **UI Location:** `/timesheets` (list + create/edit/delete UI)
 
