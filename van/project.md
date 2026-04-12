@@ -76,9 +76,9 @@
 
 **Phase B Stories Complete:**
 - ✅ Story 3.1 — Manual Time Entry UI (create/edit/delete + filters)
+- ✅ Story 2.3 — Manage Developers (`/developers`, soft-delete, active/inactive toggle)
 
 **Still Missing (Phase B scope):**
-- ⚠️ Developers CRUD UI (`/developers`) — Story 2.3
 - ⚠️ Developer productivity report — Story 4.3
 - ⚠️ Excel format docs + template — Story 3.3
 - ⚠️ Error handling hardening — Story 5.1
@@ -87,7 +87,7 @@
 ### What's IN PROGRESS 🚧
 
 **Phase B - Production Ready:**
-- 🚧 Story 2.3 — Manage Developers
+- 🚧 Story 4.3 — Developer Productivity Report
 
 ### What's PLANNED 📋
 See Roadmap section below. Full story details in [`van/stories.md`](stories.md).

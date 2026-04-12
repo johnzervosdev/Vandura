@@ -255,16 +255,68 @@
 ---
 
 ### Story 2.3: Manage Developers (P1) — 3-4h
-**Status:** Not Started
+**Status:** ✅ Complete
+**Owner:** B.A.
+
+**Decisions (pre-made):**
+- **Create/Edit:** modal on the `/developers` page (consistent with Tasks pattern)
+- **Delete:** not available — developers are soft-deleted only (mark inactive). No hard delete in M1; deleting a developer with time entries would corrupt history.
+- **Inactive = soft delete:** `isActive` flag toggled to false. No cascade. Developer remains in database and all historical time entries are preserved.
+- **Filter:** toggle between "Active only" (default) and "All developers" — simple toggle, not a dropdown
+- **Hourly rate:** optional field; no currency symbol in M1, plain number input
+- **Email:** optional but validated as proper email format if provided
+- **"Manage developers →" link:** this page is the destination for the link added in Story 3.1. Once 2.3 ships, that link stops 404-ing — no code change needed in 3.1.
 
 **Acceptance Criteria:**
-- [ ] Create developer (name, email, hourly rate)
-- [ ] View list of developers
-- [ ] Edit developer details
-- [ ] Mark developer as inactive (soft delete, no cascade)
-- [ ] Filter: show active only vs all
 
-**UI Location:** `/developers` (list + create/edit UI)
+*List View:*
+- [x] `/developers` shows developer list, default filter: active only
+- [x] Columns: Name, Email, Hourly Rate, Status (Active / Inactive)
+- [x] Toggle above table: "Active only" / "All" — switches filter without page reload
+- [x] Empty state (active filter, no active devs): `"No active developers."`
+- [x] Empty state (no developers at all): `"No developers yet. Add one to get started."`
+- [x] "Add Developer" button (top-right) opens create modal
+
+*Create Modal:*
+- [x] Fields: Name (required), Email (optional), Hourly Rate (optional, ≥ 0)
+- [x] Inline validation: Name required; Email must be valid format if provided; Hourly Rate must be ≥ 0 if provided
+- [x] New developer defaults to Active
+- [x] After save, developer appears in list, modal closes
+
+*Edit Modal:*
+- [x] Edit button on each row opens edit modal pre-filled
+- [x] Same fields and validation as create
+- [x] After save, row updates in place
+
+*Deactivate / Reactivate:*
+- [x] Active developers show a "Deactivate" button; clicking sets `isActive = false` with a confirm: `"Mark this developer as inactive? They will no longer appear in time entry dropdowns."`
+- [x] Inactive developers (visible when "All" filter is on) show a "Reactivate" button; clicking sets `isActive = true` with no confirm needed
+- [x] No hard delete option anywhere in the UI
+
+**QA Checklist (Murdock):**
+- [x] **Default view**: Visit `/developers` and confirm the default toggle is **Active only** and only active devs are shown.
+- [x] **Toggle behavior**: Switch between **Active only** and **All**; table updates without a full page reload.
+- [ ] **Empty states**:
+  - [ ] If there are **0 developers total**, page shows `"No developers yet. Add one to get started."`
+  - [ ] If there are developers but **0 active**, Active-only view shows `"No active developers."`
+- [x] **Create**:
+  - [x] Click `Add Developer` → modal opens.
+  - [x] Name required validation.
+  - [x] Email format validation (if provided).
+  - [x] Hourly rate must be **≥ 0** if provided (verify `0` is accepted).
+  - [x] New developer defaults to **Active** and appears in list after save.
+- [x] **Edit**:
+  - [x] Click `Edit` → pre-filled modal.
+  - [x] Save updates row in place.
+- [x] **Deactivate/reactivate**:
+  - [x] Active dev shows `Deactivate`. Clicking opens confirm containing exact copy:
+    - `"Mark this developer as inactive? They will no longer appear in time entry dropdowns."`
+  - [x] Confirm sets status to **Inactive** (visible under All).
+  - [x] Inactive dev shows `Reactivate` and **does not** prompt confirm.
+- [x] **No hard delete**: Verify there is no delete button anywhere.
+- [x] **Integration**: From `/timesheets` create/edit modal, click `"Manage developers →"` and confirm `/developers` loads (no 404).
+
+**UI Location:** `/developers` (list + create/edit/deactivate UI)
 
 ---
 

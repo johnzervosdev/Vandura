@@ -8,7 +8,7 @@ import { z } from 'zod';
 export const createDeveloperSchema = z.object({
   name: z.string().min(1, 'Name is required').max(100),
   email: z.string().email('Invalid email').optional(),
-  hourlyRate: z.number().positive().optional(),
+  hourlyRate: z.number().nonnegative().optional(),
   isActive: z.boolean().default(true),
 });
 

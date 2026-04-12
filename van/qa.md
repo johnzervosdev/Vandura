@@ -54,11 +54,12 @@
 | `tests/report-router.test.ts` | tRPC report router (projectsSummary, actualsReport) | ✅ Passing |
 | `tests/date-utils.test.ts` | calculateDuration, isValidDuration, getPresetRange | ✅ Passing |
 | `tests/excel-parser.test.ts` | ExcelParser date/time/duration parsing; row-based format | ✅ Passing |
+| `tests/developer-router.test.ts` | Developer CRUD + active-only filtering | ✅ Passing |
 | `tests/timesheet-bulkCreate.test.ts` | TimesheetService.bulkCreateEntries transaction + return type | ✅ Passing — regression for Issue #9 |
 | `tests/timesheet-sample-extract.test.ts` | Weekly-grid parser: JZER-style layout (B2/C2 developer, Project Code column, weekday hours E–K); synthetic workbook fallback for CI | ✅ Passing — addresses Known Issue #3 |
 | `tests/report-projects-summary-error.test.ts` | reportRouter.projectsSummary does not throw SQL alias error | ✅ Passing — regression for Issue #4 |
 
-**Suite status:** 67/67 passing (last run: 2026-04-07)
+**Suite status:** 70/70 passing (last run: 2026-04-12)
 
 ### Next Test Targets (Deferred to Phase B)
 The following were explicitly deferred during Phase A — known debt, not a blocker:
@@ -248,7 +249,20 @@ The following were explicitly deferred during Phase A — known debt, not a bloc
 - Create modal: required validation, active-only developer dropdown, task filter/reset, duration increments (15–480), manage developers link ✅
 - Edit modal: pre-filled fields and successful update ✅
 - Delete modal: exact confirm copy ("Delete this time entry? This cannot be undone.") and removal ✅
-- Developer dropdown fix verified: modal shows active developers only; list filter retains all developers for historical filtering ✅
+- Developer dropdown fix re-verified after B.A. update; modal shows active developers only; list filter retains all developers for historical filtering ✅
+
+### Story 2.3 — Manage Developers ✅
+- Status: QA complete (empty states accepted on PM code review — logic is trivial and strings match AC)
+- Default view: Active only ✅
+- Toggle behavior: Active only / All updates table without reload ✅
+- Columns: Name, Email, Hourly Rate, Status, Actions ✅
+- Create modal validations: name required, email format, hourly rate >= 0 (0 accepted) ✅
+- Edit modal prefill and save update ✅
+- Deactivate confirm copy matches spec ✅
+- Reactivate without confirm ✅
+- No delete option present ✅
+- Integration: Manage developers link from timesheets navigates to `/developers` ✅
+- Empty states not verified (no zero-dev dataset) ⚠️
 
 ---
 

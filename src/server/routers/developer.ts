@@ -17,7 +17,7 @@ export const developerRouter = createTRPCRouter({
       const newDeveloper: NewDeveloper = {
         name: input.name,
         email: input.email || null,
-        hourlyRate: input.hourlyRate || null,
+        hourlyRate: input.hourlyRate ?? null,
         isActive: input.isActive,
       };
 
