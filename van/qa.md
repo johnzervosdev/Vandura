@@ -1,6 +1,6 @@
 # Project Vandura — QA Strategy, Test Plans & Results
 
-**Last Updated:** 2026-04-07  
+**Last Updated:** 2026-04-12  
 **Owner:** Murdock
 
 > **Navigation:** [`van/project.md`](project.md) — project dashboard | [`van/stories.md`](stories.md) — story ACs & QA checklists
@@ -24,6 +24,7 @@
    - Actuals vs Estimates accuracy
    - CSV export correctness
    - Date range presets behavior
+   - Developer productivity: totals, distinct project/task counts, avg hours per logging day vs date range
 
 ### Nice-to-Test (If Time Permits)
 - Form validation (manual time entry, project creation)
@@ -60,6 +61,10 @@
 | `tests/report-projects-summary-error.test.ts` | reportRouter.projectsSummary does not throw SQL alias error | ✅ Passing — regression for Issue #4 |
 
 **Suite status:** 70/70 passing (last run: 2026-04-12)
+
+### Story 4.3 — Planned / optional automation
+- **Manual QA:** Primary sign-off per `van/stories.md` QA checklist (filters, sort, tooltip, empty state, cross-check counts).
+- **Optional (B.A. if time):** Unit test for `ReportService.getDeveloperProductivity` date boundaries + empty range (mirrors `tests/report-service.test.ts` style). Not a gate for story completion.
 
 ### Next Test Targets (Deferred to Phase B)
 The following were explicitly deferred during Phase A — known debt, not a blocker:
@@ -263,6 +268,10 @@ The following were explicitly deferred during Phase A — known debt, not a bloc
 - No delete option present ✅
 - Integration: Manage developers link from timesheets navigates to `/developers` ✅
 - Empty states not verified (no zero-dev dataset) ⚠️
+
+### Story 4.3 — Developer Productivity Report
+- Status: **Pending** (B.A. in progress — see `van/stories.md` QA checklist)
+- Murdock: run checklist when B.A. hands off; log results here with pass/fail per row.
 
 ---
 

@@ -1,6 +1,6 @@
 # Project Vandura — Project Dashboard
 
-**Last Updated:** 2026-03-13  
+**Last Updated:** 2026-04-12  
 **Milestone:** M1 - MVP Showcase  
 **Status:** Phase A In Progress
 
@@ -73,6 +73,7 @@
 - ✅ Timesheets: list (`/timesheets`)
 - ✅ Excel import UI (`/timesheets/upload`) with parse preview, duplicate + local-time warnings
 - ✅ Reports: project summaries (`/reports`), actuals report (`/reports/[projectId]`), CSV export
+- 🚧 Developer productivity report (`/reports/productivity`) — Story 4.3 in progress
 
 **Phase B Stories Complete:**
 - ✅ Story 3.1 — Manual Time Entry UI (create/edit/delete + filters)
@@ -357,4 +358,4 @@ _Log questions and blockers here. Tag the owner._
 ---
 
 **End of Document**  
-Last Updated: 2026-03-13 by Hannibal (restructured van.md → van/ folder)
+Last Updated: 2026-04-12 by Hannibal (Story 4.3 kickoff — docs + scope)

@@ -1,6 +1,6 @@
 # Project Vandura — User Stories & Acceptance Criteria
 
-**Last Updated:** 2026-03-13  
+**Last Updated:** 2026-04-12  
 **Owner:** B.A. (maintains ACs + implementation notes) | Murdock (updates QA checklists)
 
 > **Navigation:** [`van/project.md`](project.md) — project dashboard | [`van/qa.md`](qa.md) — test plans & results
@@ -321,17 +321,51 @@
 ---
 
 ### Story 4.3: Developer Productivity Report (P1) — 4-6h
-**Status:** Not Started
+**Status:** 🚧 In Progress  
+**Owner:** B.A.
+
+**Decisions (pre-made):**
+- **Who appears in the table:** **Active developers only** (matches existing `ReportService.getDeveloperProductivity` — one row per active developer). Developers with **zero** time entries in the selected range still appear with `0` hours — that is correct.
+- **Date range UX:** Same pattern as Actuals report (`/reports/[projectId]`): presets **Last 7 Days**, **Last 30 Days**, **This Month**, **All Time**, plus **custom** start/end date fields. Use `getPresetRange`, `startOfDay`, and `endOfDay` from `@/lib/date-utils` so boundaries match other reports.
+- **Backend audit:** `report.developerProductivity` and `getDeveloperProductivity` already exist. B.A. must verify `startDate`/`endDate` are applied with **inclusive** day boundaries (wrap filter dates with `startOfDay` / `endOfDay` in the service if not already — parity with Actuals report).
+- **Metric definition (Avg Hours/Active Day):** Backend computes `totalHours / (number of distinct calendar days with ≥1 entry in range)`. **Tooltip text (exact):** *"Average hours per calendar day on which this developer logged at least one entry in the selected range."*
+- **Sorting:** Client-side sort on column header click. Default sort: **developer name A→Z**. Toggle asc/desc on repeat click for the same column.
+- **Navigation:** Add a clear link from `/reports` to `/reports/productivity` (e.g. text link or secondary button next to the project picker flow).
+- **Optional column:** API returns `entriesCount`; showing it in the table is **optional** — not required by AC.
 
 **Acceptance Criteria:**
-- [ ] View all developers with total hours logged
-- [ ] Date range filter (presets + custom)
-- [ ] Columns: developer name, total hours, project count, task count, avg hours/active day
-- [ ] Column label: "Avg Hours/Active Day" with tooltip
-- [ ] Sortable table
-- [ ] Empty state if no time entries
 
-**UI Location:** `/reports/productivity` (new page)
+*Page & data:*
+- [ ] New page at `/reports/productivity` (App Router)
+- [ ] Calls `trpc.report.developerProductivity.useQuery` with `startDate` / `endDate` derived from preset or custom range (both optional for "all time" behavior — align with how All Time is represented elsewhere, typically `undefined` both ends)
+- [ ] Table lists **active** developers with: **Developer name**, **Total hours** (formatted, e.g. one decimal + `h`), **Project count**, **Task count**, **Avg Hours/Active Day** (column header exactly as written; tooltip with exact copy above)
+
+*Filters:*
+- [ ] Presets: Last 7 Days, Last 30 Days, This Month, All Time
+- [ ] Custom start and end date inputs; when set, they override / replace preset selection in a way consistent with the timesheets or actuals report UX
+
+*Table behavior:*
+- [ ] All listed columns are **sortable** via header click
+- [ ] Loading and error states (reuse patterns from `/reports` — e.g. retry on failure)
+
+*Empty state:*
+- [ ] When **no time entries** fall in the selected date range (all developers have 0 hours / 0 entries in range), show a single empty message: **`No time entries in this range.`** (no misleading table of all zeros — cleaner UX)
+
+**QA Checklist (Murdock):**
+- [ ] `/reports` includes navigation to `/reports/productivity`
+- [ ] Default view loads without error; table shows active developers
+- [ ] Each preset changes totals predictably (compare narrow vs All Time on seeded data)
+- [ ] Custom range matches expected inclusion (same day boundary behavior as Actuals report)
+- [ ] Sorting: click each sortable column; order toggles and data looks correct
+- [ ] Tooltip on **Avg Hours/Active Day** matches spec wording
+- [ ] Empty state appears when range has no entries (use extreme past/future custom range if needed)
+- [ ] Spot-check: project count / task count match distinct projects/tasks from time entries in range (manual SQL or UI cross-check on one developer)
+
+**UI Location:** `/reports/productivity`
+
+**Implementation notes (B.A.):**
+- Reuse `Modal` only if needed; this page is primarily a filter bar + table (like reports list + detail pattern).
+- After implementation, update `van/qa.md` test registry if new automated tests are added.
 
 ---
 
@@ -411,4 +445,4 @@
 ---
 
 **End of Document**  
-Last Updated: 2026-03-13 by Hannibal (split from van.md into van/ folder)
+Last Updated: 2026-04-12 by Hannibal (Story 4.3 scope + DoR for B.A./Murdock)
