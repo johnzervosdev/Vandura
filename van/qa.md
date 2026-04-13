@@ -61,16 +61,16 @@
 | `tests/developer-router.test.ts` | Developer schema + isolated-DB queries (active-only, toggle `isActive`) | ✅ Passing |
 | `tests/excel-grid.test.ts` | Weekly grid `parseFile` (Mon–Fri + Hours column); preview-mode JZER/Variable-style project validation; **import-mode tests clean up via `parser-db-cleanup`** | ✅ Passing |
 | `tests/excel-parser.test.ts` | Row `parseRows` + `parseFile` (dates, durations, preview vs import, case-sensitive tasks); **shared DB cleanup in `finally`** | ✅ Passing |
-| `tests/project-router.test.ts` | Story 2.1: project CRUD against temp DB; **create-via-router path cleans shared DB** | ✅ Passing |
+| `tests/project-router.test.ts` | Story 2.1: project CRUD against temp DB; **create-via-router path cleans shared DB**; cascade test **deletes orphan developer + any leftover rows in `finally`** before unlink | ✅ Passing |
 | `tests/project-validation.test.ts` | `createProjectSchema` (name, estimated hours, status enum) | ✅ Passing |
 | `tests/report-developer-productivity.test.ts` | Story 4.3: `report.developerProductivity` + `getDeveloperProductivity` — smoke, inactive omitted, inclusive dates, metrics, null `taskId`, empty-range row, tRPC args; **`finally` cleanup** | ✅ Passing |
 | `tests/report-projects-summary-error.test.ts` | `reportRouter.projectsSummary` SQL alias regression (Issue #4) | ✅ Passing |
 | `tests/report-router.test.ts` | `exportCSV` filename + mocked actuals | ✅ Passing |
 | `tests/report-service.test.ts` | `exportToCSV` escaping / zero estimates | ✅ Passing |
-| `tests/task-router.test.ts` | Story 2.2: tasks + time-entry cascade on temp DB; **create-via-router path cleans leaked task on shared DB** | ✅ Passing |
+| `tests/task-router.test.ts` | Story 2.2: tasks + time-entry cascade on temp DB; **create-via-router path cleans leaked task on shared DB**; delete-task test **clears entry / project / developer in `finally`** before unlink | ✅ Passing |
 | `tests/task-validation.test.ts` | `createTaskSchema` | ✅ Passing |
 | `tests/time-entry-validation.test.ts` | `createTimeEntrySchema` (15-minute rule, positive duration) | ✅ Passing |
-| `tests/timesheet-bulkCreate.test.ts` | `TimesheetService.bulkCreateEntries` + **`finally` cleanup** (Issue #9) | ✅ Passing |
+| `tests/timesheet-bulkCreate.test.ts` | `TimesheetService.bulkCreateEntries` + **`finally` cleanup** (all returned entry IDs via `inArray`) (Issue #9) | ✅ Passing |
 | `tests/timesheet-router-excel.test.ts` | Story 3.2: `parseExcel` / `importExcel` with **mocked** `parseFile` + `bulkCreateEntries` | ✅ Passing |
 | `tests/timesheet-sample-extract.test.ts` | Weekly-grid sample extraction (JZER-style; synthetic workbook); **preview-mode** | ✅ Passing — Known Issue #3 |
 | `tests/validators.test.ts` | Schema validation (createProject, createTask, createTimeEntry) | ✅ Passing |

@@ -213,12 +213,18 @@ test('Story 2.1: Delete project (cascade deletes tasks and time entries)', async
   const { db, sqlite, path: dbPath } = createTestDb();
   const { eq } = await import('drizzle-orm');
 
+  let projectId: number | null = null;
+  let developerId: number | null = null;
+  let taskId: number | null = null;
+  let entryId: number | null = null;
+
   try {
     // Create project
     const [project] = await db.insert(schema.projects).values({
       name: 'Cascade Test Project',
       status: 'active',
     }).returning();
+    projectId = project.id;
 
     // Create developer
     const [developer] = await db.insert(schema.developers).values({
@@ -226,6 +232,7 @@ test('Story 2.1: Delete project (cascade deletes tasks and time entries)', async
       email: 'test@example.com',
       isActive: true,
     }).returning();
+    developerId = developer.id;
 
     // Create task
     const [task] = await db.insert(schema.tasks).values({
@@ -233,15 +240,20 @@ test('Story 2.1: Delete project (cascade deletes tasks and time entries)', async
       name: 'Test Task',
       status: 'pending',
     }).returning();
+    taskId = task.id;
 
     // Create time entry
-    await db.insert(schema.timeEntries).values({
-      projectId: project.id,
-      taskId: task.id,
-      developerId: developer.id,
-      startTime: new Date('2026-01-01T09:00:00'),
-      durationMinutes: 30,
-    });
+    const [entry] = await db
+      .insert(schema.timeEntries)
+      .values({
+        projectId: project.id,
+        taskId: task.id,
+        developerId: developer.id,
+        startTime: new Date('2026-01-01T09:00:00'),
+        durationMinutes: 30,
+      })
+      .returning();
+    entryId = entry.id;
 
     // Verify data exists
     const tasksBefore = await db.query.tasks.findMany({
@@ -256,6 +268,7 @@ test('Story 2.1: Delete project (cascade deletes tasks and time entries)', async
 
     // Delete project
     await db.delete(schema.projects).where(eq(schema.projects.id, project.id));
+    projectId = null;
 
     // Verify project is deleted
     const projectAfter = await db.query.projects.findFirst({
@@ -275,6 +288,19 @@ test('Story 2.1: Delete project (cascade deletes tasks and time entries)', async
     });
     assert.equal(entriesAfter.length, 0);
   } finally {
+    // FK-safe cleanup if assertions failed mid-test; also removes orphan developer after successful cascade.
+    if (entryId != null) {
+      await db.delete(schema.timeEntries).where(eq(schema.timeEntries.id, entryId));
+    }
+    if (taskId != null) {
+      await db.delete(schema.tasks).where(eq(schema.tasks.id, taskId));
+    }
+    if (projectId != null) {
+      await db.delete(schema.projects).where(eq(schema.projects.id, projectId));
+    }
+    if (developerId != null) {
+      await db.delete(schema.developers).where(eq(schema.developers.id, developerId));
+    }
     sqlite.close();
     fs.unlinkSync(dbPath);
   }

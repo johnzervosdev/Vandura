@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { db } from '../src/server/db';
 import { developers, projects, timeEntries } from '../src/server/db/schema';
-import { eq } from 'drizzle-orm';
+import { eq, inArray } from 'drizzle-orm';
 import { timesheetService } from '../src/server/services/TimesheetService';
 
 test('bulkCreateEntries should return an array without throwing', async () => {
@@ -41,7 +41,7 @@ test('bulkCreateEntries should return an array without throwing', async () => {
     createdEntryIds = entries.map((e) => e.id);
   } finally {
     if (createdEntryIds.length > 0) {
-      await db.delete(timeEntries).where(eq(timeEntries.id, createdEntryIds[0]));
+      await db.delete(timeEntries).where(inArray(timeEntries.id, createdEntryIds));
     }
     if (projectId) {
       await db.delete(projects).where(eq(projects.id, projectId));

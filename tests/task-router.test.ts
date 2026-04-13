@@ -180,23 +180,31 @@ test('Story 2.2: Delete task unassigns time entries', async () => {
   const { db, sqlite, path: dbPath } = createTestDb();
   const { eq } = await import('drizzle-orm');
 
+  let projectId: number | null = null;
+  let developerId: number | null = null;
+  let taskId: number | null = null;
+  let entryId: number | null = null;
+
   try {
     const [project] = await db.insert(schema.projects).values({
       name: 'Delete Task Project',
       status: 'active',
     }).returning();
+    projectId = project.id;
 
     const [developer] = await db.insert(schema.developers).values({
       name: 'Task Dev',
       email: 'task-dev@example.com',
       isActive: true,
     }).returning();
+    developerId = developer.id;
 
     const [task] = await db.insert(schema.tasks).values({
       projectId: project.id,
       name: 'Task to Delete',
       status: 'pending',
     }).returning();
+    taskId = task.id;
 
     const [entry] = await db.insert(schema.timeEntries).values({
       projectId: project.id,
@@ -205,8 +213,10 @@ test('Story 2.2: Delete task unassigns time entries', async () => {
       startTime: new Date('2026-01-01T09:00:00'),
       durationMinutes: 30,
     }).returning();
+    entryId = entry.id;
 
     await db.delete(schema.tasks).where(eq(schema.tasks.id, task.id));
+    taskId = null;
 
     const after = await db.query.timeEntries.findFirst({
       where: (entries, { eq }) => eq(entries.id, entry.id),
@@ -215,6 +225,18 @@ test('Story 2.2: Delete task unassigns time entries', async () => {
     assert.ok(after);
     assert.equal(after.taskId, null);
   } finally {
+    if (entryId != null) {
+      await db.delete(schema.timeEntries).where(eq(schema.timeEntries.id, entryId));
+    }
+    if (taskId != null) {
+      await db.delete(schema.tasks).where(eq(schema.tasks.id, taskId));
+    }
+    if (projectId != null) {
+      await db.delete(schema.projects).where(eq(schema.projects.id, projectId));
+    }
+    if (developerId != null) {
+      await db.delete(schema.developers).where(eq(schema.developers.id, developerId));
+    }
     sqlite.close();
     fs.unlinkSync(dbPath);
   }

@@ -280,22 +280,28 @@ test('ExcelParser returns preview for valid rows even when errors exist', async 
 
 test('ExcelParser uses local midnight when only date is provided', async () => {
   const unique = Date.now();
+  const developerName = `QA Dev ${unique}`;
+  const projectName = `QA Project ${unique}`;
   const rows = [
     {
-      Developer: `QA Dev ${unique}`,
-      Project: `QA Project ${unique}`,
+      Developer: developerName,
+      Project: projectName,
       Task: 'Date Only',
       Date: '2026-02-05',
       Duration: 15,
     },
   ];
 
-  const result = await excelParser.parseRows(rows);
+  try {
+    const result = await excelParser.parseRows(rows);
 
-  assert.equal(result.errors.length, 0);
-  assert.equal(result.entries.length, 1);
-  assert.equal(result.entries[0].startTime.getHours(), 0);
-  assert.equal(result.entries[0].startTime.getMinutes(), 0);
+    assert.equal(result.errors.length, 0);
+    assert.equal(result.entries.length, 1);
+    assert.equal(result.entries[0].startTime.getHours(), 0);
+    assert.equal(result.entries[0].startTime.getMinutes(), 0);
+  } finally {
+    await cleanupParserImportSideEffects(developerName, projectName);
+  }
 });
 
 test('ExcelParser treats task names as case-sensitive', async () => {
