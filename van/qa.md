@@ -1,6 +1,6 @@
 # Project Vandura — QA Strategy, Test Plans & Results
 
-**Last Updated:** 2026-04-12  
+**Last Updated:** 2026-04-12 (test registry + shared-DB cleanup documentation)  
 **Owner:** Murdock
 
 > **Navigation:** [`van/project.md`](project.md) — project dashboard | [`van/stories.md`](stories.md) — story ACs & QA checklists
@@ -45,32 +45,42 @@
 - **Command:** `npm test`
 - **Runner:** `scripts/run-tests.mjs` (runs every `tests/*.test.ts` via `node --import tsx --test`)
 - **Note:** Node's test runner does not auto-discover `*.test.ts` by directory alone; the runner is required to avoid missing tests.
+- **Support module (not a test file):** `tests/parser-db-cleanup.ts` — shared helpers used by `excel-parser.test.ts` and `excel-grid.test.ts` to delete developer/project/task rows that `ExcelParser` creates in **import** mode against `./data/vandura.db`.
+
+### Shared database hygiene (automated tests)
+- Several suites use the **app singleton** (`import { db } from '../src/server/db'` → `./data/vandura.db`). Any test that inserts rows there must **`try` / `finally` delete** those rows (FK order: time entries → tasks → projects → developers as applicable).
+- **`ExcelParser`** defaults to **import** mode: `getOrCreate*` runs **before** duration validation, so “negative” row tests can still persist rows unless cleaned up. **`parseFile`** defaults the same way — weekly-grid tests that import `parseFile` without `{ mode: 'preview' }` also persist.
+- **`projectRouter` / `taskRouter` first-create tests** use a temp SQLite file for most assertions but can hit the **real** DB when the router succeeds; those tests use **unique names** and **`finally` cleanup** on the shared DB.
+- Isolated DB tests (`createTestDb()` + `unlink`) do not touch `vandura.db` for inserts.
 
 ### Current Test Files
 
 | File | Coverage | Status |
 |------|----------|--------|
+| `tests/date-utils.test.ts` | `calculateDuration`, `isValidDuration`, `getPresetRange` | ✅ Passing |
+| `tests/developer-router.test.ts` | Developer schema + isolated-DB queries (active-only, toggle `isActive`) | ✅ Passing |
+| `tests/excel-grid.test.ts` | Weekly grid `parseFile` (Mon–Fri + Hours column); preview-mode JZER/Variable-style project validation; **import-mode tests clean up via `parser-db-cleanup`** | ✅ Passing |
+| `tests/excel-parser.test.ts` | Row `parseRows` + `parseFile` (dates, durations, preview vs import, case-sensitive tasks); **shared DB cleanup in `finally`** | ✅ Passing |
+| `tests/project-router.test.ts` | Story 2.1: project CRUD against temp DB; **create-via-router path cleans shared DB** | ✅ Passing |
+| `tests/project-validation.test.ts` | `createProjectSchema` (name, estimated hours, status enum) | ✅ Passing |
+| `tests/report-developer-productivity.test.ts` | Story 4.3: `report.developerProductivity` + `getDeveloperProductivity` — smoke, inactive omitted, inclusive dates, metrics, null `taskId`, empty-range row, tRPC args; **`finally` cleanup** | ✅ Passing |
+| `tests/report-projects-summary-error.test.ts` | `reportRouter.projectsSummary` SQL alias regression (Issue #4) | ✅ Passing |
+| `tests/report-router.test.ts` | `exportCSV` filename + mocked actuals | ✅ Passing |
+| `tests/report-service.test.ts` | `exportToCSV` escaping / zero estimates | ✅ Passing |
+| `tests/task-router.test.ts` | Story 2.2: tasks + time-entry cascade on temp DB; **create-via-router path cleans leaked task on shared DB** | ✅ Passing |
+| `tests/task-validation.test.ts` | `createTaskSchema` | ✅ Passing |
+| `tests/time-entry-validation.test.ts` | `createTimeEntrySchema` (15-minute rule, positive duration) | ✅ Passing |
+| `tests/timesheet-bulkCreate.test.ts` | `TimesheetService.bulkCreateEntries` + **`finally` cleanup** (Issue #9) | ✅ Passing |
+| `tests/timesheet-router-excel.test.ts` | Story 3.2: `parseExcel` / `importExcel` with **mocked** `parseFile` + `bulkCreateEntries` | ✅ Passing |
+| `tests/timesheet-sample-extract.test.ts` | Weekly-grid sample extraction (JZER-style; synthetic workbook); **preview-mode** | ✅ Passing — Known Issue #3 |
 | `tests/validators.test.ts` | Schema validation (createProject, createTask, createTimeEntry) | ✅ Passing |
-| `tests/report-service.test.ts` | ReportService actuals vs estimates calculations | ✅ Passing |
-| `tests/report-router.test.ts` | tRPC report router (projectsSummary, actualsReport) | ✅ Passing |
-| `tests/date-utils.test.ts` | calculateDuration, isValidDuration, getPresetRange | ✅ Passing |
-| `tests/excel-parser.test.ts` | ExcelParser date/time/duration parsing; row-based format | ✅ Passing |
-| `tests/developer-router.test.ts` | Developer CRUD + active-only filtering | ✅ Passing |
-| `tests/timesheet-bulkCreate.test.ts` | TimesheetService.bulkCreateEntries transaction + return type | ✅ Passing — regression for Issue #9 |
-| `tests/timesheet-sample-extract.test.ts` | Weekly-grid parser: JZER-style layout (B2/C2 developer, Project Code column, weekday hours E–K); synthetic workbook fallback for CI | ✅ Passing — addresses Known Issue #3 |
-| `tests/report-projects-summary-error.test.ts` | reportRouter.projectsSummary does not throw SQL alias error | ✅ Passing — regression for Issue #4 |
 
-**Suite status:** 70/70 passing (last run: 2026-04-12)
-
-### Story 4.3 — Planned / optional automation
-- **Manual QA:** Primary sign-off per `van/stories.md` QA checklist (filters, sort, tooltip, empty state, cross-check counts).
-- **Optional (B.A. if time):** Unit test for `ReportService.getDeveloperProductivity` date boundaries + empty range (mirrors `tests/report-service.test.ts` style). Not a gate for story completion.
+**Suite status:** **76/76** passing — **17** test files under `tests/*.test.ts` (last full run: 2026-04-12).
 
 ### Next Test Targets (Deferred to Phase B)
 The following were explicitly deferred during Phase A — known debt, not a blocker:
-- `timesheet.parseExcel` tRPC router: returns `{ entries, errors, warnings }` with correct row numbering
-- `timesheet.importExcel` tRPC router: blocks on any parse errors (no partial imports); succeeds when `errors.length === 0`
-- ExcelParser negative cases: missing required columns, invalid durations (`<= 0`, not multiple of 15), unsupported date/time formats
+- Deeper **`timesheet.parseExcel` / `timesheet.importExcel`** integration against a real workbook + real DB (current router tests rely on mocks).
+- Additional ExcelParser edge cases not yet encoded (e.g. more unsupported date/time shapes, missing-column layouts) — many duration/date paths are already covered in `excel-parser.test.ts`.
 
 ---
 
@@ -199,7 +209,7 @@ The following were explicitly deferred during Phase A — known debt, not a bloc
 - All QA checklist items: PASS
 - Bulk insert regression test (`tests/timesheet-bulkCreate.test.ts`): PASS
 - Weekly-grid JZER-style layout validation (`tests/timesheet-sample-extract.test.ts`): PASS
-- Suite: 60/60 green
+- Suite: **76/76** green (`npm test`)
 
 ### Story 4.2 — Actuals vs Estimates Report ✅
 - Status: QA complete
@@ -269,9 +279,23 @@ The following were explicitly deferred during Phase A — known debt, not a bloc
 - Integration: Manage developers link from timesheets navigates to `/developers` ✅
 - Empty states not verified (no zero-dev dataset) ⚠️
 
-### Story 4.3 — Developer Productivity Report
-- Status: **Pending** (B.A. in progress — see `van/stories.md` QA checklist)
-- Murdock: run checklist when B.A. hands off; log results here with pass/fail per row.
+### Story 4.3 — Developer Productivity Report ✅
+- **Status:** QA complete (2026-04-12, Murdock). Dev server: `http://localhost:3001` (port may differ locally).
+- **Automated:** `tests/report-developer-productivity.test.ts` — integration tests on shared DB (`finally` cleanup) plus smoke; Excel/parser suites use `tests/parser-db-cleanup.ts` where `ExcelParser` writes to `vandura.db`. Full suite **`npm test`** → **76/76** (17 `*.test.ts` files).
+
+| Checklist item | Result | Notes |
+|----------------|--------|--------|
+| `/reports` → productivity navigation | **Pass** | Link label **Developer productivity →** present; `href="/reports/productivity"` in `src/app/reports/page.tsx`. Embedded browser: single click did not navigate (tooling); **Enter** on focused link navigated correctly — recommend one manual mouse click sanity check. |
+| Default load / active developers table | **Pass** | `/reports/productivity` loads; headers include Developer name (↑ default A→Z), Total hours, Project count, Task count, Avg Hours/Active Day, Entries. |
+| Presets change totals | **Pass** | **Last 7 Days** updates custom start/end (e.g. 2026-04-06 … 2026-04-12 vs “today”); table repopulates. |
+| Custom range / Actuals parity | **Pass** | Productivity page uses same `startDate ? startOfDay(startDate)` / `endDate ? endOfDay(endDate)` pattern as `src/app/reports/[projectId]/page.tsx`. |
+| Sorting all columns + toggle | **Pass** | **Total hours** tested: first activation **↓**, second click **↑**; all six columns exposed as sort header buttons. |
+| Tooltip exact copy | **Pass** | `AVG_DAY_TOOLTIP` in `src/app/reports/productivity/page.tsx` matches spec character-for-character; `title` on `<th>` (not on inner `<button>` — a11y snapshot had no `title` on button). **Manual hover** still advised to confirm OS tooltip. |
+| Empty state (no entries in range) | **Pass** | Custom range **2099-01-01** … **2099-01-31** → message **No time entries in this range.** (no all-zero table). |
+| Spot-check project/task counts | **Pass** | For **Last 7 Days** (`new Date()` on QA machine), developer **John Zervos**: `getDeveloperProductivity` vs raw SQL `COUNT(DISTINCT project_id|task_id|*)` on `time_entries` with unix range — **3 / 12 / 22** = **3 / 12 / 22**. |
+| No active developers empty UI | **Not run** | Local DB always had active developers; strings verified in source (**No active developers.**). |
+
+- **Findings:** None blocking. Optional: confirm in-page link navigation with a normal mouse click outside automation.
 
 ---
 
@@ -283,10 +307,10 @@ The following were explicitly deferred during Phase A — known debt, not a bloc
 - Real-data samples are gitignored and no PII is committed
 - QA results per story are captured with pass/fail status
 
-## Phase B QA Notes (Pending PM)
+## Phase B QA Notes
 
 - Pagination scale test (>100 entries) is out of scope for 3.1 and should be scheduled if needed.
-- Description length limits are not specified; PM should confirm expected maximum for validation.
+- **Description length (time entry):** unconstrained in M1 (PM ruling 2026-04-12).
 
 **End of Document**  
-Last Updated: 2026-04-07 by Murdock
+Last Updated: 2026-04-12 by Murdock — Story 4.3 QA + full automated test registry (76/76, shared-DB cleanup, `parser-db-cleanup.ts`)

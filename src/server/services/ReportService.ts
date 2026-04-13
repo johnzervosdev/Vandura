@@ -129,6 +129,9 @@ export class ReportService {
     startDate?: Date,
     endDate?: Date
   ): Promise<DeveloperProductivity[]> {
+    const rangeStart = startDate ? startOfDay(startDate) : undefined;
+    const rangeEnd = endDate ? endOfDay(endDate) : undefined;
+
     const developerList = developerId
       ? [await db.query.developers.findFirst({ where: eq(developers.id, developerId) })]
       : await db.query.developers.findMany({ where: eq(developers.isActive, true) });
@@ -140,8 +143,8 @@ export class ReportService {
 
       // Get time entries
       const conditions = [eq(timeEntries.developerId, dev.id)];
-      if (startDate) conditions.push(gte(timeEntries.startTime, startDate));
-      if (endDate) conditions.push(lte(timeEntries.startTime, endDate));
+      if (rangeStart) conditions.push(gte(timeEntries.startTime, rangeStart));
+      if (rangeEnd) conditions.push(lte(timeEntries.startTime, rangeEnd));
 
       const entries = await db
         .select()

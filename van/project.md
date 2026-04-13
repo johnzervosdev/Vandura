@@ -73,14 +73,14 @@
 - ✅ Timesheets: list (`/timesheets`)
 - ✅ Excel import UI (`/timesheets/upload`) with parse preview, duplicate + local-time warnings
 - ✅ Reports: project summaries (`/reports`), actuals report (`/reports/[projectId]`), CSV export
-- 🚧 Developer productivity report (`/reports/productivity`) — Story 4.3 in progress
+- ✅ Developer productivity report (`/reports/productivity`) — Story 4.3
 
 **Phase B Stories Complete:**
 - ✅ Story 3.1 — Manual Time Entry UI (create/edit/delete + filters)
 - ✅ Story 2.3 — Manage Developers (`/developers`, soft-delete, active/inactive toggle)
+- ✅ Story 4.3 — Developer Productivity Report (`/reports/productivity`)
 
 **Still Missing (Phase B scope):**
-- ⚠️ Developer productivity report — Story 4.3
 - ⚠️ Excel format docs + template — Story 3.3
 - ⚠️ Error handling hardening — Story 5.1
 - ⚠️ README + screenshots + architecture doc — Story 5.2
@@ -88,7 +88,7 @@
 ### What's IN PROGRESS 🚧
 
 **Phase B - Production Ready:**
-- 🚧 Story 4.3 — Developer Productivity Report
+- 🚧 Story 3.3 — Excel Format Docs (next)
 
 ### What's PLANNED 📋
 See Roadmap section below. Full story details in [`van/stories.md`](stories.md).
@@ -202,7 +202,7 @@ Story 1.2 can be done any time after MVP if Windows/OneDrive instability recurs.
 3. ~~**Excel parser weekly-grid timesheet layout**~~ — ✅ **FIXED**: weekly grid (Mon/Tue/…) converted to row-based entries. Validated via `tests/timesheet-sample-extract.test.ts` (JZER-style layout; synthetic workbook fallback for CI).
 4. ~~**Projects list fails to load (SQL alias error)**~~ — ✅ **FIXED** (see `tests/report-projects-summary-error.test.ts`)
 5. ~~**Template timesheet missing date errors**~~ — ✅ **FIXED**: weekly-grid conversion now supplies per-row dates.
-6. **Test run status** — Full suite green: 60/60 passed (latest run).
+6. **Test run status** — Full suite green: **76/76** passed (`npm test`; 17 `tests/*.test.ts` files). Shared-DB tests clean up in `finally` (see `van/qa.md` — includes `tests/parser-db-cleanup.ts` for ExcelParser import-mode side effects).
 7. ~~**Next.js params Promise warning**~~ — ✅ **FIXED**: `/projects/[id]` and `/projects/[id]/edit` params handling corrected for Next.js 15.
 8. ~~**Drizzle relations missing**~~ — ✅ **FIXED**: Added Drizzle relations to schema for `with: { tasks: true }` queries.
 9. ~~**Import fails with spread error during bulk insert**~~ — ✅ **FIXED**: `bulkCreateEntries` now executes `.returning().all()` synchronously inside the transaction. Regression test: `tests/timesheet-bulkCreate.test.ts`
@@ -316,7 +316,7 @@ vandura/
 │   │   └── routers/        # tRPC API endpoints
 │   ├── lib/                # Shared utilities
 │   └── components/         # React components
-├── tests/                  # Automated test files
+├── tests/                  # `*.test.ts` (see `van/qa.md`); `parser-db-cleanup.ts` = shared DB cleanup helpers for parser tests
 ├── scripts/                # migrate.ts, seed.ts
 └── data/                   # vandura.db (local SQLite file)
 ```
@@ -358,4 +358,4 @@ _Log questions and blockers here. Tag the owner._
 ---
 
 **End of Document**  
-Last Updated: 2026-04-12 by Hannibal (Story 4.3 kickoff — docs + scope)
+Last Updated: 2026-04-12 — Story 4.3 QA (Murdock); test suite count + shared-DB cleanup docs (`van/qa.md`, `tests/parser-db-cleanup.ts`)

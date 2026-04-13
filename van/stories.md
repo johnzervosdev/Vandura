@@ -116,7 +116,7 @@
 - [x] Import disabled when errors exist
 - [x] Import succeeds when no errors and shows success banner
 - [x] Import blocks on errors (no partial import)
-- [x] Full suite green (60/60)
+- [x] Full suite green (76/76 — see `van/qa.md` registry)
 
 **UI Location:** `/timesheets/upload`
 
@@ -321,7 +321,7 @@
 ---
 
 ### Story 4.3: Developer Productivity Report (P1) — 4-6h
-**Status:** 🚧 In Progress  
+**Status:** ✅ Complete (Hannibal sign-off 2026-04-12)  
 **Owner:** B.A.
 
 **Decisions (pre-made):**
@@ -336,36 +336,37 @@
 **Acceptance Criteria:**
 
 *Page & data:*
-- [ ] New page at `/reports/productivity` (App Router)
-- [ ] Calls `trpc.report.developerProductivity.useQuery` with `startDate` / `endDate` derived from preset or custom range (both optional for "all time" behavior — align with how All Time is represented elsewhere, typically `undefined` both ends)
-- [ ] Table lists **active** developers with: **Developer name**, **Total hours** (formatted, e.g. one decimal + `h`), **Project count**, **Task count**, **Avg Hours/Active Day** (column header exactly as written; tooltip with exact copy above)
+- [x] New page at `/reports/productivity` (App Router)
+- [x] `/reports` includes navigation to `/reports/productivity`
+- [x] Calls `trpc.report.developerProductivity.useQuery` with `startDate` / `endDate` derived from preset or custom range (both optional for "all time" behavior — align with how All Time is represented elsewhere, typically `undefined` both ends)
+- [x] Table lists **active** developers with: **Developer name**, **Total hours** (formatted, e.g. one decimal + `h`), **Project count**, **Task count**, **Avg Hours/Active Day** (column header exactly as written; tooltip with exact copy above)
 
 *Filters:*
-- [ ] Presets: Last 7 Days, Last 30 Days, This Month, All Time
-- [ ] Custom start and end date inputs; when set, they override / replace preset selection in a way consistent with the timesheets or actuals report UX
+- [x] Presets: Last 7 Days, Last 30 Days, This Month, All Time
+- [x] Custom start and end date inputs; when set, they override / replace preset selection in a way consistent with the timesheets or actuals report UX
 
 *Table behavior:*
-- [ ] All listed columns are **sortable** via header click
-- [ ] Loading and error states (reuse patterns from `/reports` — e.g. retry on failure)
+- [x] All listed columns are **sortable** via header click
+- [x] Loading and error states (reuse patterns from `/reports` — e.g. retry on failure)
 
 *Empty state:*
-- [ ] When **no time entries** fall in the selected date range (all developers have 0 hours / 0 entries in range), show a single empty message: **`No time entries in this range.`** (no misleading table of all zeros — cleaner UX)
+- [x] When **no time entries** fall in the selected date range (all developers have 0 hours / 0 entries in range), show a single empty message: **`No time entries in this range.`** (no misleading table of all zeros — cleaner UX)
 
 **QA Checklist (Murdock):**
-- [ ] `/reports` includes navigation to `/reports/productivity`
-- [ ] Default view loads without error; table shows active developers
-- [ ] Each preset changes totals predictably (compare narrow vs All Time on seeded data)
-- [ ] Custom range matches expected inclusion (same day boundary behavior as Actuals report)
-- [ ] Sorting: click each sortable column; order toggles and data looks correct
-- [ ] Tooltip on **Avg Hours/Active Day** matches spec wording
-- [ ] Empty state appears when range has no entries (use extreme past/future custom range if needed)
-- [ ] Spot-check: project count / task count match distinct projects/tasks from time entries in range (manual SQL or UI cross-check on one developer)
+- [x] `/reports` includes navigation to `/reports/productivity`
+- [x] Default view loads without error; table shows active developers
+- [x] Each preset changes totals predictably (compare narrow vs All Time on seeded data)
+- [x] Custom range matches expected inclusion (same day boundary behavior as Actuals report)
+- [x] Sorting: click each sortable column; order toggles and data looks correct
+- [x] Tooltip on **Avg Hours/Active Day** matches spec wording
+- [x] Empty state appears when range has no entries (use extreme past/future custom range if needed)
+- [x] Spot-check: project count / task count match distinct projects/tasks from time entries in range (manual SQL or UI cross-check on one developer)
 
 **UI Location:** `/reports/productivity`
 
 **Implementation notes (B.A.):**
 - Reuse `Modal` only if needed; this page is primarily a filter bar + table (like reports list + detail pattern).
-- After implementation, update `van/qa.md` test registry if new automated tests are added.
+- **Automated tests:** `tests/report-developer-productivity.test.ts` — service/router integration on shared DB with `finally` cleanup (see **`van/qa.md`** registry).
 
 ---
 

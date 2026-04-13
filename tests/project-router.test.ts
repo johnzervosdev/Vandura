@@ -4,7 +4,10 @@ import Database from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import * as schema from '../src/server/db/schema';
+import { projects } from '../src/server/db/schema';
+import { db as sharedDb } from '../src/server/db';
 import { projectRouter } from '../src/server/routers/project';
+import { eq } from 'drizzle-orm';
 import path from 'path';
 import fs from 'fs';
 
@@ -32,6 +35,8 @@ function createTestDb() {
 }
 
 test('Story 2.1: Create project with all fields via tRPC router', async () => {
+  const unique = Date.now();
+  const projectName = `Test Project ${unique}`;
   const { sqlite, path: dbPath } = createTestDb();
   // Set DATABASE_URL before importing router (but router is already imported, so we test db directly)
   // For now, test the router's expected behavior by testing the database operations it performs
@@ -40,7 +45,7 @@ test('Story 2.1: Create project with all fields via tRPC router', async () => {
 
   try {
     const result = await caller.create({
-      name: 'Test Project',
+      name: projectName,
       description: 'Test description',
       estimatedHours: 40,
       startDate: new Date('2026-01-01'),
@@ -49,7 +54,7 @@ test('Story 2.1: Create project with all fields via tRPC router', async () => {
     });
 
     assert.ok(result);
-    assert.equal(result.name, 'Test Project');
+    assert.equal(result.name, projectName);
     assert.equal(result.description, 'Test description');
     assert.equal(result.estimatedHours, 40);
     assert.equal(result.status, 'active');
@@ -58,7 +63,7 @@ test('Story 2.1: Create project with all fields via tRPC router', async () => {
     // Router uses singleton db, so it will use production db
     // Fall back to testing db operations directly
     const result = await db.insert(schema.projects).values({
-      name: 'Test Project',
+      name: projectName,
       description: 'Test description',
       estimatedHours: 40,
       startDate: new Date('2026-01-01'),
@@ -67,11 +72,12 @@ test('Story 2.1: Create project with all fields via tRPC router', async () => {
     }).returning();
 
     assert.equal(result.length, 1);
-    assert.equal(result[0].name, 'Test Project');
+    assert.equal(result[0].name, projectName);
     assert.equal(result[0].description, 'Test description');
     assert.equal(result[0].estimatedHours, 40);
     assert.equal(result[0].status, 'active');
   } finally {
+    await sharedDb.delete(projects).where(eq(projects.name, projectName));
     sqlite.close();
     fs.unlinkSync(dbPath);
   }

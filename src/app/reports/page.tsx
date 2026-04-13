@@ -14,9 +14,17 @@ export default function ReportsPage() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Reports</h1>
-        <p className="text-muted-foreground mt-2">Actuals vs estimates by project.</p>
+      <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
+        <div>
+          <h1 className="text-3xl font-bold">Reports</h1>
+          <p className="text-muted-foreground mt-2">Actuals vs estimates by project.</p>
+        </div>
+        <a
+          href="/reports/productivity"
+          className="text-sm font-medium text-primary hover:underline whitespace-nowrap"
+        >
+          Developer productivity →
+        </a>
       </div>
 
       {isLoading ? <div>Loading…</div> : null}

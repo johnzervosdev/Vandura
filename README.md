@@ -137,7 +137,7 @@ Automated checks run in GitHub on every push to keep the project stable.
 | Command | What it does |
 |---------|-------------|
 | `npm run dev` | Start the development server on [localhost:3000](http://localhost:3000) |
-| `npm test` | Run the full test suite |
+| `npm test` | Run the full test suite (`scripts/run-tests.mjs`; see `van/qa.md` for the file registry and shared-DB cleanup conventions) |
 | `npm run type-check` | Run the TypeScript compiler without emitting — catches type errors across the whole project |
 | `npm run build` | Production build |
 | `npm run db:migrate` | Apply pending database migrations |

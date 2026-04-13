@@ -2,17 +2,20 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as XLSX from 'xlsx';
 import { excelParser } from '../src/server/services/ExcelParser';
+import { cleanupParserImportSideEffects } from './parser-db-cleanup';
 
 test('ExcelParser imports weekly grid (Mon-Fri) using Week Ending date + Name label', async () => {
   const unique = Date.now();
+  const developerName = `QA Dev ${unique}`;
+  const projectName = 'QA Project Grid';
 
   // Week ending Friday 2024-04-05 (Mon = 2024-04-01)
   const aoa = [
-    ['Name:', `QA Dev ${unique}`],
+    ['Name:', developerName],
     ['Week Ending:', '2024-04-05'],
     [],
     ['Project', 'Task', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Total'],
-    ['QA Project Grid', 'Build parser', 1, 0, 0.25, '', 2, 3.25],
+    [projectName, 'Build parser', 1, 0, 0.25, '', 2, 3.25],
   ];
 
   const ws = XLSX.utils.aoa_to_sheet(aoa);
@@ -20,38 +23,44 @@ test('ExcelParser imports weekly grid (Mon-Fri) using Week Ending date + Name la
   XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
   const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }) as Buffer;
 
-  const result = await excelParser.parseFile(buf);
+  try {
+    const result = await excelParser.parseFile(buf);
 
-  assert.equal(result.errors.length, 0);
-  assert.equal(result.detectedDeveloper, `QA Dev ${unique}`);
-  // Mon(1h) + Wed(0.25h) + Fri(2h) => 3 entries
-  assert.equal(result.entries.length, 3);
-  assert.equal(result.preview.length, 3);
+    assert.equal(result.errors.length, 0);
+    assert.equal(result.detectedDeveloper, developerName);
+    // Mon(1h) + Wed(0.25h) + Fri(2h) => 3 entries
+    assert.equal(result.entries.length, 3);
+    assert.equal(result.preview.length, 3);
 
-  // All preview rows should carry sheet-level developer/project/task
-  for (const p of result.preview) {
-    assert.equal(p.developer, `QA Dev ${unique}`);
-    assert.equal(p.project, 'QA Project Grid');
-    assert.equal(p.task, 'Build parser');
-  }
+    // All preview rows should carry sheet-level developer/project/task
+    for (const p of result.preview) {
+      assert.equal(p.developer, developerName);
+      assert.equal(p.project, projectName);
+      assert.equal(p.task, 'Build parser');
+    }
 
-  // Ensure durations are multiples of 15 minutes
-  for (const e of result.entries) {
-    assert.equal(e.durationMinutes % 15, 0);
+    // Ensure durations are multiples of 15 minutes
+    for (const e of result.entries) {
+      assert.equal(e.durationMinutes % 15, 0);
+    }
+  } finally {
+    await cleanupParserImportSideEffects(developerName, projectName);
   }
 });
 
 test('ExcelParser weekly grid conversion is not blocked by a generic Hours column', async () => {
   const unique = Date.now();
+  const developerName = `QA Dev ${unique}`;
+  const projectName = 'QA Project Grid';
 
   // This mirrors the weekly-grid "template" shape where a generic Hours/Total Hours column exists.
   // We should still infer per-day dates from Week Ending and generate row-based entries.
   const aoa = [
-    ['Name:', `QA Dev ${unique}`],
+    ['Name:', developerName],
     ['Week Ending:', '2024-04-05'],
     [],
     ['Project', 'Task', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Hours'],
-    ['QA Project Grid', 'Build parser', 1, 0, 0.25, '', 2, 3.25],
+    [projectName, 'Build parser', 1, 0, 0.25, '', 2, 3.25],
   ];
 
   const ws = XLSX.utils.aoa_to_sheet(aoa);
@@ -59,15 +68,19 @@ test('ExcelParser weekly grid conversion is not blocked by a generic Hours colum
   XLSX.utils.book_append_sheet(wb, ws, 'Sheet1');
   const buf = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' }) as Buffer;
 
-  const result = await excelParser.parseFile(buf);
+  try {
+    const result = await excelParser.parseFile(buf);
 
-  assert.equal(result.errors.length, 0);
-  assert.equal(result.detectedDeveloper, `QA Dev ${unique}`);
-  assert.equal(result.entries.length, 3);
+    assert.equal(result.errors.length, 0);
+    assert.equal(result.detectedDeveloper, developerName);
+    assert.equal(result.entries.length, 3);
 
-  for (const e of result.entries) {
-    assert.ok(e.startTime instanceof Date);
-    assert.equal(Number.isNaN(e.startTime.getTime()), false);
+    for (const e of result.entries) {
+      assert.ok(e.startTime instanceof Date);
+      assert.equal(Number.isNaN(e.startTime.getTime()), false);
+    }
+  } finally {
+    await cleanupParserImportSideEffects(developerName, projectName);
   }
 });
 

@@ -4,7 +4,10 @@ import Database from 'better-sqlite3';
 import { drizzle } from 'drizzle-orm/better-sqlite3';
 import { migrate } from 'drizzle-orm/better-sqlite3/migrator';
 import * as schema from '../src/server/db/schema';
+import { tasks } from '../src/server/db/schema';
+import { db as sharedDb } from '../src/server/db';
 import { taskRouter } from '../src/server/routers/task';
+import { eq } from 'drizzle-orm';
 import path from 'path';
 import fs from 'fs';
 
@@ -23,46 +26,50 @@ function createTestDb() {
 }
 
 test('Story 2.2: Create task with all fields via tRPC router', async () => {
+  const unique = Date.now();
+  const projectName = `Task Project ${unique}`;
+  const taskName = `Task A ${unique}`;
   const { db, sqlite, path: dbPath } = createTestDb();
   const caller = taskRouter.createCaller({ headers: new Headers() });
 
   try {
     const [project] = await db.insert(schema.projects).values({
-      name: 'Task Project',
+      name: projectName,
       status: 'active',
     }).returning();
 
     const result = await caller.create({
       projectId: project.id,
-      name: 'Task A',
+      name: taskName,
       description: 'Task description',
       estimatedHours: 12,
       status: 'pending',
     });
 
     assert.ok(result);
-    assert.equal(result.name, 'Task A');
+    assert.equal(result.name, taskName);
     assert.equal(result.description, 'Task description');
     assert.equal(result.estimatedHours, 12);
     assert.equal(result.status, 'pending');
     assert.equal(result.projectId, project.id);
   } catch (error) {
     const [project] = await db.insert(schema.projects).values({
-      name: 'Task Project',
+      name: projectName,
       status: 'active',
     }).returning();
 
     const result = await db.insert(schema.tasks).values({
       projectId: project.id,
-      name: 'Task A',
+      name: taskName,
       description: 'Task description',
       estimatedHours: 12,
       status: 'pending',
     }).returning();
 
     assert.equal(result.length, 1);
-    assert.equal(result[0].name, 'Task A');
+    assert.equal(result[0].name, taskName);
   } finally {
+    await sharedDb.delete(tasks).where(eq(tasks.name, taskName));
     sqlite.close();
     fs.unlinkSync(dbPath);
   }
