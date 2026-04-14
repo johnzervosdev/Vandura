@@ -1,6 +1,6 @@
 # Project Vandura — User Stories & Acceptance Criteria
 
-**Last Updated:** 2026-04-12  
+**Last Updated:** 2026-04-12 (Story 3.3 scope expanded)  
 **Owner:** B.A. (maintains ACs + implementation notes) | Murdock (updates QA checklists)
 
 > **Navigation:** [`van/project.md`](project.md) — project dashboard | [`van/qa.md`](qa.md) — test plans & results
@@ -371,16 +371,39 @@
 ---
 
 ### Story 3.3: Excel Format Docs (P1) — 3-4h
-**Status:** Not Started
+**Status:** 🚧 In Progress  
+**Owner:** B.A.
+
+**Decisions (pre-made):**
+- **Placement:** Add a dedicated documentation block on `/timesheets/upload` **above** the file picker (after the page title/subtitle). Keep the existing **Important** card; merge or dedupe so duplicate/timezone messaging is not repeated three times — one clear **Format** section + one **Important** callout is enough.
+- **Example table:** Markdown-style table in the UI (HTML `<table>` or grid) showing **canonical** column headers aligned with the parser: `Developer`, `Project`, `Task`, `Date`, `Start Time`, `End Time`, `Duration (min)`, `Notes` (or the exact aliases the parser accepts — note "headers are matched flexibly, case-insensitive").
+- **Template file:** Static asset at **`public/timesheet-template.xlsx`**. Minimum content: header row with those columns + one example data row (valid 15‑min duration). Link text e.g. **Download blank template (.xlsx)** — opens in new tab or downloads per browser default.
+- **Date/time formats (on-page doc):** Summarize what `ExcelParser` supports — at minimum document: **ISO date `YYYY-MM-DD`** (local midnight), **Excel serial dates** (numeric cells), common **slash dates** (`M/D/YYYY` / `D/M/YYYY` where implemented), and that **time** fields accept typical `HH:MM` style values as implemented in the parser. Point to **`VANDURA_ARCHITECTURE.md`** or **`README.md` Excel section** for readers who want the short version — the upload page should be self-contained for a normal user.
+- **Exact strings (must appear somewhere on the page):**
+  - Timezone: **"All times are treated as local machine time (no timezone conversion)."** (may shorten slightly if the existing shorter line is kept — meaning must match.)
+  - Duplicates: **"Importing the same file twice will create duplicate entries."** (already present — ensure it remains visible after layout changes.)
+- **No new automated tests required** for copy/layout unless B.A. adds a trivial snapshot; Murdock verifies manually.
 
 **Acceptance Criteria:**
-- [ ] Upload page shows example Excel format table
-- [ ] Downloadable template file link (`public/timesheet-template.xlsx`)
-- [ ] Documentation of supported date/time formats
-- [ ] Timezone handling explanation: "All times treated as local machine time"
-- [ ] Duplicate warning: "Importing the same file twice will create duplicates"
+
+*Upload page (`/timesheets/upload`):*
+- [ ] **Format / example:** Visible table illustrating expected columns (and note that flexible header matching applies)
+- [ ] **Template:** Working link to `/timesheet-template.xlsx` (file committed under `public/`)
+- [ ] **Date & time:** Short subsection listing supported date/time representations (not exhaustive code dump — user-facing bullets)
+- [ ] **Timezone** sentence present (see Decisions)
+- [ ] **Duplicate warning** present (see Decisions)
+
+**QA Checklist (Murdock):**
+- [ ] `/timesheets/upload` loads; new doc section is readable without horizontal scroll on mobile width (sm breakpoint)
+- [ ] Template link downloads/opens a valid `.xlsx` with headers + sample row
+- [ ] Importing the template file (after parse) produces ≥1 preview row or clear validation — no false confidence if sample row is intentionally minimal
+- [ ] Duplicate + timezone copy still visible and accurate
+- [ ] No duplicate paragraphs saying the same thing in three places (consolidation check)
 
 **UI Location:** `/timesheets/upload` (documentation section)
+
+**Implementation notes (B.A.):**
+- Generating `timesheet-template.xlsx`: use the same `xlsx` dependency as `ExcelParser`, or add a one-off script under `scripts/` that writes `public/timesheet-template.xlsx` — either commit the binary or document `npm run …` to regenerate. Prefer **committed binary** in `public/` so CI and clones work out of the box.
 
 ---
 
@@ -446,4 +469,4 @@
 ---
 
 **End of Document**  
-Last Updated: 2026-04-12 by Hannibal (Story 4.3 scope + DoR for B.A./Murdock)
+Last Updated: 2026-04-12 by Hannibal (Story 3.3 DoR — Excel format docs + template)
