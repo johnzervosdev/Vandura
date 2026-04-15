@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { trpc } from '@/lib/trpc-client';
+import type { DeveloperListRow } from '@/lib/router-types';
 import { Modal } from '@/components/Modal';
 import {
   DeveloperForm,
@@ -20,7 +21,10 @@ export default function DevelopersPage() {
   const [activeOnly, setActiveOnly] = useState(true);
   const [toast, setToast] = useState<string | null>(null);
 
-  const devsQuery = trpc.developer.list.useQuery({ activeOnly: false });
+  const devsQuery = trpc.developer.list.useQuery(
+    { activeOnly: false },
+    { meta: { suppressGlobalError: true } }
+  );
 
   const [createOpen, setCreateOpen] = useState(false);
   const [editDev, setEditDev] = useState<
@@ -43,7 +47,7 @@ export default function DevelopersPage() {
       setToast('Developer created.');
       setCreateOpen(false);
     },
-    onError: (e) => setToast(`Create failed: ${e.message}`),
+    meta: { suppressGlobalToast: true },
   });
 
   const updateDeveloper = trpc.developer.update.useMutation({
@@ -53,10 +57,13 @@ export default function DevelopersPage() {
       setEditDev(null);
       setConfirmDeactivate(null);
     },
-    onError: (e) => setToast(`Update failed: ${e.message}`),
+    meta: { suppressGlobalToast: true },
   });
 
-  const allDevelopers = devsQuery.data ?? [];
+  const allDevelopers = useMemo(
+    () => (devsQuery.data ?? []) as DeveloperListRow[],
+    [devsQuery.data]
+  );
   const visibleDevelopers = useMemo(
     () => (activeOnly ? allDevelopers.filter((d) => d.isActive) : allDevelopers),
     [activeOnly, allDevelopers]
@@ -153,7 +160,16 @@ export default function DevelopersPage() {
 
           {devsQuery.isLoading ? <div className="text-sm text-muted-foreground">Loading…</div> : null}
           {devsQuery.error ? (
-            <div className="text-sm text-destructive">Failed to load developers: {devsQuery.error.message}</div>
+            <div className="text-sm text-destructive flex flex-wrap items-center gap-2">
+              <span>Failed to load developers: {devsQuery.error.message}</span>
+              <button
+                type="button"
+                className="rounded-md border px-2 py-0.5 text-xs text-foreground"
+                onClick={() => devsQuery.refetch()}
+              >
+                Retry
+              </button>
+            </div>
           ) : null}
         </div>
       </div>
@@ -177,7 +193,7 @@ export default function DevelopersPage() {
                 </td>
               </tr>
             ) : (
-              visibleDevelopers.map((d) => (
+              visibleDevelopers.map((d: DeveloperListRow) => (
                 <tr key={d.id} className="border-b last:border-b-0">
                   <td className="py-3 px-4 font-medium">{d.name}</td>
                   <td className="py-3 px-4">{d.email ?? ''}</td>

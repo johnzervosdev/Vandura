@@ -9,6 +9,7 @@ import {
   type TaskStatus,
 } from '../../_components/TaskForm';
 import { Modal } from '@/components/Modal';
+import type { TaskByProjectRow } from '@/lib/router-types';
 
 export function TasksSection({
   projectId,
@@ -23,9 +24,10 @@ export function TasksSection({
     data: tasks,
     isLoading: tasksLoading,
     error: tasksError,
+    refetch: refetchTasks,
   } = trpc.task.listByProject.useQuery(
     { projectId },
-    { enabled: Number.isFinite(projectId) }
+    { enabled: Number.isFinite(projectId), meta: { suppressGlobalError: true } }
   );
 
   const [toast, setToast] = useState<string | null>(null);
@@ -48,16 +50,26 @@ export function TasksSection({
       setToast('Task created.');
       setCreateOpen(false);
     },
-    onError: (e) => setToast(`Create failed: ${e.message}`),
+    meta: { suppressGlobalToast: true },
   });
 
-  const updateTask = trpc.task.update.useMutation({
+  /** Modal edit: inline `submitError` + suppress global toast (avoid double-notify). */
+  const updateTaskFromModal = trpc.task.update.useMutation({
     onSuccess: async () => {
       await utils.task.listByProject.invalidate({ projectId });
       setToast('Task updated.');
       setEditTask(null);
     },
-    onError: (e) => setToast(`Update failed: ${e.message}`),
+    meta: { suppressGlobalToast: true },
+  });
+
+  /** Table status dropdown: no modal error region → global toast on failure (Story 5.1). */
+  const updateTaskInline = trpc.task.update.useMutation({
+    onSuccess: async () => {
+      await utils.task.listByProject.invalidate({ projectId });
+      setToast('Task updated.');
+      setEditTask(null);
+    },
   });
 
   const deleteTask = trpc.task.delete.useMutation({
@@ -66,10 +78,9 @@ export function TasksSection({
       setToast('Task deleted.');
       setConfirmDelete(null);
     },
-    onError: (e) => setToast(`Delete failed: ${e.message}`),
   });
 
-  const taskRows = tasks ?? [];
+  const taskRows = (tasks ?? []) as TaskByProjectRow[];
   const taskCount = useMemo(() => taskRows.length, [taskRows.length]);
 
   useEffect(() => {
@@ -105,7 +116,16 @@ export function TasksSection({
         <div className="p-6">
           {tasksLoading ? <div>Loading…</div> : null}
           {tasksError ? (
-            <div className="text-destructive text-sm">Failed to load tasks: {tasksError.message}</div>
+            <div className="flex flex-wrap items-center gap-2 text-destructive text-sm">
+              <span>Failed to load tasks: {tasksError.message}</span>
+              <button
+                type="button"
+                className="rounded-md border border-destructive/40 px-2 py-0.5 text-xs text-foreground"
+                onClick={() => refetchTasks()}
+              >
+                Retry
+              </button>
+            </div>
           ) : null}
 
           {!tasksLoading && taskRows.length === 0 ? (
@@ -124,7 +144,7 @@ export function TasksSection({
                   </tr>
                 </thead>
                 <tbody>
-                  {taskRows.map((t) => (
+                  {taskRows.map((t: TaskByProjectRow) => (
                     <tr key={t.id} className="border-b last:border-b-0">
                       <td className="py-3 px-4">
                         <div className="font-medium">{t.name}</div>
@@ -137,12 +157,12 @@ export function TasksSection({
                           className="rounded-md border bg-background px-2 py-1 text-sm"
                           value={t.status}
                           onChange={(e) =>
-                            updateTask.mutate({
+                            updateTaskInline.mutate({
                               id: t.id,
                               data: { status: e.target.value as TaskStatus },
                             })
                           }
-                          disabled={updateTask.isPending}
+                          disabled={updateTaskInline.isPending}
                         >
                           <option value="pending">pending</option>
                           <option value="in-progress">in-progress</option>
@@ -230,11 +250,11 @@ export function TasksSection({
               status: editTask.status,
             }}
             submitLabel="Save Changes"
-            isSubmitting={updateTask.isPending}
-            submitError={updateTask.error?.message ?? null}
+            isSubmitting={updateTaskFromModal.isPending}
+            submitError={updateTaskFromModal.error?.message ?? null}
             onCancel={() => setEditTask(null)}
             onSubmit={async (values: TaskFormSubmitValues) => {
-              await updateTask.mutateAsync({ id: editTask.id, data: values });
+              await updateTaskFromModal.mutateAsync({ id: editTask.id, data: values });
             }}
           />
         </Modal>

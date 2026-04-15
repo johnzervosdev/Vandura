@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import Link from 'next/link';
 import { Inter } from 'next/font/google';
 import './globals.css';
 import { Providers } from './providers';
@@ -29,11 +30,22 @@ export default function RootLayout({
                       Time Tracking & Actuals
                     </span>
                   </div>
-                  <nav className="flex gap-4">
-                    <a href="/" className="hover:text-primary">Dashboard</a>
-                    <a href="/projects" className="hover:text-primary">Projects</a>
-                    <a href="/timesheets" className="hover:text-primary">Timesheets</a>
-                    <a href="/reports" className="hover:text-primary">Reports</a>
+                  <nav className="flex flex-wrap gap-4">
+                    <Link href="/" className="hover:text-primary">
+                      Dashboard
+                    </Link>
+                    <Link href="/projects" className="hover:text-primary">
+                      Projects
+                    </Link>
+                    <Link href="/developers" className="hover:text-primary">
+                      Developers
+                    </Link>
+                    <Link href="/timesheets" className="hover:text-primary">
+                      Timesheets
+                    </Link>
+                    <Link href="/reports" className="hover:text-primary">
+                      Reports
+                    </Link>
                   </nav>
                 </div>
               </div>

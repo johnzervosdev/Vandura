@@ -4,6 +4,13 @@ import { useMemo, useState } from 'react';
 import { trpc } from '@/lib/trpc-client';
 import { Modal } from '@/components/Modal';
 import { type DatePreset, endOfDay, formatMinutesHumanReadable, getPresetRange, startOfDay } from '@/lib/date-utils';
+import type {
+  DeveloperListRow,
+  ProjectListRow,
+  TaskByProjectRow,
+  TimesheetListData,
+  TimesheetListEntry,
+} from '@/lib/router-types';
 
 export default function TimesheetsPage() {
   const utils = trpc.useUtils();
@@ -19,28 +26,42 @@ export default function TimesheetsPage() {
   const effectiveStartDate = startDate ? startOfDay(startDate) : undefined;
   const effectiveEndDate = endDate ? endOfDay(endDate) : undefined;
 
-  const { data, isLoading, error } = trpc.timesheet.list.useQuery({
-    projectId: filterProjectId,
-    developerId: filterDeveloperId,
-    startDate: effectiveStartDate,
-    endDate: effectiveEndDate,
-    limit,
-    offset,
-  });
+  const { data, isLoading, error, refetch } = trpc.timesheet.list.useQuery(
+    {
+      projectId: filterProjectId,
+      developerId: filterDeveloperId,
+      startDate: effectiveStartDate,
+      endDate: effectiveEndDate,
+      limit,
+      offset,
+    },
+    { meta: { suppressGlobalError: true } }
+  );
 
-  const allDevelopers = trpc.developer.list.useQuery({ activeOnly: false });
-  const activeDevelopers = trpc.developer.list.useQuery({ activeOnly: true });
-  const allProjects = trpc.project.list.useQuery();
-  const activeProjects = trpc.project.list.useQuery({ status: 'active' });
+  const allDevelopers = trpc.developer.list.useQuery(
+    { activeOnly: false },
+    { meta: { suppressGlobalError: true } }
+  );
+  const activeDevelopers = trpc.developer.list.useQuery(
+    { activeOnly: true },
+    { meta: { suppressGlobalError: true } }
+  );
+  const allProjects = trpc.project.list.useQuery(undefined, { meta: { suppressGlobalError: true } });
+  const activeProjects = trpc.project.list.useQuery(
+    { status: 'active' },
+    { meta: { suppressGlobalError: true } }
+  );
 
   const [createOpen, setCreateOpen] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [deleteOpen, setDeleteOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const listData = data as TimesheetListData | undefined;
+
   const selectedEntry = useMemo(() => {
-    if (!data || selectedId === null) return null;
-    return data.entries.find((e) => e.id === selectedId) ?? null;
-  }, [data, selectedId]);
+    if (!listData || selectedId === null) return null;
+    return listData.entries.find((e: TimesheetListEntry) => e.id === selectedId) ?? null;
+  }, [listData, selectedId]);
 
   const [formDeveloperId, setFormDeveloperId] = useState<number | undefined>(undefined);
   const [formProjectId, setFormProjectId] = useState<number | undefined>(undefined);
@@ -54,12 +75,21 @@ export default function TimesheetsPage() {
 
   const tasksByProject = trpc.task.listByProject.useQuery(
     { projectId: formProjectId ?? 0 },
-    { enabled: typeof formProjectId === 'number' && Number.isFinite(formProjectId) }
+    {
+      enabled: typeof formProjectId === 'number' && Number.isFinite(formProjectId),
+      meta: { suppressGlobalError: true },
+    }
   );
 
-  const createEntry = trpc.timesheet.create.useMutation();
-  const updateEntry = trpc.timesheet.update.useMutation();
-  const deleteEntry = trpc.timesheet.delete.useMutation();
+  const createEntry = trpc.timesheet.create.useMutation({
+    meta: { suppressGlobalToast: true },
+  });
+  const updateEntry = trpc.timesheet.update.useMutation({
+    meta: { suppressGlobalToast: true },
+  });
+  const deleteEntry = trpc.timesheet.delete.useMutation({
+    meta: { suppressGlobalToast: true },
+  });
 
   const durationOptions = useMemo(() => {
     const out: number[] = [];
@@ -93,7 +123,7 @@ export default function TimesheetsPage() {
   }
 
   function openEdit(id: number) {
-    const entry = data?.entries.find((e) => e.id === id);
+    const entry = listData?.entries.find((e: TimesheetListEntry) => e.id === id);
     if (!entry) return;
     clearForm();
     setSelectedId(id);
@@ -234,7 +264,7 @@ export default function TimesheetsPage() {
               }}
             >
               <option value="">All projects</option>
-              {(allProjects.data ?? []).map((p) => (
+              {(allProjects.data ?? []).map((p: ProjectListRow) => (
                 <option key={p.id} value={String(p.id)}>
                   {p.name}
                 </option>
@@ -254,7 +284,7 @@ export default function TimesheetsPage() {
               }}
             >
               <option value="">All developers</option>
-              {(allDevelopers.data ?? []).map((d) => (
+              {(allDevelopers.data ?? []).map((d: DeveloperListRow) => (
                 <option key={d.id} value={String(d.id)}>
                   {d.name}
                 </option>
@@ -307,9 +337,21 @@ export default function TimesheetsPage() {
       </div>
 
       {isLoading ? <div>Loading…</div> : null}
-      {error ? <div className="text-destructive">Failed to load entries: {error.message}</div> : null}
+      {error ? (
+        <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm">
+          <div className="font-medium text-destructive">Failed to load entries</div>
+          <div className="text-muted-foreground mt-1">{error.message}</div>
+          <button
+            type="button"
+            className="mt-2 inline-flex items-center rounded-md border px-3 py-1.5 text-xs"
+            onClick={() => refetch()}
+          >
+            Retry
+          </button>
+        </div>
+      ) : null}
 
-      {data ? (
+      {listData ? (
         <div className="rounded-lg border bg-card overflow-x-auto">
           <table className="w-full">
             <thead>
@@ -324,14 +366,14 @@ export default function TimesheetsPage() {
               </tr>
             </thead>
             <tbody className="text-sm">
-              {data.entries.length === 0 ? (
+              {listData.entries.length === 0 ? (
                 <tr>
                   <td className="py-6 px-4 text-muted-foreground" colSpan={7}>
                     No time entries found.
                   </td>
                 </tr>
               ) : (
-                data.entries.map((e) => (
+                listData.entries.map((e: TimesheetListEntry) => (
                   <tr key={e.id} className="border-b last:border-b-0">
                     <td className="py-3 px-4 whitespace-nowrap">
                       <div>{new Date(e.startTime).toLocaleDateString()}</div>
@@ -371,10 +413,11 @@ export default function TimesheetsPage() {
         </div>
       ) : null}
 
-      {data ? (
+      {listData ? (
         <div className="flex items-center justify-between text-sm text-muted-foreground">
           <div>
-            Showing {data.entries.length ? offset + 1 : 0}–{offset + data.entries.length} of {data.total}
+            Showing {listData.entries.length ? offset + 1 : 0}–{offset + listData.entries.length} of{' '}
+            {listData.total}
           </div>
           <div className="flex items-center gap-2">
             <button
@@ -388,7 +431,7 @@ export default function TimesheetsPage() {
             <button
               type="button"
               className="rounded-md border px-3 py-1.5 disabled:opacity-50"
-              disabled={!data.hasMore}
+              disabled={!listData.hasMore}
               onClick={() => setOffset((o) => o + limit)}
             >
               Next
@@ -425,11 +468,13 @@ export default function TimesheetsPage() {
                   onChange={(e) => setFormDeveloperId(e.target.value ? Number(e.target.value) : undefined)}
                 >
                   <option value="">Select developer…</option>
-                  {(activeDevelopers.data?.filter((d) => d.isActive) ?? []).map((d) => (
+                  {(activeDevelopers.data?.filter((d: DeveloperListRow) => d.isActive) ?? []).map(
+                    (d: DeveloperListRow) => (
                     <option key={d.id} value={String(d.id)}>
                       {d.name}
                     </option>
-                  ))}
+                  )
+                  )}
                 </select>
                 {submitAttempted && !formDeveloperId ? (
                   <div className="text-xs text-destructive">Developer is required.</div>
@@ -453,7 +498,7 @@ export default function TimesheetsPage() {
                   }}
                 >
                   <option value="">Select project…</option>
-                  {(activeProjects.data ?? []).map((p) => (
+                  {(activeProjects.data ?? []).map((p: ProjectListRow) => (
                     <option key={p.id} value={String(p.id)}>
                       {p.name}
                     </option>
@@ -475,7 +520,7 @@ export default function TimesheetsPage() {
                   disabled={!formProjectId || tasksByProject.isLoading}
                 >
                   <option value="">{formProjectId ? 'Select task…' : 'Select a project first…'}</option>
-                  {taskOptions.map((t) => (
+                  {taskOptions.map((t: TaskByProjectRow) => (
                     <option key={t.id} value={String(t.id)}>
                       {t.name}
                     </option>
@@ -594,11 +639,13 @@ export default function TimesheetsPage() {
                   onChange={(e) => setFormDeveloperId(e.target.value ? Number(e.target.value) : undefined)}
                 >
                   <option value="">Select developer…</option>
-                  {(activeDevelopers.data?.filter((d) => d.isActive) ?? []).map((d) => (
+                  {(activeDevelopers.data?.filter((d: DeveloperListRow) => d.isActive) ?? []).map(
+                    (d: DeveloperListRow) => (
                     <option key={d.id} value={String(d.id)}>
                       {d.name}
                     </option>
-                  ))}
+                  )
+                  )}
                 </select>
                 {submitAttempted && !formDeveloperId ? (
                   <div className="text-xs text-destructive">Developer is required.</div>
@@ -622,7 +669,7 @@ export default function TimesheetsPage() {
                   }}
                 >
                   <option value="">Select project…</option>
-                  {(activeProjects.data ?? []).map((p) => (
+                  {(activeProjects.data ?? []).map((p: ProjectListRow) => (
                     <option key={p.id} value={String(p.id)}>
                       {p.name}
                     </option>
@@ -644,7 +691,7 @@ export default function TimesheetsPage() {
                   disabled={!formProjectId || tasksByProject.isLoading}
                 >
                   <option value="">{formProjectId ? 'Select task…' : 'Select a project first…'}</option>
-                  {taskOptions.map((t) => (
+                  {taskOptions.map((t: TaskByProjectRow) => (
                     <option key={t.id} value={String(t.id)}>
                       {t.name}
                     </option>

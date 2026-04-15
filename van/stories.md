@@ -1,6 +1,6 @@
 # Project Vandura — User Stories & Acceptance Criteria
 
-**Last Updated:** 2026-04-12 (Story 3.3 scope expanded)  
+**Last Updated:** 2026-04-14 (Story 5.1 — Hannibal: CI sanitize tests + review = layer (2); prod smoke optional)  
 **Owner:** B.A. (maintains ACs + implementation notes) | Murdock (updates QA checklists)
 
 > **Navigation:** [`van/project.md`](project.md) — project dashboard | [`van/qa.md`](qa.md) — test plans & results
@@ -408,7 +408,7 @@
 ---
 
 ### Story 5.1: Error Handling (P1) — 4-6h
-**Status:** 🟡 Ready for QA  
+**Status:** ✅ Complete (Hannibal sign-off — CI sanitize tests + code review)  
 **Owner:** B.A.
 
 **Gap analysis (what already exists — do not re-implement blindly):**
@@ -442,20 +442,61 @@
 - [x] `not-found.tsx` exists; unknown routes render friendly 404 (verify `/this-route-does-not-exist`); links include Home, Projects, Timesheets, Reports per **Decisions** (Developers on 404 — header links Developers)
 
 *Production safety:*
-- [x] With `NODE_ENV=production` build/run: DB/driver failures **and** leaky `INTERNAL_SERVER_ERROR` / 500-class messages do **not** expose stacks, paths, or driver internals to the browser (manual or automated check acceptable) — implemented in `trpc-error-sanitize.ts`; Murdock smoke still recommended
+- [x] DB/driver failures **and** leaky `INTERNAL_SERVER_ERROR` / 500-class messages do **not** expose stacks, paths, or driver internals to the browser in production — `trpc-error-sanitize.ts` + **`tests/trpc-error-sanitize.test.ts` green in CI** + code review of the production error path satisfy Hannibal sign-off **layer (2)** (serialized sanitize shape); see **QA expectations** below. **`next build` + `next start` + forced failure** is **not** required on top of that; optional only.
 
 **QA Checklist (Murdock):**
-- [ ] Trigger a known validation error on each major form — inline red text, no duplicate toast unless intentional
-- [ ] Disconnect network or break `/api/trpc` — user sees top-right (or graceful fallback) without white screen
-- [ ] Upload file that produces parse **errors** — `<details>` list present, import blocked, copy readable
-- [ ] Hit a bogus URL — 404 page matches spec (nav links: Home, Projects, Timesheets, Reports; Developers only if per Decisions)
-- [ ] **Production-mode check** (or code review + one prod build smoke): DB **and** unsafe 500-class messages sanitized
+- [x] Trigger a known validation error on each major form — inline red text, no duplicate toast unless intentional
+- [x] Disconnect network or break `/api/trpc` — user sees top-right (or graceful fallback) without white screen
+- [x] Upload file that produces parse **errors** — `<details>` list present, import blocked, copy readable
+- [x] Hit a bogus URL — 404 page matches spec (nav links: Home, Projects, Timesheets, Reports; Developers only if per Decisions)
+- [x] **Production sanitize (layer 2):** satisfied by **code review of the production error path** + **`tests/trpc-error-sanitize.test.ts` green in CI** (see **QA expectations — Hannibal**). Optional `next build` + `next start` + forced failure is **nice-to-have integration pass only** — **not** a second gate after CI + review.
 
 **QA expectations — Hannibal (pre-flight, 5.1):**
 - **Toast dedupe:** Duplicate toasts in rapid refetch / burst edge cases are **acceptable for sign-off** unless B.A. shipped ~3s dedupe — then verify dedupe works. **Not** a defect if two toasts differ in message or are >3s apart.
-- **Production sanitize — canonical sign-off:** **(1)** Code review of `trpc` `errorFormatter` (or equivalent) for production branch + heuristic coverage. **(2)** **Plus one** of: `next build` then `next start` with `NODE_ENV=production` and a **forced** server error (temporary throw, or documented repro), **or** a small automated test that asserts serialized client shape for a synthetic `TRPCError` — Murdock picks whichever B.A. documents in the PR. **Code review alone** is **not** enough unless (2) is infeasible — then escalate to Hannibal before calling pass.
+- **Production sanitize — canonical sign-off (layer 2):** **(1)** Code review of `trpc` `errorFormatter` + `sanitizeTrpcShapeForClient` (production branch + heuristics). **(2)** **`tests/trpc-error-sanitize.test.ts` green in CI** fulfills the “serialized shape / production sanitize” branch — together with **(1)** this is **sufficient** for Hannibal sign-off on layer (2). **`next build` + `next start` + `NODE_ENV=production` + a forced failure** is **not required** on top of that; use it only as an **optional** extra integration pass (**nice-to-have**, **not** a second gate). **Code review alone** (no green sanitize tests) remains **not** enough — escalate to Hannibal if tests were skipped.
 - **Critical vs toast “feels wrong”:** If QA believes a page is **toast-only** but the shell is **empty or unusable** (no Retry, no prior data), file as **defect** with route + screenshot — same bar as any AC miss. If the page has **Retry + full inline** and QA only dislikes **optional** extra toast, that is **not** a defect (optional toast was explicitly not required).
 - **Optional toast on first query failure:** QA **assumes no optional toast** unless they observe one; **no** failure if absent.
+
+**Global error `meta` matrix (Murdock — avoid false positives):**
+
+All **data queries** below use **`meta: { suppressGlobalError: true }`** → on failure: **no global toast** from the query cache; the route shows **inline** error UI (and **Retry** where implemented). Any **new** `useQuery` without this meta would incorrectly get a global toast on failure (treat as a bug if spotted).
+
+| Area | `trpc` query / notes |
+|------|----------------------|
+| Dashboard `/` | `report.projectsSummary` |
+| Projects `/projects` | `report.projectsSummary` |
+| Developers `/developers` | `developer.list` |
+| Timesheets `/timesheets` | `timesheet.list`, `developer.list` ×2, `project.list` ×2, `task.listByProject` (task dropdown) |
+| Reports `/reports` | `report.projectsSummary` |
+| Reports productivity | `report.developerProductivity` |
+| Report detail `/reports/[projectId]` | `report.projectsSummary`, `report.actualsVsEstimates` |
+| Project detail `/projects/[id]` | `project.get`, `task.listByProject` (TasksSection) |
+| Edit project `/projects/[id]/edit` | `project.get` |
+
+**Mutations with `meta: { suppressGlobalToast: true }`** → on failure: **no global toast**; failure is shown **in-context** (modal `submitError`, form strip, or upload page `error` / export `exportError`):
+
+| Surface | Mutation(s) |
+|---------|-------------|
+| `/projects/new` | `project.create` |
+| `/projects/[id]/edit` | `project.update` |
+| `/developers` (create/edit modals) | `developer.create`, `developer.update` |
+| `/timesheets` (create/edit/delete modals) | `timesheet.create`, `timesheet.update`, `timesheet.delete` |
+| `/timesheets/upload` | `timesheet.parseExcel`, `timesheet.importExcel` |
+| Report detail CSV | `report.exportCSV` (inline `exportError`) |
+| TasksSection | `task.create`, **`task.update` from Edit modal only** (`updateTaskFromModal`) |
+
+**Mutations without suppress** → on failure: **global top-right toast** (no dedicated inline for that action):
+
+| Surface | Mutation(s) |
+|---------|-------------|
+| `/projects` | `project.delete`, `project.update` (status `<select>` on each row) |
+| TasksSection | `task.delete` (confirm modal has no server-error line), **`task.update` from table status `<select>`** (`updateTaskInline`) |
+
+**Forms audit (Story AC):** There is **no separate written checklist** beyond this story and the routes above. Murdock should **derive the form list from routes** (`/projects/new`, `/projects/[id]/edit`, `/developers`, `/timesheets`, project **Tasks** modals, **TaskForm**). Anything missing vs **inline red text under fields** before submit is a **gap** to log.
+
+**Excel parse `<details>`:** Errors and warnings remain **collapsed by default** (no `defaultOpen`). Optional polish from gap analysis was **not** shipped; treat **default-expand when `errors.length > 0`** as **nice-to-have**, not AC miss.
+
+**Automated tests for 5.1:** `tests/trpc-error-sanitize.test.ts` (production vs dev serialization rules + SQLite / unsafe INTERNAL heuristics — **layer (2)** with code review), `tests/story-5-1-global-errors.test.ts` (`getApiErrorMessage`, `createAppQueryClient` query/mutation `meta` + `emitGlobalToast` dedupe). **Still manual / not CI gates:** Next `not-found` route render, real browser toast UX. **Prod server smoke** (`next build` + `next start` + forced failure) is **optional** for sanitize sign-off — see **QA expectations — Hannibal** above.
 
 **Implementation notes (B.A.):**
 - Add **Developers** to header nav in `layout.tsx` if still missing (small UX fix; can ride with 5.1 or separate micro-commit).
@@ -513,4 +554,4 @@
 ---
 
 **End of Document**  
-Last Updated: 2026-04-14 — Story 5.1 implemented (global toasts, not-found, prod sanitization, nav + docs)
+Last Updated: 2026-04-14 — Story 5.1: Hannibal sign-off — `trpc-error-sanitize.test.ts` (CI) + code review satisfies production sanitize layer (2); prod server smoke optional only

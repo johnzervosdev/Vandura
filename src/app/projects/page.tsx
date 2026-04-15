@@ -1,8 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { trpc } from '@/lib/trpc-client';
+import type { ProjectSummaryRow } from '@/lib/router-types';
 import { Modal } from '@/components/Modal';
 
 export default function ProjectsPage() {
@@ -12,7 +14,9 @@ export default function ProjectsPage() {
   const updated = searchParams.get('updated');
   const deleted = searchParams.get('deleted');
 
-  const { data: summaries, isLoading, error } = trpc.report.projectsSummary.useQuery();
+  const { data: summaries, isLoading, error, refetch } = trpc.report.projectsSummary.useQuery(undefined, {
+    meta: { suppressGlobalError: true },
+  });
 
   const [toast, setToast] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState<{
@@ -34,7 +38,6 @@ export default function ProjectsPage() {
       setConfirmDelete(null);
       setToast('Project deleted successfully.');
     },
-    onError: (e) => setToast(`Delete failed: ${e.message}`),
   });
 
   const updateProject = trpc.project.update.useMutation({
@@ -42,10 +45,9 @@ export default function ProjectsPage() {
       await utils.report.projectsSummary.invalidate();
       setToast('Status updated.');
     },
-    onError: (e) => setToast(`Update failed: ${e.message}`),
   });
 
-  const rows = summaries ?? [];
+  const rows = (summaries ?? []) as ProjectSummaryRow[];
 
   return (
     <div className="space-y-8">
@@ -56,12 +58,12 @@ export default function ProjectsPage() {
             Manage projects and track estimated vs actual hours.
           </p>
         </div>
-        <a
+        <Link
           href="/projects/new"
           className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-primary-foreground"
         >
           New Project
-        </a>
+        </Link>
       </div>
 
       {toast ? (
@@ -84,7 +86,19 @@ export default function ProjectsPage() {
 
         <div className="p-6">
           {isLoading ? <div>Loading…</div> : null}
-          {error ? <div className="text-destructive">Failed to load: {error.message}</div> : null}
+          {error && !isLoading ? (
+            <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm">
+              <div className="font-medium text-destructive">Failed to load projects</div>
+              <div className="text-muted-foreground mt-1">{error.message}</div>
+              <button
+                type="button"
+                className="mt-2 inline-flex items-center rounded-md border px-3 py-1.5 text-xs"
+                onClick={() => refetch()}
+              >
+                Retry
+              </button>
+            </div>
+          ) : null}
 
           {rows.length === 0 && !isLoading ? (
             <div className="text-muted-foreground">No projects yet. Create one to get started.</div>

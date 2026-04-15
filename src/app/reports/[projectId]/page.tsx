@@ -1,8 +1,10 @@
 'use client';
 
+import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { useParams } from 'next/navigation';
 import { trpc } from '@/lib/trpc-client';
+import type { ProjectSummaryRow } from '@/lib/router-types';
 import { type DatePreset, endOfDay, getPresetRange, startOfDay } from '@/lib/date-utils';
 
 function downloadTextFile(filename: string, content: string, mime = 'text/plain') {
@@ -25,7 +27,10 @@ export default function ProjectReportPage() {
   const projectId = Number(rawProjectId);
   const enabled = Number.isFinite(projectId);
 
-  const projectsSummary = trpc.report.projectsSummary.useQuery(undefined, { staleTime: 30_000 });
+  const projectsSummary = trpc.report.projectsSummary.useQuery(undefined, {
+    staleTime: 30_000,
+    meta: { suppressGlobalError: true },
+  });
 
   const [preset, setPreset] = useState<DatePreset>('All Time');
   const [startDate, setStartDate] = useState<Date | undefined>(undefined);
@@ -34,17 +39,19 @@ export default function ProjectReportPage() {
   const effectiveStartDate = startDate ? startOfDay(startDate) : undefined;
   const effectiveEndDate = endDate ? endOfDay(endDate) : undefined;
 
-  const { data, isLoading, error } = trpc.report.actualsVsEstimates.useQuery(
+  const { data, isLoading, error, refetch } = trpc.report.actualsVsEstimates.useQuery(
     {
       projectId,
       startDate: effectiveStartDate,
       endDate: effectiveEndDate,
       groupBy: 'task',
     },
-    { enabled }
+    { enabled, meta: { suppressGlobalError: true } }
   );
 
-  const exportCsv = trpc.report.exportCSV.useMutation();
+  const exportCsv = trpc.report.exportCSV.useMutation({
+    meta: { suppressGlobalToast: true },
+  });
   const [exportError, setExportError] = useState<string | null>(null);
 
   const [sortKey, setSortKey] = useState<
@@ -128,9 +135,9 @@ export default function ProjectReportPage() {
           >
             {exportCsv.isPending ? 'Exporting…' : 'Export CSV'}
           </button>
-          <a href="/reports" className="text-sm text-muted-foreground hover:underline">
+          <Link href="/reports" className="text-sm text-muted-foreground hover:underline">
             Back to Reports
-          </a>
+          </Link>
         </div>
       </div>
 
@@ -146,7 +153,7 @@ export default function ProjectReportPage() {
                 if (next) window.location.href = `/reports/${next}`;
               }}
             >
-              {projectsSummary.data?.map((p) => (
+              {projectsSummary.data?.map((p: ProjectSummaryRow) => (
                 <option key={p.projectId} value={String(p.projectId)}>
                   {p.projectName}
                 </option>
@@ -208,6 +215,13 @@ export default function ProjectReportPage() {
         <div className="rounded-md border border-destructive/40 bg-destructive/10 p-3 text-sm">
           <div className="font-medium text-destructive">Failed to load report</div>
           <div className="text-muted-foreground mt-1">{error.message}</div>
+          <button
+            type="button"
+            className="mt-2 inline-flex items-center rounded-md border px-3 py-1.5 text-xs"
+            onClick={() => refetch()}
+          >
+            Retry
+          </button>
         </div>
       ) : null}
       {exportError ? (

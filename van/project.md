@@ -1,8 +1,8 @@
 # Project Vandura — Project Dashboard
 
-**Last Updated:** 2026-04-12  
+**Last Updated:** 2026-04-14  
 **Milestone:** M1 - MVP Showcase  
-**Status:** Phase A In Progress
+**Status:** Phase B — Story **5.2** next (README / screenshots / architecture review)
 
 > **Navigation:** This is the entry point. Read this first for project context.  
 > Story details → [`van/stories.md`](stories.md) | QA strategy & results → [`van/qa.md`](qa.md)
@@ -80,6 +80,7 @@
 - ✅ Story 2.3 — Manage Developers (`/developers`, soft-delete, active/inactive toggle)
 - ✅ Story 4.3 — Developer Productivity Report (`/reports/productivity`)
 - ✅ Story 3.3 — Excel format docs + `public/timesheet-template.xlsx`
+- ✅ Story 5.1 — Error handling (global toasts, `not-found`, production-safe tRPC errors)
 
 **Still Missing (Phase B scope):**
 - ⚠️ README + screenshots + architecture doc — Story 5.2
@@ -87,7 +88,7 @@
 ### What's IN PROGRESS 🚧
 
 **Phase B - Production Ready:**
-- 🚧 Story 5.1 — Error Handling (global toasts, 404, production-safe errors)
+- _(none)_
 
 ### What's PLANNED 📋
 See Roadmap section below. Full story details in [`van/stories.md`](stories.md).
@@ -357,4 +358,4 @@ _Log questions and blockers here. Tag the owner._
 ---
 
 **End of Document**  
-Last Updated: 2026-04-12 — Story 3.3 complete (Hannibal sign-off); Phase B remaining: 5.1, 5.2
+Last Updated: 2026-04-14 — Story 5.1 complete (global toasts, `not-found`, prod tRPC sanitization); Phase B remaining: **5.2** (README / screenshots / architecture review)

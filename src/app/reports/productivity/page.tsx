@@ -1,7 +1,9 @@
 'use client';
 
+import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { trpc } from '@/lib/trpc-client';
+import type { DeveloperProductivityRow } from '@/lib/router-types';
 import { type DatePreset, endOfDay, getPresetRange, startOfDay } from '@/lib/date-utils';
 
 const AVG_DAY_TOOLTIP =
@@ -30,16 +32,23 @@ export default function DeveloperProductivityReportPage() {
   const effectiveStartDate = startDate ? startOfDay(startDate) : undefined;
   const effectiveEndDate = endDate ? endOfDay(endDate) : undefined;
 
-  const { data, isLoading, error, refetch } = trpc.report.developerProductivity.useQuery({
-    startDate: effectiveStartDate,
-    endDate: effectiveEndDate,
-  });
+  const { data, isLoading, error, refetch } = trpc.report.developerProductivity.useQuery(
+    {
+      startDate: effectiveStartDate,
+      endDate: effectiveEndDate,
+    },
+    { meta: { suppressGlobalError: true } }
+  );
 
   const [sortKey, setSortKey] = useState<SortKey>('developerName');
   const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc');
 
   const totalEntriesInRange = useMemo(
-    () => (data ?? []).reduce((s, r) => s + r.entriesCount, 0),
+    () =>
+      (data ?? []).reduce(
+        (s: number, r: DeveloperProductivityRow) => s + r.entriesCount,
+        0
+      ),
     [data]
   );
 
@@ -104,9 +113,9 @@ export default function DeveloperProductivityReportPage() {
             Hours and counts per active developer for the selected range.
           </p>
         </div>
-        <a href="/reports" className="text-sm text-muted-foreground hover:underline">
+        <Link href="/reports" className="text-sm text-muted-foreground hover:underline">
           Back to Reports
-        </a>
+        </Link>
       </div>
 
       <div className="rounded-lg border bg-card p-4 space-y-4">

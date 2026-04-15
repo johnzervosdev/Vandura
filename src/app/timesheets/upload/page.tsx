@@ -26,8 +26,12 @@ export default function TimesheetUploadPage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
 
-  const parseExcel = trpc.timesheet.parseExcel.useMutation();
-  const importExcel = trpc.timesheet.importExcel.useMutation();
+  const parseExcel = trpc.timesheet.parseExcel.useMutation({
+    meta: { suppressGlobalToast: true },
+  });
+  const importExcel = trpc.timesheet.importExcel.useMutation({
+    meta: { suppressGlobalToast: true },
+  });
 
   const canParse = useMemo(
     () => !!file && !!fileBuffer && !parseExcel.isPending && !importExcel.isPending,

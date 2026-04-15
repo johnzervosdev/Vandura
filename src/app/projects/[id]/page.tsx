@@ -10,9 +10,9 @@ export default function ProjectDetailPage() {
   // Handle Next.js 15: params.id can be string | string[] | undefined
   const idParam = Array.isArray(params?.id) ? params.id[0] : params?.id;
   const projectId = Number(idParam);
-  const { data, isLoading, error } = trpc.project.get.useQuery(
+  const { data, isLoading, error, refetch } = trpc.project.get.useQuery(
     { id: projectId },
-    { enabled: Number.isFinite(projectId) }
+    { enabled: Number.isFinite(projectId), meta: { suppressGlobalError: true } }
   );
   const [taskCount, setTaskCount] = useState<number>(0);
 
@@ -21,7 +21,23 @@ export default function ProjectDetailPage() {
   }
 
   if (isLoading) return <div>Loading…</div>;
-  if (error) return <div className="text-destructive">Failed to load: {error.message}</div>;
+  if (error) {
+    return (
+      <div className="space-y-4">
+        <div className="rounded-md border border-destructive/40 bg-destructive/10 p-4 text-sm">
+          <div className="font-medium text-destructive">Failed to load project</div>
+          <div className="text-muted-foreground mt-1">{error.message}</div>
+          <button
+            type="button"
+            className="mt-3 inline-flex items-center rounded-md border px-3 py-1.5 text-xs"
+            onClick={() => refetch()}
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
   if (!data) return <div className="text-muted-foreground">Project not found.</div>;
 
   return (

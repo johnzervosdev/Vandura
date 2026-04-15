@@ -1,19 +1,45 @@
 'use client';
 
+import Link from 'next/link';
 import { trpc } from '@/lib/trpc-client';
+import type { ProjectSummaryRow } from '@/lib/router-types';
 
 export default function HomePage() {
-  const { data: projects, isLoading } = trpc.report.projectsSummary.useQuery();
+  const { data: projects, isLoading, error, refetch } = trpc.report.projectsSummary.useQuery(undefined, {
+    meta: { suppressGlobalError: true },
+  });
 
   if (isLoading) {
     return <div>Loading dashboard...</div>;
   }
 
+  if (error && !projects) {
+    return (
+      <div className="space-y-4">
+        <h1 className="text-4xl font-bold">Dashboard</h1>
+        <div className="rounded-md border border-destructive/40 bg-destructive/10 p-4 text-sm">
+          <div className="font-medium text-destructive">Failed to load dashboard</div>
+          <div className="text-muted-foreground mt-1">{error.message}</div>
+          <button
+            type="button"
+            className="mt-3 inline-flex items-center rounded-md border px-3 py-1.5 text-xs"
+            onClick={() => refetch()}
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const allProjects = projects || [];
   const activeProjects = allProjects.filter((p) => p.status === 'active');
   const hasAnyProjects = allProjects.length > 0;
-  const totalEstimated = activeProjects.reduce((sum, p) => sum + (p.estimatedHours || 0), 0);
-  const totalActual = activeProjects.reduce((sum, p) => sum + p.actualHours, 0);
+  const totalEstimated = activeProjects.reduce(
+    (sum: number, p: ProjectSummaryRow) => sum + (p.estimatedHours || 0),
+    0
+  );
+  const totalActual = activeProjects.reduce((sum: number, p: ProjectSummaryRow) => sum + p.actualHours, 0);
   const totalVariance = totalActual - totalEstimated;
   const variancePercent = totalEstimated > 0 ? (totalVariance / totalEstimated) * 100 : 0;
 
@@ -78,12 +104,15 @@ export default function HomePage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {activeProjects.map((project) => (
+                  {activeProjects.map((project: ProjectSummaryRow) => (
                     <tr key={project.projectId} className="border-b hover:bg-muted/50">
                       <td className="py-3 px-4">
-                        <a href={`/projects/${project.projectId}`} className="font-medium hover:text-primary">
+                        <Link
+                          href={`/projects/${project.projectId}`}
+                          className="font-medium hover:text-primary"
+                        >
                           {project.projectName}
-                        </a>
+                        </Link>
                       </td>
                       <td className="text-right py-3 px-4">
                         {project.estimatedHours != null ? `${project.estimatedHours.toFixed(1)}h` : 'N/A'}
@@ -110,29 +139,29 @@ export default function HomePage() {
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <a
+        <Link
           href="/timesheets/upload"
           className="bg-primary text-primary-foreground rounded-lg p-6 hover:bg-primary/90 transition-colors"
         >
           <h3 className="font-semibold text-lg">Upload Timesheet</h3>
           <p className="text-sm mt-1 opacity-90">Import time entries from Excel</p>
-        </a>
+        </Link>
 
-        <a
+        <Link
           href="/projects/new"
           className="bg-secondary text-secondary-foreground rounded-lg p-6 hover:bg-secondary/80 transition-colors"
         >
           <h3 className="font-semibold text-lg">Create Project</h3>
           <p className="text-sm mt-1">Create and configure projects</p>
-        </a>
+        </Link>
 
-        <a
+        <Link
           href="/reports"
           className="bg-secondary text-secondary-foreground rounded-lg p-6 hover:bg-secondary/80 transition-colors"
         >
           <h3 className="font-semibold text-lg">View Reports</h3>
           <p className="text-sm mt-1">Generate actuals vs estimates</p>
-        </a>
+        </Link>
       </div>
     </div>
   );

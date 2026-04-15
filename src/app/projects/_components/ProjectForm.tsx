@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useMemo, useState } from 'react';
 
 export type ProjectStatus = 'active' | 'completed' | 'on-hold' | 'cancelled';
@@ -177,9 +178,9 @@ export function ProjectForm({
           >
             {isSubmitting ? 'Saving…' : submitLabel}
           </button>
-          <a href="/projects" className="text-sm text-muted-foreground hover:underline">
+          <Link href="/projects" className="text-sm text-muted-foreground hover:underline">
             Cancel
-          </a>
+          </Link>
         </div>
       </form>
     </div>

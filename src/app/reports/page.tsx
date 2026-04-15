@@ -1,15 +1,21 @@
 'use client';
 
+import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { trpc } from '@/lib/trpc-client';
+import type { ProjectSummaryRow } from '@/lib/router-types';
 
 export default function ReportsPage() {
-  const { data, isLoading, error, refetch } = trpc.report.projectsSummary.useQuery();
+  const { data, isLoading, error, refetch } = trpc.report.projectsSummary.useQuery(undefined, {
+    meta: { suppressGlobalError: true },
+  });
   const [selectedProjectId, setSelectedProjectId] = useState<string>('');
 
-  const sortedProjects = useMemo(() => {
+  const sortedProjects = useMemo((): ProjectSummaryRow[] => {
     if (!data) return [];
-    return [...data].sort((a, b) => a.projectName.localeCompare(b.projectName));
+    return [...(data as ProjectSummaryRow[])].sort((a, b) =>
+      a.projectName.localeCompare(b.projectName)
+    );
   }, [data]);
 
   return (
@@ -19,12 +25,12 @@ export default function ReportsPage() {
           <h1 className="text-3xl font-bold">Reports</h1>
           <p className="text-muted-foreground mt-2">Actuals vs estimates by project.</p>
         </div>
-        <a
+        <Link
           href="/reports/productivity"
           className="text-sm font-medium text-primary hover:underline whitespace-nowrap"
         >
           Developer productivity →
-        </a>
+        </Link>
       </div>
 
       {isLoading ? <div>Loading…</div> : null}
@@ -88,7 +94,7 @@ export default function ReportsPage() {
                   </td>
                 </tr>
               ) : (
-                data.map((p) => {
+                data.map((p: ProjectSummaryRow) => {
                   const hasEstimate =
                     p.estimatedHours !== null && p.estimatedHours !== undefined;
                   const varianceClass = hasEstimate
@@ -100,12 +106,12 @@ export default function ReportsPage() {
                   return (
                     <tr key={p.projectId} className="border-b last:border-b-0">
                       <td className="py-3 px-4">
-                        <a
+                        <Link
                           className="font-medium hover:underline"
                           href={`/reports/${p.projectId}`}
                         >
                           {p.projectName}
-                        </a>
+                        </Link>
                         <div className="text-xs text-muted-foreground">
                           {p.status}
                         </div>

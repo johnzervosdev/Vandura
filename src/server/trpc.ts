@@ -6,6 +6,7 @@
 import { initTRPC } from '@trpc/server';
 import superjson from 'superjson';
 import { ZodError } from 'zod';
+import { sanitizeTrpcShapeForClient } from '@/server/trpc-error-sanitize';
 
 /**
  * Context type (can be extended with auth, session, etc.)
@@ -24,7 +25,7 @@ export type Context = Awaited<ReturnType<typeof createTRPCContext>>;
 const t = initTRPC.context<Context>().create({
   transformer: superjson, // Enables Date, Map, Set serialization
   errorFormatter({ shape, error }) {
-    return {
+    const withZod = {
       ...shape,
       data: {
         ...shape.data,
@@ -32,6 +33,10 @@ const t = initTRPC.context<Context>().create({
           error.cause instanceof ZodError ? error.cause.flatten() : null,
       },
     };
+    return sanitizeTrpcShapeForClient(
+      withZod as Parameters<typeof sanitizeTrpcShapeForClient>[0],
+      error
+    );
   },
 });
 

@@ -19,6 +19,7 @@ export default function NewProjectPage() {
     onError: (e) => {
       setSubmitError(e.message);
     },
+    meta: { suppressGlobalToast: true },
   });
 
   async function onSubmit(values: ProjectFormSubmitValues) {
