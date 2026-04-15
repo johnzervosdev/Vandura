@@ -408,7 +408,7 @@
 ---
 
 ### Story 5.1: Error Handling (P1) — 4-6h
-**Status:** 🚧 In Progress  
+**Status:** 🟡 Ready for QA  
 **Owner:** B.A.
 
 **Gap analysis (what already exists — do not re-implement blindly):**
@@ -417,36 +417,45 @@
 - **API / mutation errors today:** Mix of inline red boxes, `error.message` in page body, and **page-local** “toast” strips (not global, not top-right). AC explicitly wants **top-right** — requires a **global** mechanism.
 
 **Decisions (pre-made — Hannibal):**
-- **Global API toasts:** Add a **single** app-level notification surface, **fixed top-right** (`fixed top-4 right-4 z-50`), wired from **React Query defaults** on `QueryClient` (`meta.onError` / `mutationCache` / `queryCache`) **or** a thin wrapper around `trpc` mutation hooks — pick one pattern and use it everywhere mutations can fail without inline handling. Prefer **no new heavy dependency** if a 30-line context + queue is enough; **sonner** is acceptable if B.A. wants shadcn parity (adds bundle size — justify in commit message if used).
+- **Global API toasts:** Add a **single** app-level notification surface, **fixed top-right** (`fixed top-4 right-4 z-50`), wired from **`QueryCache` / `MutationCache` `onError`** on `QueryClient` (TanStack v5 — not `defaultOptions.queries.onError`) **or** equivalent; use query `meta.suppressGlobalError` / mutation `meta.suppressGlobalToast` where inline/modal already handles the failure. Prefer **no new heavy dependency** if a small context + queue is enough; **sonner** is acceptable if B.A. wants shadcn parity (adds bundle size — justify in commit message if used).
 - **Toast content:** User-safe string only — prefer `TRPCClientError` `message` or mapped friendly text. Never raw `cause` / stack in the toast body.
 - **Inline validation remains primary** for Zod/client validation; toasts are for **server/network** failures and unexpected errors after submit.
-- **404:** `src/app/not-found.tsx` — friendly title, short explanation, links to `/` and `/projects`. Use Next.js App Router convention (no custom server).
-- **Production DB / SQL errors:** In `src/server/trpc.ts` `errorFormatter` (or a small helper called from it), when `process.env.NODE_ENV === 'production'`, if the error looks like a DB driver error (`SqliteError`, message contains `SQLITE_`, etc.), **replace** `message` shown to the client with a generic: **`Something went wrong while saving data. Please try again.`** and **omit** stack / internal `data` fields from the serialized shape. In **development**, keep current verbose behavior for debugging.
+- **Critical inline vs toast (M1 — no pre-merge allowlist doc):** **Critical inline** = the user would see a blank or meaningless shell with no way to recover if we only toast. That includes: dashboard; any list page whose entire body is the table (projects, timesheets, developers, reports list, productivity); project detail when the project header depends on `get`; report detail when the chart/table is the whole point. **Toast + inline** is allowed only when inline is a single slim line (e.g. “Couldn’t refresh”) and the toast carries the actionable message — avoid two paragraphs saying the same thing. **Elsewhere:** toast-only for mutation failures after submit where there is no dedicated red box in a modal; toast-only for background refetches when previous data can still show. If a case is ambiguous, default **toast-only** unless the PR justifies “blank shell” in **one sentence** — no allowlist required for M1. If anything still feels fuzzy during implementation: **fewer toasts, clearer inline** when the page would otherwise be empty.
+- **Failed `useQuery` vs `useMutation`:** List/detail pages that already have a centered “Failed to load” + **Retry** — **keep** that block (it is not redundant with a toast). Optionally add a short toast on first failure — **not required** for M1. Do **not** replace a good inline error + Retry with toast-only unless the page stays useful without the inline (rare). **Mutations:** default toast for server failure after submit where there is not already a dedicated red box in the modal.
+- **Toast spam / refetch storms (M1):** One toast per distinct failure event surfaced from the global handler (e.g. first query failure in a burst) is acceptable. **Nice-to-have:** dedupe the same error message within ~3s — implement if cheap; **not** a merge blocker if time is tight.
+- **404:** `src/app/not-found.tsx` — friendly title, short explanation; Next.js App Router convention (no custom server). **Minimum per AC:** Home (`/`) + Projects (`/projects`). **IA parity with header:** also link **Timesheets** and **Reports** (same as primary nav). **Skip** `/developers` on the 404 page unless the header links Developers everywhere; keep 404 links aligned with primary nav, not every route.
+- **Production error sanitization (`src/server/trpc.ts` `errorFormatter` or helper):** When `NODE_ENV === 'production'`: (1) Always sanitize known **DB / SQLite / Drizzle** shapes (`SqliteError`, `SQLITE_`, etc.). (2) For any **INTERNAL_SERVER_ERROR** (or 500-class) where the message looks **non-user-safe** (stack fragment, ` at `, file path, `ECONN`, empty, etc.) or is empty, map to the **same** generic client message as (1), e.g. **`Something went wrong while saving data. Please try again.`** Do **not** blanket-replace every message — only 500-class **plus** unsafe-looking (simple regex/heuristic is fine). **Omit** stack / internal `data` from the serialized error shape. **Development:** keep verbose behavior for debugging.
 - **Out of scope for 5.1:** Auth errors, rate limiting, logging service, i18n. **Story 5.2** owns README / screenshots — do not fold screenshot work into 5.1.
 
 **Acceptance Criteria:**
 
 *Forms:*
-- [ ] Every create/edit flow shows **inline** validation errors (red text below the relevant field) before submit, consistent with existing modal forms
+- [x] Every create/edit flow shows **inline** validation errors (red text below the relevant field) before submit, consistent with existing modal forms (audit: no regressions; `ProjectForm` Cancel uses `Link`)
 
 *Global API errors:*
-- [ ] Failed mutations / queries (where not already using a dedicated inline error region) surface a **top-right** dismissible notification with a clear user message
+- [x] Failed mutations / queries (where not already using a dedicated inline error region) surface a **top-right** dismissible notification with a clear user message (`GlobalToastProvider` + cache `onError`; `meta` suppresses double-notify on critical pages / modals)
 
 *Excel:*
-- [ ] Parse preview: errors remain in an **expandable** list before import; confirm UX matches AC (adjust only if gaps found)
+- [x] Parse preview: errors remain in an **expandable** list before import; confirm UX matches AC (adjust only if gaps found)
 
 *Routing:*
-- [ ] `not-found.tsx` exists; unknown routes render friendly 404 (verify `/this-route-does-not-exist`)
+- [x] `not-found.tsx` exists; unknown routes render friendly 404 (verify `/this-route-does-not-exist`); links include Home, Projects, Timesheets, Reports per **Decisions** (Developers on 404 — header links Developers)
 
 *Production safety:*
-- [ ] With `NODE_ENV=production` build/run, simulated or real DB failure from a procedure does **not** return stack traces or driver internals to the browser (manual or automated check acceptable)
+- [x] With `NODE_ENV=production` build/run: DB/driver failures **and** leaky `INTERNAL_SERVER_ERROR` / 500-class messages do **not** expose stacks, paths, or driver internals to the browser (manual or automated check acceptable) — implemented in `trpc-error-sanitize.ts`; Murdock smoke still recommended
 
 **QA Checklist (Murdock):**
 - [ ] Trigger a known validation error on each major form — inline red text, no duplicate toast unless intentional
 - [ ] Disconnect network or break `/api/trpc` — user sees top-right (or graceful fallback) without white screen
 - [ ] Upload file that produces parse **errors** — `<details>` list present, import blocked, copy readable
-- [ ] Hit a bogus URL — 404 page matches spec
-- [ ] **Production-mode check** (or code review + one prod build smoke): DB error path sanitized
+- [ ] Hit a bogus URL — 404 page matches spec (nav links: Home, Projects, Timesheets, Reports; Developers only if per Decisions)
+- [ ] **Production-mode check** (or code review + one prod build smoke): DB **and** unsafe 500-class messages sanitized
+
+**QA expectations — Hannibal (pre-flight, 5.1):**
+- **Toast dedupe:** Duplicate toasts in rapid refetch / burst edge cases are **acceptable for sign-off** unless B.A. shipped ~3s dedupe — then verify dedupe works. **Not** a defect if two toasts differ in message or are >3s apart.
+- **Production sanitize — canonical sign-off:** **(1)** Code review of `trpc` `errorFormatter` (or equivalent) for production branch + heuristic coverage. **(2)** **Plus one** of: `next build` then `next start` with `NODE_ENV=production` and a **forced** server error (temporary throw, or documented repro), **or** a small automated test that asserts serialized client shape for a synthetic `TRPCError` — Murdock picks whichever B.A. documents in the PR. **Code review alone** is **not** enough unless (2) is infeasible — then escalate to Hannibal before calling pass.
+- **Critical vs toast “feels wrong”:** If QA believes a page is **toast-only** but the shell is **empty or unusable** (no Retry, no prior data), file as **defect** with route + screenshot — same bar as any AC miss. If the page has **Retry + full inline** and QA only dislikes **optional** extra toast, that is **not** a defect (optional toast was explicitly not required).
+- **Optional toast on first query failure:** QA **assumes no optional toast** unless they observe one; **no** failure if absent.
 
 **Implementation notes (B.A.):**
 - Add **Developers** to header nav in `layout.tsx` if still missing (small UX fix; can ride with 5.1 or separate micro-commit).
@@ -504,4 +513,4 @@
 ---
 
 **End of Document**  
-Last Updated: 2026-04-12 by Hannibal (Story 3.3 complete)
+Last Updated: 2026-04-14 — Story 5.1 implemented (global toasts, not-found, prod sanitization, nav + docs)
