@@ -71,7 +71,7 @@
 - ✅ Dashboard (`/`) project variance summary + quick actions
 - ✅ Projects: list + create (`/projects`), detail (`/projects/[id]`)
 - ✅ Timesheets: list (`/timesheets`)
-- ✅ Excel import UI (`/timesheets/upload`) with parse preview, duplicate + local-time warnings
+- ✅ Excel import UI (`/timesheets/upload`) with parse preview, format docs, template download, duplicate + timezone copy
 - ✅ Reports: project summaries (`/reports`), actuals report (`/reports/[projectId]`), CSV export
 - ✅ Developer productivity report (`/reports/productivity`) — Story 4.3
 
@@ -79,16 +79,16 @@
 - ✅ Story 3.1 — Manual Time Entry UI (create/edit/delete + filters)
 - ✅ Story 2.3 — Manage Developers (`/developers`, soft-delete, active/inactive toggle)
 - ✅ Story 4.3 — Developer Productivity Report (`/reports/productivity`)
+- ✅ Story 3.3 — Excel format docs + `public/timesheet-template.xlsx`
 
 **Still Missing (Phase B scope):**
-- ⚠️ Excel format docs + template — Story 3.3
 - ⚠️ Error handling hardening — Story 5.1
 - ⚠️ README + screenshots + architecture doc — Story 5.2
 
 ### What's IN PROGRESS 🚧
 
 **Phase B - Production Ready:**
-- 🚧 Story 3.3 — Excel Format Docs (next)
+- _(none)_
 
 ### What's PLANNED 📋
 See Roadmap section below. Full story details in [`van/stories.md`](stories.md).
@@ -114,11 +114,11 @@ See Roadmap section below. Full story details in [`van/stories.md`](stories.md).
 
 ### Time Tracking Rules
 - **Granularity:** 15-minute increments (validated: duration % 15 === 0)
-- **Timezone:** All dates treated as local machine time (no conversion)
+- **Timezone:** All times are treated as local machine time (no timezone conversion).
 - **Week boundaries:** Calendar days, no UTC offset
 
 ### Excel Import Behavior
-- **Dedupe:** Allow duplicates (no deduplication in M1)
+- **Duplicates:** Importing the same file twice will create duplicate entries.
 - **Task matching:** Auto-create missing tasks by `(project_id, task_name)`
 - **Column detection:** Flexible, case-insensitive matching
 - **Batch size:** 1000 rows per transaction
@@ -358,4 +358,4 @@ _Log questions and blockers here. Tag the owner._
 ---
 
 **End of Document**  
-Last Updated: 2026-04-12 — Story 4.3 QA (Murdock); test suite count + shared-DB cleanup docs (`van/qa.md`, `tests/parser-db-cleanup.ts`)
+Last Updated: 2026-04-12 — Story 3.3 complete (Hannibal sign-off); Phase B remaining: 5.1, 5.2

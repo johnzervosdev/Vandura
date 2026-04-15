@@ -73,9 +73,10 @@
 | `tests/timesheet-bulkCreate.test.ts` | `TimesheetService.bulkCreateEntries` + **`finally` cleanup** (all returned entry IDs via `inArray`) (Issue #9) | ✅ Passing |
 | `tests/timesheet-router-excel.test.ts` | Story 3.2: `parseExcel` / `importExcel` with **mocked** `parseFile` + `bulkCreateEntries` | ✅ Passing |
 | `tests/timesheet-sample-extract.test.ts` | Weekly-grid sample extraction (JZER-style; synthetic workbook); **preview-mode** | ✅ Passing — Known Issue #3 |
+| `tests/story-3-3-excel-format-docs.test.ts` | Story 3.3: `public/timesheet-template.xlsx` shape, preview parse of template, upload page DoD strings | ✅ Passing |
 | `tests/validators.test.ts` | Schema validation (createProject, createTask, createTimeEntry) | ✅ Passing |
 
-**Suite status:** **76/76** passing — **17** test files under `tests/*.test.ts` (last full run: 2026-04-12).
+**Suite status:** **79/79** passing — **18** test files under `tests/*.test.ts` (last full run: 2026-04-12).
 
 ### Next Test Targets (Deferred to Phase B)
 The following were explicitly deferred during Phase A — known debt, not a blocker:
@@ -159,7 +160,7 @@ The following were explicitly deferred during Phase A — known debt, not a bloc
 - Story 2.2 tasks UI must exist before task tests ✅ (done)
 - Parse preview + error summary UI required for Excel tests ✅ (done)
 - Reporting filters and sorting UI needed for report tests — pending Story 4.2
-- Example Excel template file provided and stored in `/public` — pending Story 3.3 (Phase B)
+- Example Excel template file provided and stored in `/public` (`timesheet-template.xlsx`) — Story 3.3 ✅
 
 ---
 
@@ -279,6 +280,17 @@ The following were explicitly deferred during Phase A — known debt, not a bloc
 - Integration: Manage developers link from timesheets navigates to `/developers` ✅
 - Empty states not verified (no zero-dev dataset) ⚠️
 
+### Story 3.3 — Excel Format Docs ✅
+- **Status:** QA complete (2026-04-12). **Automated:** `tests/story-3-3-excel-format-docs.test.ts` — template `public/timesheet-template.xlsx` (xlsx read: eight canonical headers + 15 in sample row), `parseFile` preview smoke (≥1 row and/or invalid-project path), upload `page.tsx` string assertions (exact duplicate + timezone lines, template link, section headings, date bullets). **Suite:** 79/79.
+- **Manual:** layout / mobile width / consolidation — pass per Murdock checklist.
+
+| Murdock checklist (manual) | Result |
+|----------------------------|--------|
+| Readable on narrow width | **Pass** |
+| Template link + parse honesty | **Covered by automation + manual spot-check** |
+| Duplicate + timezone visible | **Pass** (matches exact strings in tests) |
+| No triple duplicate prose | **Pass** |
+
 ### Story 4.3 — Developer Productivity Report ✅
 - **Status:** QA complete (2026-04-12, Murdock). Dev server: `http://localhost:3001` (port may differ locally).
 - **Automated:** `tests/report-developer-productivity.test.ts` — integration tests on shared DB (`finally` cleanup) plus smoke; Excel/parser suites use `tests/parser-db-cleanup.ts` where `ExcelParser` writes to `vandura.db`. Full suite **`npm test`** → **76/76** (17 `*.test.ts` files).
@@ -313,4 +325,4 @@ The following were explicitly deferred during Phase A — known debt, not a bloc
 - **Description length (time entry):** unconstrained in M1 (PM ruling 2026-04-12).
 
 **End of Document**  
-Last Updated: 2026-04-12 by Murdock — Story 4.3 QA + full automated test registry (76/76, shared-DB cleanup, `parser-db-cleanup.ts`)
+Last Updated: 2026-04-12 by Hannibal — Story 3.3 sign-off; suite 79/79 (Story 3.3 tests + prior registry)

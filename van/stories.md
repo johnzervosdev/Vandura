@@ -371,7 +371,7 @@
 ---
 
 ### Story 3.3: Excel Format Docs (P1) — 3-4h
-**Status:** 🚧 In Progress  
+**Status:** ✅ Complete (Hannibal sign-off 2026-04-12)  
 **Owner:** B.A.
 
 **Decisions (pre-made):**
@@ -382,23 +382,23 @@
 - **Exact strings (must appear somewhere on the page):**
   - Timezone: **"All times are treated as local machine time (no timezone conversion)."** (may shorten slightly if the existing shorter line is kept — meaning must match.)
   - Duplicates: **"Importing the same file twice will create duplicate entries."** (already present — ensure it remains visible after layout changes.)
-- **No new automated tests required** for copy/layout unless B.A. adds a trivial snapshot; Murdock verifies manually.
+- **Automated tests:** `tests/story-3-3-excel-format-docs.test.ts` — committed template structure + `parseFile` preview smoke + required on-page strings (exact duplicate/timezone copy, template link, headings).
 
 **Acceptance Criteria:**
 
 *Upload page (`/timesheets/upload`):*
-- [ ] **Format / example:** Visible table illustrating expected columns (and note that flexible header matching applies)
-- [ ] **Template:** Working link to `/timesheet-template.xlsx` (file committed under `public/`)
-- [ ] **Date & time:** Short subsection listing supported date/time representations (not exhaustive code dump — user-facing bullets)
-- [ ] **Timezone** sentence present (see Decisions)
-- [ ] **Duplicate warning** present (see Decisions)
+- [x] **Format / example:** Visible table illustrating expected columns (and note that flexible header matching applies)
+- [x] **Template:** Working link to `/timesheet-template.xlsx` (file committed under `public/`)
+- [x] **Date & time:** Short subsection listing supported date/time representations (not exhaustive code dump — user-facing bullets)
+- [x] **Timezone** sentence present (see Decisions)
+- [x] **Duplicate warning** present (see Decisions)
 
 **QA Checklist (Murdock):**
-- [ ] `/timesheets/upload` loads; new doc section is readable without horizontal scroll on mobile width (sm breakpoint)
-- [ ] Template link downloads/opens a valid `.xlsx` with headers + sample row
-- [ ] Importing the template file (after parse) produces ≥1 preview row or clear validation — no false confidence if sample row is intentionally minimal
-- [ ] Duplicate + timezone copy still visible and accurate
-- [ ] No duplicate paragraphs saying the same thing in three places (consolidation check)
+- [x] `/timesheets/upload` loads; new doc section is readable without horizontal scroll on mobile width (sm breakpoint)
+- [x] Template link downloads/opens a valid `.xlsx` with headers + sample row
+- [x] Importing the template file (after parse) produces ≥1 preview row or clear validation — no false confidence if sample row is intentionally minimal
+- [x] Duplicate + timezone copy still visible and accurate
+- [x] No duplicate paragraphs saying the same thing in three places (consolidation check)
 
 **UI Location:** `/timesheets/upload` (documentation section)
 
@@ -469,4 +469,4 @@
 ---
 
 **End of Document**  
-Last Updated: 2026-04-12 by Hannibal (Story 3.3 DoR — Excel format docs + template)
+Last Updated: 2026-04-12 by Hannibal (Story 3.3 complete)

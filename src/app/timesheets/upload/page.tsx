@@ -4,6 +4,10 @@ import { useMemo, useState } from 'react';
 import { trpc } from '@/lib/trpc-client';
 import { Modal } from '@/components/Modal';
 
+/** Canonical copy for support/QA (Story 3.3) — keep in sync with README.md */
+const DUPLICATE_EXACT = 'Importing the same file twice will create duplicate entries.';
+const TIMEZONE_EXACT = 'All times are treated as local machine time (no timezone conversion).';
+
 function arrayBufferToBase64(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
   const chunkSize = 0x8000;
@@ -75,15 +79,108 @@ export default function TimesheetUploadPage() {
         </p>
       </div>
 
-      <div className="rounded-lg border bg-card p-4 space-y-3">
+      <div className="rounded-lg border bg-card p-4 sm:p-6 space-y-4">
+        <div>
+          <h2 className="text-lg font-semibold">Expected format</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Column headers are matched <span className="text-foreground font-medium">flexibly</span> and{' '}
+            <span className="text-foreground font-medium">case-insensitive</span> (e.g. &quot;Dev&quot; or
+            &quot;Developer name&quot;). Use the table below as a guide; aliases like &quot;Activity&quot;
+            for Task are accepted.
+          </p>
+        </div>
+
+        <div className="overflow-x-auto -mx-1 px-1">
+          <table className="w-full min-w-[640px] text-sm border-collapse">
+            <thead>
+              <tr className="border-b">
+                <th className="text-left py-2 pr-3 font-medium">Developer</th>
+                <th className="text-left py-2 pr-3 font-medium">Project</th>
+                <th className="text-left py-2 pr-3 font-medium">Task</th>
+                <th className="text-left py-2 pr-3 font-medium">Date</th>
+                <th className="text-left py-2 pr-3 font-medium">Start Time</th>
+                <th className="text-left py-2 pr-3 font-medium">End Time</th>
+                <th className="text-left py-2 pr-3 font-medium">Duration (min)</th>
+                <th className="text-left py-2 font-medium">Notes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr className="text-muted-foreground">
+                <td className="py-2 pr-3 align-top">Who logged the work</td>
+                <td className="py-2 pr-3 align-top">Project name</td>
+                <td className="py-2 pr-3 align-top">Task name</td>
+                <td className="py-2 pr-3 align-top">Work date</td>
+                <td className="py-2 pr-3 align-top">Optional if duration set</td>
+                <td className="py-2 pr-3 align-top">Optional if duration set</td>
+                <td className="py-2 pr-3 align-top">15-minute multiples</td>
+                <td className="py-2 align-top">Optional</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+
+        <p className="text-sm text-muted-foreground">
+          Provide either <span className="text-foreground font-medium">Duration (min)</span> or both{' '}
+          <span className="text-foreground font-medium">Start Time</span> and{' '}
+          <span className="text-foreground font-medium">End Time</span> — the parser derives the missing
+          piece. Duration must be a <span className="text-foreground font-medium">multiple of 15 minutes</span>
+          .
+        </p>
+
+        <p>
+          <a
+            href="/timesheet-template.xlsx"
+            className="text-sm font-medium text-primary hover:underline"
+            download
+          >
+            Download blank template (.xlsx)
+          </a>
+        </p>
+
+        <div className="space-y-2">
+          <h3 className="text-sm font-semibold">Dates &amp; times</h3>
+          <ul className="text-sm text-muted-foreground list-disc pl-5 space-y-1.5">
+            <li>
+              <span className="text-foreground font-medium">ISO date</span> <code className="text-xs bg-muted px-1 rounded">YYYY-MM-DD</code> — interpreted as a{' '}
+              <span className="text-foreground">local calendar date</span> (midnight local).
+            </li>
+            <li>
+              <span className="text-foreground font-medium">Excel serial dates</span> — numeric cells (days since Excel&apos;s epoch) are supported.
+            </li>
+            <li>
+              <span className="text-foreground font-medium">Slash dates</span> —{' '}
+              <code className="text-xs bg-muted px-1 rounded">M/D/YYYY</code> or{' '}
+              <code className="text-xs bg-muted px-1 rounded">D/M/YYYY</code>; ambiguous day/month values default to US-style (M/D).
+            </li>
+            <li>
+              Other date strings may parse via ISO 8601 / common formats where the cell is plain text.
+            </li>
+            <li>
+              <span className="text-foreground font-medium">Time</span> —{' '}
+              <code className="text-xs bg-muted px-1 rounded">HH:MM</code> or{' '}
+              <code className="text-xs bg-muted px-1 rounded">HH:MM AM/PM</code>, or 4-digit{' '}
+              <code className="text-xs bg-muted px-1 rounded">0930</code> style.
+            </li>
+          </ul>
+        </div>
+
+        <p className="text-sm text-muted-foreground">
+          Other layouts — for example a <span className="text-foreground font-medium">weekly grid</span>{' '}
+          with weekdays as columns — are also supported. Use <span className="text-foreground font-medium">Parse</span>{' '}
+          to see how your file was read, or read <span className="text-foreground font-medium">VANDURA_ARCHITECTURE.md</span>{' '}
+          (Excel import / weekly-grid) in the project repository.
+        </p>
+
+        <p className="text-sm text-muted-foreground">
+          Short overview: <span className="text-foreground">README.md</span> § Excel Format.
+        </p>
+      </div>
+
+      <div className="rounded-lg border border-amber-500/30 bg-amber-500/5 p-4 space-y-2">
         <div className="text-sm font-medium">Important</div>
-        <ul className="text-sm text-muted-foreground list-disc pl-5 space-y-1">
-          <li>
-            <span className="text-foreground font-medium">Duplicates:</span> importing the same file twice will create duplicate entries.
-          </li>
-          <li>
-            <span className="text-foreground font-medium">Timezone:</span> all times are treated as your local machine timezone (no conversion).
-          </li>
+        <ul className="text-sm text-muted-foreground list-disc pl-5 space-y-2">
+          <li className="text-foreground">{DUPLICATE_EXACT}</li>
+          <li className="text-foreground">{TIMEZONE_EXACT}</li>
         </ul>
       </div>
 
@@ -271,4 +368,3 @@ export default function TimesheetUploadPage() {
     </div>
   );
 }
-

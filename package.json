@@ -13,7 +13,8 @@
     "db:migrate": "tsx scripts/migrate.ts",
     "db:seed": "tsx scripts/seed.ts",
     "db:studio": "drizzle-kit studio",
-    "type-check": "tsc --noEmit"
+    "type-check": "tsc --noEmit",
+    "generate:template": "node scripts/generate-timesheet-template.mjs"
   },
   "dependencies": {
     "@tanstack/react-query": "^5.17.19",

@@ -101,7 +101,10 @@ Rules:
 - Provide either **Duration (min)** or both **Start Time + End Time** — Vandura calculates whichever is missing
 - Duration must be a multiple of **15 minutes**
 - Missing developers, projects, or tasks are created automatically on import
-- Importing the same file twice creates duplicate entries — this is intentional M1 behavior
+- Importing the same file twice will create duplicate entries.
+- All times are treated as local machine time (no timezone conversion).
+
+Full column rules, date/time detail, and downloadable template: **Timesheets → Upload** (`/timesheets/upload`).
 
 ---
 
