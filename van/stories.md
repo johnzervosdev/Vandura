@@ -408,14 +408,49 @@
 ---
 
 ### Story 5.1: Error Handling (P1) — 4-6h
-**Status:** Not Started
+**Status:** 🚧 In Progress  
+**Owner:** B.A.
+
+**Gap analysis (what already exists — do not re-implement blindly):**
+- **Excel parse errors (expandable):** `/timesheets/upload` parse preview already uses `<details>` for **Errors** and **Warnings** with row-level copy. AC is **substantially met** — verify wording, default-expanded when `errors.length > 0` (optional polish), and cross-link from Story checklist.
+- **Inline form validation:** `DeveloperForm`, `ProjectForm`, `TaskForm`, and timesheet create/edit modals already use red text under fields. **Audit** every user-facing form (`/projects/new`, `/projects/[id]/edit`, any page missing the pattern) and align styling (`text-sm text-destructive` under the control).
+- **API / mutation errors today:** Mix of inline red boxes, `error.message` in page body, and **page-local** “toast” strips (not global, not top-right). AC explicitly wants **top-right** — requires a **global** mechanism.
+
+**Decisions (pre-made — Hannibal):**
+- **Global API toasts:** Add a **single** app-level notification surface, **fixed top-right** (`fixed top-4 right-4 z-50`), wired from **React Query defaults** on `QueryClient` (`meta.onError` / `mutationCache` / `queryCache`) **or** a thin wrapper around `trpc` mutation hooks — pick one pattern and use it everywhere mutations can fail without inline handling. Prefer **no new heavy dependency** if a 30-line context + queue is enough; **sonner** is acceptable if B.A. wants shadcn parity (adds bundle size — justify in commit message if used).
+- **Toast content:** User-safe string only — prefer `TRPCClientError` `message` or mapped friendly text. Never raw `cause` / stack in the toast body.
+- **Inline validation remains primary** for Zod/client validation; toasts are for **server/network** failures and unexpected errors after submit.
+- **404:** `src/app/not-found.tsx` — friendly title, short explanation, links to `/` and `/projects`. Use Next.js App Router convention (no custom server).
+- **Production DB / SQL errors:** In `src/server/trpc.ts` `errorFormatter` (or a small helper called from it), when `process.env.NODE_ENV === 'production'`, if the error looks like a DB driver error (`SqliteError`, message contains `SQLITE_`, etc.), **replace** `message` shown to the client with a generic: **`Something went wrong while saving data. Please try again.`** and **omit** stack / internal `data` fields from the serialized shape. In **development**, keep current verbose behavior for debugging.
+- **Out of scope for 5.1:** Auth errors, rate limiting, logging service, i18n. **Story 5.2** owns README / screenshots — do not fold screenshot work into 5.1.
 
 **Acceptance Criteria:**
-- [ ] Form validation errors displayed inline (red text below field)
-- [ ] API errors shown in toast/alert (top-right corner)
-- [ ] Excel parse errors shown in expandable list before import
-- [ ] 404 page for missing routes
-- [ ] Database errors: graceful message, no stack traces in production
+
+*Forms:*
+- [ ] Every create/edit flow shows **inline** validation errors (red text below the relevant field) before submit, consistent with existing modal forms
+
+*Global API errors:*
+- [ ] Failed mutations / queries (where not already using a dedicated inline error region) surface a **top-right** dismissible notification with a clear user message
+
+*Excel:*
+- [ ] Parse preview: errors remain in an **expandable** list before import; confirm UX matches AC (adjust only if gaps found)
+
+*Routing:*
+- [ ] `not-found.tsx` exists; unknown routes render friendly 404 (verify `/this-route-does-not-exist`)
+
+*Production safety:*
+- [ ] With `NODE_ENV=production` build/run, simulated or real DB failure from a procedure does **not** return stack traces or driver internals to the browser (manual or automated check acceptable)
+
+**QA Checklist (Murdock):**
+- [ ] Trigger a known validation error on each major form — inline red text, no duplicate toast unless intentional
+- [ ] Disconnect network or break `/api/trpc` — user sees top-right (or graceful fallback) without white screen
+- [ ] Upload file that produces parse **errors** — `<details>` list present, import blocked, copy readable
+- [ ] Hit a bogus URL — 404 page matches spec
+- [ ] **Production-mode check** (or code review + one prod build smoke): DB error path sanitized
+
+**Implementation notes (B.A.):**
+- Add **Developers** to header nav in `layout.tsx` if still missing (small UX fix; can ride with 5.1 or separate micro-commit).
+- After delivery: update `van/qa.md` test registry only if new automated tests are added (optional: smoke test for `not-found` is low value).
 
 ---
 

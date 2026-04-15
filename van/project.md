@@ -82,13 +82,12 @@
 - ✅ Story 3.3 — Excel format docs + `public/timesheet-template.xlsx`
 
 **Still Missing (Phase B scope):**
-- ⚠️ Error handling hardening — Story 5.1
 - ⚠️ README + screenshots + architecture doc — Story 5.2
 
 ### What's IN PROGRESS 🚧
 
 **Phase B - Production Ready:**
-- _(none)_
+- 🚧 Story 5.1 — Error Handling (global toasts, 404, production-safe errors)
 
 ### What's PLANNED 📋
 See Roadmap section below. Full story details in [`van/stories.md`](stories.md).
