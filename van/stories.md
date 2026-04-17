@@ -1,6 +1,6 @@
 # Project Vandura — User Stories & Acceptance Criteria
 
-**Last Updated:** 2026-04-14 (Story 5.1 — Hannibal: CI sanitize tests + review = layer (2); prod smoke optional)  
+**Last Updated:** 2026-04-12 (Story 5.2 documentation + clean upload screenshot)  
 **Owner:** B.A. (maintains ACs + implementation notes) | Murdock (updates QA checklists)
 
 > **Navigation:** [`van/project.md`](project.md) — project dashboard | [`van/qa.md`](qa.md) — test plans & results
@@ -505,13 +505,16 @@ All **data queries** below use **`meta: { suppressGlobalError: true }`** → on 
 ---
 
 ### Story 5.2: Documentation (P1) — 3-5h
-**Status:** Not Started
+**Status:** 🟡 Ready for QA  
+**Owner:** B.A.
 
 **Acceptance Criteria:**
-- [ ] README: Setup instructions (Windows notes), usage guide, screenshots
-- [ ] Sample Excel file in `/public` or `/examples`
-- [ ] Architecture doc accuracy review (VANDURA_ARCHITECTURE.md)
-- [ ] Screenshots: Dashboard, Excel upload, Actuals report
+- [x] README: Setup instructions (Windows notes), usage guide, screenshots
+- [x] Sample Excel file in `/public` — `public/timesheet-template.xlsx` (linked from README + upload page; no duplicate under `/examples` unless product asks)
+- [x] Architecture doc accuracy review (VANDURA_ARCHITECTURE.md)
+- [x] Screenshots: Dashboard, Excel upload, Actuals report (`docs/screenshots/*.png`)
+
+**QA notes (Murdock):** Screenshots are environment-specific; verify links render on GitHub. Re-capture if branding or primary nav changes materially.
 
 ---
 
@@ -554,4 +557,4 @@ All **data queries** below use **`meta: { suppressGlobalError: true }`** → on 
 ---
 
 **End of Document**  
-Last Updated: 2026-04-14 — Story 5.1: Hannibal sign-off — `trpc-error-sanitize.test.ts` (CI) + code review satisfies production sanitize layer (2); prod server smoke optional only
+Last Updated: 2026-04-12 — Story 5.2 README + screenshots + `VANDURA_ARCHITECTURE.md` + `docs/screenshots/excel-upload.png` recapture

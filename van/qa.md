@@ -1,6 +1,6 @@
 # Project Vandura — QA Strategy, Test Plans & Results
 
-**Last Updated:** 2026-04-14 (Story 5.1 automated tests in registry)  
+**Last Updated:** 2026-04-12 (Story 5.2 — screenshot registry; `excel-upload.png` recaptured clean, no toast)  
 **Owner:** Murdock
 
 > **Navigation:** [`van/project.md`](project.md) — project dashboard | [`van/stories.md`](stories.md) — story ACs & QA checklists
@@ -78,9 +78,20 @@
 | `tests/trpc-error-sanitize.test.ts` | Story 5.1: `sanitizeTrpcShapeForClient` production heuristics (INTERNAL unsafe/safe, BAD_REQUEST+zod, SQLite cause) | ✅ Passing |
 | `tests/validators.test.ts` | Schema validation (createProject, createTask, createTimeEntry) | ✅ Passing |
 
-**Suite status:** **93/93** passing — **20** test files under `tests/*.test.ts` (last full run: 2026-04-14).
+**Suite status:** **93/93** passing — **20** test files under `tests/*.test.ts` (last full run: 2026-04-12).
 
 **Story 5.1 production sanitize sign-off:** Hannibal — **`tests/trpc-error-sanitize.test.ts` green in CI** plus **code review** of the production error path satisfies sign-off **layer (2)**. A separate `next build` + `next start` + forced failure smoke is **optional** (nice-to-have), not a second gate. Full wording: **`van/stories.md` → Story 5.1** (AC, Murdock checklist, **QA expectations — Hannibal**).
+
+### Documentation screenshots (Story 5.2 — asset registry)
+Committed paths under **`docs/screenshots/`** (referenced from **README** / docs as Story 5.2 lands):
+
+| File | Typical use |
+|------|-------------|
+| `docs/screenshots/dashboard.png` | Dashboard |
+| `docs/screenshots/excel-upload.png` | Excel upload / timesheets |
+| `docs/screenshots/actuals-report.png` | Actuals vs estimates report |
+
+**Screenshot hygiene:** **`excel-upload.png`** was recaptured (full-page, no global toast) via local dev + browser tooling; rerun after UI changes. No CI step validates pixels.
 
 ### Next Test Targets (Deferred to Phase B)
 The following were explicitly deferred during Phase A — known debt, not a blocker:

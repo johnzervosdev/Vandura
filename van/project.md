@@ -1,8 +1,8 @@
 # Project Vandura — Project Dashboard
 
-**Last Updated:** 2026-04-14  
+**Last Updated:** 2026-04-12  
 **Milestone:** M1 - MVP Showcase  
-**Status:** Phase B — Story **5.2** next (README / screenshots / architecture review)
+**Status:** Phase B complete — Story **5.2** shipped (README, screenshots, `VANDURA_ARCHITECTURE.md`); next work is M2 / deferred items in `van/stories.md`
 
 > **Navigation:** This is the entry point. Read this first for project context.  
 > Story details → [`van/stories.md`](stories.md) | QA strategy & results → [`van/qa.md`](qa.md)
@@ -81,9 +81,10 @@
 - ✅ Story 4.3 — Developer Productivity Report (`/reports/productivity`)
 - ✅ Story 3.3 — Excel format docs + `public/timesheet-template.xlsx`
 - ✅ Story 5.1 — Error handling (global toasts, `not-found`, production-safe tRPC errors)
+- ✅ Story 5.2 — README setup/walkthrough/screenshots + `VANDURA_ARCHITECTURE.md` pass
 
 **Still Missing (Phase B scope):**
-- ⚠️ README + screenshots + architecture doc — Story 5.2
+- _(none — Phase B backlog cleared; M2 / deferred items live in `van/stories.md`)_
 
 ### What's IN PROGRESS 🚧
 
@@ -358,4 +359,4 @@ _Log questions and blockers here. Tag the owner._
 ---
 
 **End of Document**  
-Last Updated: 2026-04-14 — Story 5.1 complete (global toasts, `not-found`, prod tRPC sanitization); Phase B remaining: **5.2** (README / screenshots / architecture review)
+Last Updated: 2026-04-12 — Story 5.2 complete (README, `docs/screenshots`, `VANDURA_ARCHITECTURE.md`); Phase B closed; `excel-upload.png` recaptured (clean UI)

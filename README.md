@@ -29,64 +29,97 @@ An at-a-glance view of all active projects: total estimated hours, total hours l
 
 ## Screenshots
 
-> *Screenshots coming in Phase B — documentation sprint.*
+Captured from a local dev server (your tables and counts may differ after `db:seed`).
+
+**Dashboard** (`/`)
+
+![Dashboard](docs/screenshots/dashboard.png)
+
+**Excel upload** (`/timesheets/upload`)
+
+![Excel upload](docs/screenshots/excel-upload.png)
+
+**Actuals vs estimates** (`/reports/[projectId]`)
+
+![Actuals vs estimates report](docs/screenshots/actuals-report.png)
 
 ---
 
-## Demo Walkthrough
+## Usage walkthrough (demo path)
 
-The full demo path takes about five minutes. After running `npm run db:seed` you'll have sample data loaded.
+Typical flow (**~5 minutes** with sample data). After `npm run db:seed`, use **Projects → project detail (tasks) → import → report → CSV**. You can also add time from **Timesheets** without Excel.
 
-1. **Dashboard** (`/`) — shows all active projects with estimated hours, actual hours logged, and variance color-coded green or red at a glance.
+1. **Projects** (`/projects`) — open an existing project or **Create** one at `/projects/new` (name, budget, dates, status).
 
-2. **Create a project** (`/projects/new`) — name it, set an hour budget, add start and end dates. The project appears on the dashboard immediately.
+2. **Tasks** (`/projects/[id]`) — on the project page, add tasks and optional hour estimates so the report has baselines.
 
-3. **Add tasks** (`/projects/[id]`) — each task gets its own hour estimate. Tasks are managed directly on the project detail page. Add a few with estimates so the report has something to compare against.
+3. **Import** (`/timesheets/upload`) — choose an `.xlsx` / `.xls` file, **Parse** to preview rows, review errors/warnings in the expandable sections, then **Import** when valid. Use the committed blank template if you need a starting point: **[Download `/timesheet-template.xlsx`](public/timesheet-template.xlsx)** (served from `public/`). Full column rules and date/time behavior are documented on the upload page and in [README § Excel Format](#excel-format).
 
-4. **Import a timesheet** (`/timesheets/upload`) — upload an `.xlsx` file. Before anything is saved, you see a row-by-row preview, any validation errors that would block the import, and warnings for duplicates or timezone assumptions. Confirm to commit.
+4. **Reports** (`/reports`) — pick a project to open **Actuals vs Estimates** (`/reports/[projectId]`). Adjust preset or custom date range.
 
-5. **View the report** (`/reports/[projectId]`) — estimated vs. actual hours per task, variance in green or red, filterable by date range using presets or a custom range.
+5. **CSV** — on the report page, **Export CSV** downloads a timestamped file for Excel.
 
-6. **Export to CSV** — one button on the report page. The file downloads named and timestamped, ready to open in Excel.
+6. **Dashboard** (`/`) — optional check-in: active-project rollups and quick links.
+
+**Optional:** **Timesheets** (`/timesheets`) — add or edit entries in the UI (no Excel required). **Developers** (`/developers`) — manage who appears in entry dropdowns. **Developer productivity** — link from `/reports`.
 
 ---
 
-## Getting Started
+## Getting started
 
-**Requirement:** Node.js 20 or higher ([nodejs.org](https://nodejs.org))
+**Requirement:** Node.js **20+** ([nodejs.org](https://nodejs.org)).
 
 ```bash
 # 1. Install dependencies
 npm install
 
-# 2. Create a local environment file
+# 2. Local environment (copy on Windows; use cp on macOS/Linux)
 copy .env.example .env
 
-# 3. Create the database
+# 3. Apply database migrations (creates / updates ./data/vandura.db)
 npm run db:migrate
 
-# 4. (Optional) Load sample data to explore the app
+# 4. (Optional) Sample projects, tasks, developers, and time entries
 npm run db:seed
 
-# 5. Start the development server
+# 5. Start the dev server
 npm run dev
 ```
 
 Open [http://localhost:3000](http://localhost:3000).
 
-### Windows / OneDrive users
+**If you change the Drizzle schema** (`src/server/db/schema.ts`), generate SQL migrations before migrating:
 
-If the dev server hangs or shows chunk-load errors, run with file-system polling:
+```bash
+npm run db:generate
+npm run db:migrate
+```
+
+**Regenerate the committed Excel template** (writes `public/timesheet-template.xlsx`):
+
+```bash
+npm run generate:template
+```
+
+### Windows / OneDrive
+
+The repo often lives under **OneDrive** on Windows; `next dev` can occasionally **hang** or show **chunk-load** issues when file watchers miss updates.
+
+1. **Polling** — run dev with Watchpack polling:
 
 ```powershell
 $env:WATCHPACK_POLLING="true"; $env:WATCHPACK_POLLING_INTERVAL="1000"; npm run dev
 ```
 
-If you see a `ChunkLoadError` after switching Node versions, delete the build cache and restart:
+2. **Stale `.next`** — after switching Node versions or odd HMR behavior:
 
 ```powershell
 Remove-Item -Recurse -Force .next; npm run dev
 ```
+
+3. **Stuck process** — if the port is bound but the app does not respond, end stray `node.exe` tasks in Task Manager, clear `.next`, and restart (optionally with polling above).
+
+**Future hardening:** scripted `dev:win` / `dev:clean` helpers are tracked as **Story 1.2** (deferred) in [`van/stories.md`](van/stories.md).
 
 ---
 
@@ -117,7 +150,7 @@ Full column rules, date/time detail, and downloadable template: **Timesheets →
 | API | tRPC | The frontend and backend share the same TypeScript types — no manual API contracts |
 | Database | SQLite (`better-sqlite3`) | Embedded database, zero infrastructure, single-file backup |
 | ORM | Drizzle | Type-safe database queries with SQL-like syntax and built-in migrations |
-| UI | Tailwind CSS + shadcn/ui | Utility-first styling with an accessible component library |
+| UI | Tailwind CSS + shared components | Utility-first styling; `Modal`, `GlobalToastProvider`, and page-level layouts (no full shadcn/ui kit in-tree) |
 | Validation | Zod | Runtime input validation with full TypeScript inference |
 
 ---
@@ -127,10 +160,13 @@ Full column rules, date/time detail, and downloadable template: **Timesheets →
 **Phase A — Complete ✅**
 The full showcase path is functional: create a project → add tasks with estimates → import an Excel timesheet → view the Actuals vs. Estimates report → export to CSV.
 
-**Phase B — In Progress 🚧**
-Manual time entry UI, developer management, developer productivity report, Excel format documentation, error handling hardening, and README screenshots.
+**Phase B — Complete ✅**  
+Manual time entry, developers, developer productivity report, Excel format + template, global error handling (`GlobalToastProvider`, production-safe tRPC errors, `not-found`), and this README / screenshots / architecture pass (Story 5.2).
 
-**Quality Checks**
+**Phase B — remaining polish (optional)**  
+README screenshots drift over time; rerun `npm run db:seed` and recapture if marketing needs fresher images.
+
+**Quality checks**
 Automated checks run in GitHub on every push to keep the project stable.
 
 ---
@@ -143,9 +179,11 @@ Automated checks run in GitHub on every push to keep the project stable.
 | `npm test` | Run the full test suite (`scripts/run-tests.mjs`; see `van/qa.md` for the file registry and shared-DB cleanup conventions) |
 | `npm run type-check` | Run the TypeScript compiler without emitting — catches type errors across the whole project |
 | `npm run build` | Production build |
+| `npm run db:generate` | Generate Drizzle migration files after schema edits (`drizzle-kit generate`) |
 | `npm run db:migrate` | Apply pending database migrations |
 | `npm run db:seed` | Populate the database with sample data |
 | `npm run db:studio` | Open Drizzle Studio — a browser-based database viewer |
+| `npm run generate:template` | Regenerate `public/timesheet-template.xlsx` from `scripts/generate-timesheet-template.mjs` |
 
 ### Running a single test file
 

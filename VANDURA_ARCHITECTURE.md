@@ -1,7 +1,7 @@
 # Vandura — Technical Architecture
 
 **Stack:** Next.js 15 · TypeScript · tRPC · SQLite (better-sqlite3) · Drizzle ORM  
-**Status:** Phase A complete. Phase B in progress.  
+**Status:** Phase A complete. Phase B feature set complete (manual entry, developers, productivity, Excel docs, error handling); ongoing work is polish and M2 planning.  
 **For context on project status and stories, see** [`van/project.md`](van/project.md)
 
 ---
@@ -13,83 +13,76 @@ Vandura is a full-stack TypeScript web application built on Next.js 15 App Route
 The core data pipeline:
 
 ```
-Excel Upload → ExcelParser → TimesheetService (bulk insert) → SQLite
-                                                                  ↓
-Dashboard / Reports ← React Components ← tRPC ← ReportService ← AggregationEngine
+Excel Upload → ExcelParser → timesheet.parseExcel / importExcel → TimesheetService.bulkCreateEntries → SQLite
+Manual UI   → timesheet.create|update|delete ────────────────────────────────────────────────────────┘
+                                                                                    ↓
+Dashboard / Reports / Timesheets ← React (App Router) ← tRPC ← Routers ← ReportService / TimesheetService / AggregationEngine
 ```
 
 ---
 
-## Project Structure
+## Project structure
 
 ```
 vandura/
 ├── README.md
 ├── VANDURA_ARCHITECTURE.md
 ├── package.json
-├── tsconfig.json
-├── next.config.ts
+├── next.config.js
 ├── drizzle.config.ts
 ├── tailwind.config.ts
 ├── .env.example
 │
+├── public/
+│   └── timesheet-template.xlsx        # Blank import template (regenerate: npm run generate:template)
+│
 ├── data/
-│   └── vandura.db                     # SQLite database file (gitignored)
+│   └── vandura.db                     # SQLite (gitignored)
+│
+├── docs/
+│   └── screenshots/                   # README screenshots (optional to refresh)
 │
 ├── src/
-│   ├── app/                           # Next.js App Router (pages + API)
-│   │   ├── layout.tsx                 # Root layout
+│   ├── app/
+│   │   ├── layout.tsx                 # Shell + header nav
+│   │   ├── providers.tsx              # tRPC + React Query + GlobalToastProvider
+│   │   ├── not-found.tsx              # App Router 404
 │   │   ├── page.tsx                   # Dashboard (/)
-│   │   ├── api/trpc/[trpc]/route.ts   # tRPC HTTP handler
+│   │   ├── globals.css
+│   │   ├── api/trpc/[trpc]/route.ts   # tRPC HTTP adapter (POST /api/trpc)
+│   │   ├── developers/page.tsx        # Developer list + modals
 │   │   ├── projects/
-│   │   │   ├── page.tsx               # Project list (/projects)
-│   │   │   ├── new/page.tsx           # Create project
-│   │   │   ├── _components/           # Shared project UI components
-│   │   │   └── [id]/
-│   │   │       ├── page.tsx           # Project detail + tasks
-│   │   │       ├── edit/page.tsx      # Edit project
-│   │   │       └── _components/       # TasksSection modal components
-│   │   ├── timesheets/
-│   │   │   ├── page.tsx               # Time entries list (/timesheets)
-│   │   │   └── upload/page.tsx        # Excel import UI (/timesheets/upload)
-│   │   └── reports/
-│   │       ├── page.tsx               # Project summaries (/reports)
-│   │       └── [projectId]/page.tsx   # Actuals vs Estimates + CSV export
+│   │   │   ├── page.tsx               # /projects
+│   │   │   ├── new/page.tsx
+│   │   │   ├── _components/ProjectForm.tsx
+│   │   │   └── [id]/page.tsx, edit/page.tsx, _components/TasksSection.tsx
+│   │   ├── timesheets/page.tsx, upload/page.tsx
+│   │   └── reports/page.tsx, [projectId]/page.tsx, productivity/page.tsx
 │   │
 │   ├── components/
-│   │   └── ui/                        # shadcn/ui primitives (Button, Modal, etc.)
+│   │   ├── Modal.tsx
+│   │   └── GlobalToastProvider.tsx    # Top-right API error toasts (Story 5.1)
 │   │
 │   ├── lib/
-│   │   ├── date-utils.ts              # Duration validation, preset ranges, week helpers
-│   │   └── trpc.ts                    # tRPC React client setup
+│   │   ├── trpc-client.ts             # createTRPCReact<AppRouter>
+│   │   ├── create-app-query-client.ts
+│   │   ├── api-error-message.ts
+│   │   ├── global-toast-dispatcher.ts
+│   │   ├── router-types.ts
+│   │   ├── date-utils.ts, validators.ts, …
 │   │
 │   └── server/
-│       ├── db/
-│       │   ├── schema.ts              # Drizzle schema — 5 tables
-│       │   ├── index.ts               # Database client singleton
-│       │   └── migrations/            # SQL migration files (Drizzle Kit generated)
-│       ├── routers/
-│       │   ├── index.ts               # Root router (appRouter)
-│       │   ├── project.ts
-│       │   ├── task.ts
-│       │   ├── developer.ts
-│       │   ├── timesheet.ts
-│       │   └── report.ts
-│       ├── services/
-│       │   ├── ExcelParser.ts         # .xlsx ingestion, validation, weekly-grid conversion
-│       │   ├── TimesheetService.ts    # Time entry CRUD + bulk insert transaction
-│       │   ├── AggregationEngine.ts   # Actuals aggregation + variance calculation
-│       │   └── ReportService.ts       # Report formatting + CSV generation
-│       └── trpc.ts                    # tRPC server initialization + context
+│       ├── db/schema.ts, index.ts, migrations/
+│       ├── routers/                   # project, task, developer, timesheet, report → appRouter
+│       ├── services/                  # ExcelParser, TimesheetService, AggregationEngine, ReportService
+│       ├── trpc.ts                    # initTRPC + errorFormatter → sanitizeTrpcShapeForClient (prod)
+│       └── trpc-error-sanitize.ts
 │
 ├── scripts/
-│   └── seed.ts                        # Sample data seeding
+│   ├── dev.mjs, migrate.ts, seed.ts
+│   └── generate-timesheet-template.mjs
 │
-└── tests/
-    ├── date-utils.test.ts
-    ├── report-projects-summary-error.test.ts
-    ├── timesheet-bulkCreate.test.ts
-    └── timesheet-sample-extract.test.ts
+└── tests/                             # See van/qa.md for full registry (~18 files, `npm test`)
 ```
 
 ---
@@ -105,9 +98,9 @@ Five tables. Defined in `src/server/db/schema.ts` using Drizzle ORM.
 │ id (PK)     │      │ id (PK)     │      │ id (PK)      │
 │ name        │      │ name        │      │ project_id →─┼──→ projects.id
 │ email       │      │ description │      │ name         │    (cascade delete)
-│ hourly_rate │      │ est_hours   │      │ est_hours    │
+│ hourly_rate │      │ est. hours  │      │ est. hours   │   (* `estimated_hours` in DB)
 │ is_active   │      │ start_date  │      │ status       │
-│ created_at  │      │ end_date    │      │ parent_task  │    (self-ref, unused M1)
+│ created_at  │      │ end_date    │      │ parent_task  │    (self-ref, optional)
 │ updated_at  │      │ status      │      │ created_at   │
 └─────────────┘      └─────────────┘      └──────────────┘
        │                    │                     │
@@ -131,8 +124,8 @@ Five tables. Defined in `src/server/db/schema.ts` using Drizzle ORM.
 │               actuals_cache               │
 │───────────────────────────────────────────│
 │ id (PK)                                   │
-│ project_id, task_id, developer_id (FKs)   │
-│ period_start / period_end                 │
+│ project_id, task_id, developer_id (FKs) │
+│ period_start / period_end (timestamps)   │
 │ total_minutes, entry_count                │
 │ calculated_at                             │
 └───────────────────────────────────────────┘
@@ -198,33 +191,37 @@ Formats aggregation output for the tRPC response and handles CSV generation. The
 
 ## API Layer (tRPC)
 
-All API calls go through tRPC, served at `/api/trpc/[trpc]`. The client uses React Query under the hood (`useQuery`, `useMutation`). `superjson` is used as the transformer to preserve `Date` objects across the network boundary (plain JSON would serialize them as strings).
+All API calls go through tRPC, served at **`/api/trpc`** via `src/app/api/trpc/[trpc]/route.ts` (`fetchRequestHandler`). The React client uses **`@trpc/react-query`** (`useQuery`, `useMutation`) with a shared **`QueryClient`** (`src/lib/create-app-query-client.ts`: global toast hooks on `QueryCache` / `MutationCache`). **`superjson`** preserves `Date` values across the wire.
 
-### Routers
+### Routers (`src/server/routers/`)
 
 **`project`**
-- `list` — all projects with aggregated actuals summary
-- `get` — single project with tasks
-- `create` / `update` / `delete`
+- `list`, `get`, `create`, `update`, `delete`
 
 **`task`**
-- `list` — tasks for a project
-- `create` / `update` / `delete`
+- `listByProject`, `get`, `create`, `update`, `delete`
 
 **`developer`**
-- `list` — all developers (active filter available)
-- `create` / `update`
+- `list` (optional `activeOnly`), `get`, `create`, `update`, `delete` *(UI uses soft lifecycle via `isActive`; hard delete exists on router for admin-style use)*
 
 **`timesheet`**
-- `list` — paginated time entries with filters (project, developer, date range)
+- `list` — paginated entries + filters
 - `create` / `update` / `delete`
-- `parseExcel` — parses an uploaded file, returns preview data (no DB write)
-- `importExcel` — takes the validated parse result and calls `bulkCreateEntries`
+- `parseExcel` / `importExcel` — preview vs commit (`TimesheetService.bulkCreateEntries`)
 
 **`report`**
-- `projectsSummary` — all projects with total estimated/actual hours and variance (dashboard + reports list)
-- `actualsVsEstimates` — task-level breakdown for a single project with date range filter
-- `exportCsv` — formatted CSV string for the active report view
+- `projectsSummary` — dashboard + `/reports` table
+- `actualsVsEstimates` — `/reports/[projectId]` task breakdown + presets
+- `developerProductivity` — `/reports/productivity`
+- `timeline` — chart-oriented series *(wired for future UI)*
+- `exportCSV` — CSV download for current report filters
+
+---
+
+## Client errors & production responses (Story 5.1)
+
+- **`GlobalToastProvider`** + **`emitGlobalToast`** — user-visible API failures default to a **top-right** dismissible card; queries/mutations pass **`meta.suppressGlobalError`** / **`meta.suppressGlobalToast`** when a page or modal already shows the failure inline (see `van/stories.md` Story 5.1 matrix).
+- **`trpc-error-sanitize.ts`** — in **`NODE_ENV === 'production'`**, database-looking failures and leaky **`INTERNAL_SERVER_ERROR`** messages are replaced with a generic client-safe string; **`BAD_REQUEST` + Zod** shapes are preserved for forms.
 
 ---
 
@@ -264,33 +261,26 @@ Duration is always stored as `duration_minutes` (integer, always a multiple of 1
 
 ---
 
-## Testing Strategy
+## Testing strategy
 
-**Runner:** Node.js built-in test runner (`node --import tsx --test`)  
-**Philosophy:** Critical paths only — no framework overhead, no test coverage theater.
+**Runner:** `npm test` → `scripts/run-tests.mjs` → `node --import tsx --test tests/*.test.ts`  
+**Registry & DB hygiene:** [`van/qa.md`](van/qa.md) lists every file, shared-`vandura.db` cleanup expectations, and FK delete order for parser/router tests.
 
-| File | What it covers |
-|------|---------------|
-| `date-utils.test.ts` | Duration validation, preset range calculation, week boundary helpers |
-| `timesheet-bulkCreate.test.ts` | Regression for the bulk insert spread error; confirms `bulkCreateEntries` returns an array |
-| `timesheet-sample-extract.test.ts` | ExcelParser weekly-grid detection; synthetic workbook validates layout conversion without needing a real client file in CI |
-| `report-projects-summary-error.test.ts` | Regression for the SQL alias error that caused the project summary query to fail on load |
-
-Integration tests for `parseExcel` / `importExcel` (end-to-end with a real file) are deferred to Phase B.
+Coverage includes Excel parser/grid suites, project/task/timesheet routers, report + export paths, **`tests/trpc-error-sanitize.test.ts`**, Story 3.3 template/upload checks, and developer productivity metrics.
 
 ---
 
-## What's Built vs. Planned
+## What is built vs. planned
 
-**Phase A — Complete**
-Full demo path operational: project management, task management, Excel import with preview, Actuals vs. Estimates report, CSV export, dashboard.
+**Phase A — Complete**  
+Excel → preview → import, tasks, actuals report, CSV, dashboard.
 
-**Phase B — In Progress**
-Manual time entry UI (Story 3.1), developer management UI (Story 2.3), developer productivity report (Story 4.3), Excel format documentation + template (Story 3.3), error handling hardening (Story 5.1), README screenshots + architecture review (Story 5.2).
+**Phase B — Complete**  
+Manual timesheets UI, developers + active flag, developer productivity report, Excel in-app documentation + `public/timesheet-template.xlsx`, global error handling + `not-found`, README/screenshots and this architecture pass (Story 5.2).
 
-**Deferred (Post-MVP)**
-Import deduplication + audit log, dev server stability scripts (Windows/OneDrive), parse preview remediation tools.
+**Deferred (post-MVP)**  
+Import dedupe + audit log, **Story 1.2** dev-server hardening (`dev:win` / `dev:clean`), parse-preview remediation (Story 3.4).
 
 ---
 
-*Last Updated: 2026-03-15*
+*Last Updated: 2026-04-12 — routers, repo tree, client error pipeline, Phase B status.*
