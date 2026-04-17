@@ -1,6 +1,6 @@
 # Project Vandura — QA Strategy, Test Plans & Results
 
-**Last Updated:** 2026-04-12 (Story 5.2 — screenshot registry; `excel-upload.png` recaptured clean, no toast)  
+**Last Updated:** 2026-04-17 (Story 5.2 — Hannibal sign-off + Murdock README doc smoke; cross-platform `.env` steps; screenshot registry)  
 **Owner:** Murdock
 
 > **Navigation:** [`van/project.md`](project.md) — project dashboard | [`van/stories.md`](stories.md) — story ACs & QA checklists
@@ -78,7 +78,7 @@
 | `tests/trpc-error-sanitize.test.ts` | Story 5.1: `sanitizeTrpcShapeForClient` production heuristics (INTERNAL unsafe/safe, BAD_REQUEST+zod, SQLite cause) | ✅ Passing |
 | `tests/validators.test.ts` | Schema validation (createProject, createTask, createTimeEntry) | ✅ Passing |
 
-**Suite status:** **93/93** passing — **20** test files under `tests/*.test.ts` (last full run: 2026-04-12).
+**Suite status:** **93/93** passing — **20** test files under `tests/*.test.ts` (last full run: **2026-04-17** — post–Story 5.2 Hannibal doc sign-off sanity).
 
 **Story 5.1 production sanitize sign-off:** Hannibal — **`tests/trpc-error-sanitize.test.ts` green in CI** plus **code review** of the production error path satisfies sign-off **layer (2)**. A separate `next build` + `next start` + forced failure smoke is **optional** (nice-to-have), not a second gate. Full wording: **`van/stories.md` → Story 5.1** (AC, Murdock checklist, **QA expectations — Hannibal**).
 
@@ -92,6 +92,32 @@ Committed paths under **`docs/screenshots/`** (referenced from **README** / docs
 | `docs/screenshots/actuals-report.png` | Actuals vs estimates report |
 
 **Screenshot hygiene:** **`excel-upload.png`** was recaptured (full-page, no global toast) via local dev + browser tooling; rerun after UI changes. No CI step validates pixels.
+
+### Story 5.2 — README / doc smoke (Hannibal → Murdock, evidence on record)
+
+**README as a test (clean-clone / fresh machine):** Getting started, Scripts, and walkthrough were checked against `package.json` and repo layout.
+
+| Check | Result |
+|-------|--------|
+| `npm install` / Node 20+ | Matches `engines` and README |
+| `.env` from example | **README fix:** the shared `bash` block previously used Windows-only `copy`; it now documents **`cp .env.example .env`** for macOS/Linux/Git Bash and **`copy` / `Copy-Item`** for Windows so Unix clones are not misled |
+| `npm run db:migrate`, `db:seed`, `dev`, `db:generate`, `generate:template` | All listed in README; scripts and paths (`scripts/migrate.ts`, `public/timesheet-template.xlsx`, etc.) exist |
+| Screenshot markdown paths | `docs/screenshots/{dashboard,excel-upload,actuals-report}.png` — files **present** |
+| Walkthrough URLs | Align with App Router routes in README |
+
+**Screenshots vs live UI (no stale chrome):** Hannibal expects pixels to match current theme. **`excel-upload.png`** is already on record as recaptured without toast (see above). **`dashboard.png`** / **`actuals-report.png`** — not re-captured in this doc-smoke pass; **recapture when chrome or theme drifts** (README already notes optional polish).
+
+### Story 5.2 — Hannibal sign-off (2026-04-17)
+
+**Story status (`van/stories.md`):** Story 5.2 set to **Complete** (handoff label was “Ready for QA”).
+
+**Screenshots (asset judgment):** **`excel-upload.png`** remains the **pixel-fresh** reference (full-page, no global toast — Murdock on record). **`dashboard.png`** and **`actuals-report.png`** are **accepted for M1 portfolio README** as shipped with 5.2 — not re-captured in the latest doc-smoke pass; **recapture when primary nav or theme drifts materially** (README already allows optional polish).
+
+**GitHub README images:** README uses repo-relative `docs/screenshots/*.png` links; files **exist in-tree** (Murdock doc-smoke table). A separate “clicked through on github.com” session was **not** logged in QA; **post-push ops:** open default-branch README on GitHub once and confirm all three images render (standard Markdown behavior).
+
+**`VANDURA_ARCHITECTURE.md` (5.2 accuracy):** Hannibal **spot-check** of B.A.’s refresh vs current repo: stack, App Router + tRPC, SQLite/Drizzle, core services (`TimesheetService`, `ExcelParser`, `ReportService`, `AggregationEngine`), and testing/CI framing vs `scripts/run-tests.mjs` / this file. **No conflicting claims** surfaced during sign-off.
+
+**Automated suite:** **`npm test`** — **93/93** passing, run **2026-04-17** after Hannibal doc edits (README is doc-only for code paths; optional Murdock sanity satisfied).
 
 ### Next Test Targets (Deferred to Phase B)
 The following were explicitly deferred during Phase A — known debt, not a blocker:

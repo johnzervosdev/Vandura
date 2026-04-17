@@ -1,6 +1,6 @@
 # Project Vandura — User Stories & Acceptance Criteria
 
-**Last Updated:** 2026-04-12 (Story 5.2 documentation + clean upload screenshot)  
+**Last Updated:** 2026-04-17 (Story 5.2 — Hannibal sign-off; status + dates aligned with `van/qa.md`)  
 **Owner:** B.A. (maintains ACs + implementation notes) | Murdock (updates QA checklists)
 
 > **Navigation:** [`van/project.md`](project.md) — project dashboard | [`van/qa.md`](qa.md) — test plans & results
@@ -505,7 +505,7 @@ All **data queries** below use **`meta: { suppressGlobalError: true }`** → on 
 ---
 
 ### Story 5.2: Documentation (P1) — 3-5h
-**Status:** 🟡 Ready for QA  
+**Status:** ✅ Complete (Hannibal sign-off — 2026-04-17; judgments + evidence in **`van/qa.md` → Story 5.2 — Hannibal sign-off**)  
 **Owner:** B.A.
 
 **Acceptance Criteria:**
@@ -515,6 +515,8 @@ All **data queries** below use **`meta: { suppressGlobalError: true }`** → on 
 - [x] Screenshots: Dashboard, Excel upload, Actuals report (`docs/screenshots/*.png`)
 
 **QA notes (Murdock):** Screenshots are environment-specific; verify links render on GitHub. Re-capture if branding or primary nav changes materially.
+
+**Hannibal:** Story status was “Ready for QA” at Murdock handoff — moved to **Complete** on sign-off. Screenshot freshness (all three pixel-current vs **`excel-upload` only**), GitHub README image render, architecture spot-check, and post–5.2 **`npm test`** are recorded under **`van/qa.md` → Story 5.2 — Hannibal sign-off**.
 
 ---
 
@@ -557,4 +559,4 @@ All **data queries** below use **`meta: { suppressGlobalError: true }`** → on 
 ---
 
 **End of Document**  
-Last Updated: 2026-04-12 — Story 5.2 README + screenshots + `VANDURA_ARCHITECTURE.md` + `docs/screenshots/excel-upload.png` recapture
+Last Updated: 2026-04-17 — Story 5.2 Hannibal sign-off; Phase B closed (`van/qa.md` evidence block)

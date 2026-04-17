@@ -73,8 +73,11 @@ Typical flow (**~5 minutes** with sample data). After `npm run db:seed`, use **P
 # 1. Install dependencies
 npm install
 
-# 2. Local environment (copy on Windows; use cp on macOS/Linux)
-copy .env.example .env
+# 2. Local environment from .env.example
+# macOS / Linux / Git Bash:
+cp .env.example .env
+# Windows Command Prompt:  copy .env.example .env
+# Windows PowerShell:      Copy-Item .env.example .env
 
 # 3. Apply database migrations (creates / updates ./data/vandura.db)
 npm run db:migrate

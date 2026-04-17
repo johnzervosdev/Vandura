@@ -1,6 +1,6 @@
 # Project Vandura — Project Dashboard
 
-**Last Updated:** 2026-04-12  
+**Last Updated:** 2026-04-17  
 **Milestone:** M1 - MVP Showcase  
 **Status:** Phase B complete — Story **5.2** shipped (README, screenshots, `VANDURA_ARCHITECTURE.md`); next work is M2 / deferred items in `van/stories.md`
 
@@ -359,4 +359,4 @@ _Log questions and blockers here. Tag the owner._
 ---
 
 **End of Document**  
-Last Updated: 2026-04-12 — Story 5.2 complete (README, `docs/screenshots`, `VANDURA_ARCHITECTURE.md`); Phase B closed; `excel-upload.png` recaptured (clean UI)
+Last Updated: 2026-04-17 — Story 5.2 Hannibal sign-off recorded in `van/qa.md`; Phase B closed; `excel-upload.png` recaptured (clean UI)
