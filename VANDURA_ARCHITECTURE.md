@@ -245,8 +245,8 @@ The Excel import is a two-step operation: parse (validate + preview) → import 
 **Weekly-grid layout detection**
 Real client Excel files often use a weekly-grid format: one row per developer/project/task, with Monday through Friday as columns containing duration values. The parser detects this layout heuristically (looking for day-of-week headers) and converts each cell to a standard row-based entry before validation.
 
-**No import deduplication in M1**
-Allowing duplicate imports keeps the parser simple and avoids false-positive dedup logic. A developer uploading the same file twice is an operator error, not a system problem to solve in M1. An import history / audit log is planned for M2.
+**Import deduplication (M1 vs planned)**
+**M1 shipped** with **no dedupe**: importing the same file twice **creates duplicate** `time_entries` — this kept the parser and router simple. **Planned — Stories 7.1–7.2** (see [`van/stories.md`](van/stories.md), *Import integrity*): **7.1** — **block** true duplicate rows for the same logical work; **identical** re-import → **no-op**; **conflicts** → **user review** before overwrite (canonical key **TBD in PR**). **7.2** — **whole-timesheet** / **discard this import** (batch identity or staging) so users are not stuck deleting rows one-by-one if they reject an upload. **Audit log** remains a likely **M2** follow-on.
 
 ---
 
@@ -279,8 +279,8 @@ Excel → preview → import, tasks, actuals report, CSV, dashboard.
 Manual timesheets UI, developers + active flag, developer productivity report, Excel in-app documentation + `public/timesheet-template.xlsx`, global error handling + `not-found`, README/screenshots and this architecture pass (Story 5.2).
 
 **Deferred (post-MVP)**  
-Import dedupe + audit log, **Story 1.2** dev-server hardening (`dev:win` / `dev:clean`), parse-preview remediation (Story 3.4).
+**Stories 7.1–7.2** import integrity (dedupe / conflict review + whole-timesheet discard/replace — see `van/stories.md`), audit log, **Story 1.2** dev-server hardening (`dev:win` / `dev:clean`), parse-preview remediation (Story 3.4).
 
 ---
 
-*Last Updated: 2026-04-12 — routers, repo tree, client error pipeline, Phase B status.*
+*Last Updated: 2026-04-17 — Story 7.1 import policy (planned) noted under Import deduplication.*

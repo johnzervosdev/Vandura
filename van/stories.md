@@ -1,6 +1,6 @@
 # Project Vandura — User Stories & Acceptance Criteria
 
-**Last Updated:** 2026-04-17 (Story 5.2 — Hannibal sign-off; status + dates aligned with `van/qa.md`)  
+**Last Updated:** 2026-04-12 (Phase C — **B.A. sequencing tweak** 6.6 first + **6.3/6.4** schedule flexibility; **Hannibal** keeps **6.3→6.4**; **M1 ~20h** triage; 7.1–7.2)  
 **Owner:** B.A. (maintains ACs + implementation notes) | Murdock (updates QA checklists)
 
 > **Navigation:** [`van/project.md`](project.md) — project dashboard | [`van/qa.md`](qa.md) — test plans & results
@@ -520,6 +520,320 @@ All **data queries** below use **`meta: { suppressGlobalError: true }`** → on 
 
 ---
 
+## Phase C: Budget clarity & reporting UX (P2 — post-M1 showcase)
+
+**Goal:** Make the **project-level hour cap** (`projects.estimatedHours` in DB) explicitly **budgeted time**, separate from **per-task estimates** (`tasks.estimatedHours`). Align copy and variance UX. Replace **`N/A`** for **unset** hours with **`TBD`**. **Story 6.2** adds a project-detail **second card** to surface tasks still missing estimates and make filling them in easy. **Story 6.3** adds **sortable** task lists, with **story number** as a first-class optional field for ordering. **Story 6.4** adds **hide/show completed** tasks on the project task board to reduce clutter. **Story 6.5** surfaces when a project’s **end date has passed** but it is **not** marked **completed**. **Story 6.6** improves **discoverability** of the Developer productivity report from **`/developers`**.
+
+**Planning — Phase C scope is provisional (Hannibal):** **B.A. estimates** and **Murdock QA bands** are logged per story below. **Combined planning hours** = **B.A. implementation** + **Murdock testing** (same story). Optional B.A. add-ons (**6.1** migration, **6.2** dashboard stretch) are **not** included in the combined low band unless explicitly taken.
+
+**B.A. original reference sequence:** **6.1 → 6.2 → 6.3 → 6.4 → 6.5 → 6.6** (dependency-friendly linear build).
+
+**B.A. sequencing tweak (agreed with Hannibal):** **6.6** ships **first** (same estimate—quick **IA**). For **6.3** vs **6.4**, **either PR order works**: schedule **6.4** before **6.3** if you want the hide toggle on the current table first, or **6.3** before **6.4** if you want **sortable headers stable** before adding the toggle. **Product rule unchanged:** once **6.3** exists, the completed-task filter in **6.4** applies **on top of** the **sorted** row order (**Story 6.4** AC: client filter **after** sort from **6.3**).
+
+**Hannibal execution order (final for Phase C):** **6.6 → 6.1 → 6.5 → 6.2 → 6.3 → 6.4**
+
+- **6.6 first:** Matches B.A. tweak; smallest story; no dependency on budget or task schema.
+- **6.1 second:** Establishes **Budget / TBD** vocabulary, **`projectsSummary`** invalidation, and report/dashboard copy baseline before more task-board churn.
+- **6.5 third:** Extends **`projectsSummary` / `project.get`** and multi-surface cues **after** 6.1 copy and cache behavior are stable.
+- **6.2 → 6.3 → 6.4:** Keeps **project-detail task work** contiguous. **Hannibal picks 6.3 before 6.4** (B.A.: either order acceptable): sort UI and migration land first; **6.4** then implements filter-after-sort per AC; Murdock still batches **6.3 + 6.4** regression.
+
+**B.A. Phase C rollup (6.1–6.6, dev only):** ~**23–35h** (upper band if **6.1** adds **`budget_hours`** migration **and** **6.2** includes the dashboard “tasks TBD” stretch).
+
+**Per-story Murdock QA (testing) — Hannibal allocation** (sums to **~12–18h** total Murdock for 6.1–6.6; aligns with Murdock’s informal rollup):
+
+| Story | Murdock QA (h) | Murdock focus |
+|-------|----------------|----------------|
+| **6.1** | **3.5–5.5** | Copy sweep, `TBD`, CSV/legend, **`projectsSummary`** invalidation — largest regression surface |
+| **6.2** | **2–3** | Second card, ≤2 clicks, empty states; +dashboard if stretch ships |
+| **6.3** | **2–4** | Migration, sort keys, nulls-last, router/SQL tests |
+| **6.4** | **1.5–2** | Hide toggle + **6.3** interaction, `localStorage`, a11y |
+| **6.5** | **2–3** | `isProjectPastEndDate`, all consumers, injectable-clock test |
+| **6.6** | **0.5–1** | One-click link, accessible name — smoke |
+
+**Combined Phase C (B.A. + Murdock per story, planning bands):**
+
+| Story | B.A. (h) | + Murdock (h) | Combined (h) |
+|-------|----------|---------------|----------------|
+| **6.1** | 8–12 *(+2–3 if `budget_hours` migration)* | 3.5–5.5 | **11.5–17.5** *(+2–3 migration)* |
+| **6.2** | 4–6 *(+1–2 dashboard stretch)* | 2–3 | **6–9** *(+1–2 stretch)* |
+| **6.3** | 5–8 | 2–4 | **7–12** |
+| **6.4** | 2–3 | 1.5–2 | **3.5–5** |
+| **6.5** | 3–5 | 2–3 | **5–8** |
+| **6.6** | 0.5–1 | 0.5–1 | **1–2** |
+
+**Rollup (6.1–6.6, no B.A. optionals):** B.A. **~22.5–35h** + Murdock **~11.5–18.5h** → **~34–54h** end-to-end planning band for the full phase.
+
+**M1 remainder vs Phase C (Hannibal):** **~20 hours** remain on the **first MVP** hour bank. **Full Phase C does not fit** inside 20h at current scope—even the **low-low** combined band (~**34h**) exceeds 20h. **Triage for M1 tail:** ship **6.6** + **6.4** + **6.5** at **low** estimates (~**9.5–15h** combined) *or* prioritize **6.1** (copy-only, no migration) + **6.6** (~**12.5–19.5h** combined) and **defer** remaining stories to **Phase C+** / next milestone—**Hannibal + B.A. confirm** which slice before locking sprint.
+
+**Optional Phase C candidates (if triaged in):** e.g. Reports hub → Upload link — **+0.5–1h** Murdock smoke; Excel → **`story_number`** — treat like a small feature (**+2–4h** depending on parser/tests).
+
+**Not included in table above:** **Story 7.1–7.2** import integrity (**roughly +8–20h** Murdock if sized like dev — **highly scope-dependent**).
+
+---
+
+### Story 6.1: Project budget vs task estimates (P2) — **6–10h** (Hannibal informal) · **B.A.: 8–12h** (copy + surfaces + `projectsSummary` invalidation + report/CSV on **`projects.estimatedHours`** as budget); **+2–3h** if shipping **`budget_hours`** column + migration + rename call sites · **Murdock QA: 3.5–5.5h** · **Combined (planning): ~11.5–17.5h** *(+2–3h if migration)*
+
+**Status:** Not Started  
+**Owner:** B.A.
+
+**Problem statement:** The projects list and dashboard aggregate **actual hours** from time entries but treat **`projects.estimatedHours`** as the baseline for variance. That field is **not** a roll-up of task estimates; task edits do not change it. Users expect either one coherent “estimate” story or clear **budget vs task forecast** language plus optional comparison UI.
+
+**Decisions (Hannibal — pre-flight):**
+- **Budget = `projects.estimatedHours`:** No requirement to rename the DB column in M1 follow-up; **in-app copy and docs** should say **Budget** / **budgeted hours** for the project field. If B.A. prefers a `budgetHours` column + migration for clarity, that is **in scope** as an implementation choice—call it out in the PR.
+- **Task line stays “estimate”:** Task table and task modals keep **Estimated hours (optional)** for the **task-level** forecast; do not relabel those to “budget.”
+- **Variance definition (unchanged math):** Project-level variance remains **`actual − budget`** when budget is set; null/0 budget keeps existing “no variance %” behavior unless this story tightens copy.
+- **TBD vs N/A (unset hours):** When **project budget** or a **task estimated hours** cell is unset (`null` / not yet filled), show **`TBD`** — meaning “to be filled in,” not **`N/A`** (which reads like “not applicable” or bad data). Apply across dashboard, `/projects`, `/reports`, project detail, actuals report labels/tables, and task tables where those cells appear; **CSV** may emit `TBD` or leave blank with a **README/legend** note — B.A. picks one approach and documents in PR.
+- **Optional comparison (recommended in scope):** On **project detail** (`/projects/[id]`), show **two** numbers: **Budget (project)** and **Sum of task estimates** (computed from tasks), plus a short line when they differ (e.g. “Task estimates total 120h vs project budget 100h”) — **informational only** unless Hannibal later approves auto-sync.
+- **Cache / freshness:** Invalidate **`report.projectsSummary`** (and any other consumers) when **task** create/update/delete and **time entry** create/update/delete affect numbers users see on `/projects` and `/`. Treat as **in scope** for 6.1 so actuals refresh without full reload.
+- **Out of scope for 6.1:** Auto-writing project budget from sum of tasks (requires explicit product rule); the **“tasks missing estimates”** second card (**Story 6.2**); **task list sorting / story number** (**Story 6.3**); **hide completed tasks toggle** (**Story 6.4**); **past end date visual** (**Story 6.5**); Story **3.4** parse remediation; **1.2** dev scripts.
+
+**Acceptance Criteria:**
+
+*Naming & copy (project-level baseline):*
+- [ ] **Dashboard** (`/`): Summary card and active-projects table label **budget** (e.g. “Total budgeted hours”, column “Budget”) — not “Estimated” for the project cap; subtitle/help text if needed so readers know this is the **project** field from create/edit.
+- [ ] **Projects list** (`/projects`): Column header and row copy use **Budget** / **budgeted hours** (or equivalent); page subtitle updated (“budget vs actual” not “estimated vs actual” if that is the only meaning).
+- [ ] **Reports list** (`/reports`): Same column semantics for the summary table driven by `projectsSummary`.
+- [ ] **Project detail header** (`/projects/[id]`): Field currently labeled “Estimated hours” for the **project** shows **Budget** (or “Budgeted hours”) with one-line helper: task estimates are separate.
+- [ ] **Project create/edit** (`ProjectForm`): Label + validation messages use **budget** wording; optional inline note that **task estimates** on the tasks tab are independent.
+
+*Unset values (TBD):*
+- [ ] Replace **`N/A`** display for **unset** project budget and **unset** task estimate cells with **`TBD`** everywhere in scope for Story 6.1 (lists, detail, actuals report, dashboard cards/tables as applicable). **Exception list** (if any) documented in PR — e.g. CSV column policy.
+
+*Comparison & insight:*
+- [ ] **Project detail:** Display **sum of task `estimatedHours`** (for the sum: **treat null task estimates as 0** for numeric total **or** show “TBD” for the sum when any contributing task is unset — **pick one** in PR and stay consistent with the TBD rules above); show alongside **project budget**; when both present and differ, show a neutral comparison (no alarmism—copy TBD in PR, e.g. “Task estimates total Xh · Project budget Yh”).
+
+*Reports & export:*
+- [ ] **Actuals vs estimates** (`/reports/[projectId]`): Disambiguate **project** summary line: user-facing label for project baseline = **Budget** (task rows keep “Estimated” for task hours). Sort/tooltips updated for consistency.
+- [ ] **CSV export** from that report: Header or legend distinguishes **project budget** vs **task estimated** columns (wording only unless schema of CSV changes—keep backward compatibility if external users rely on file shape; document in PR if columns rename).
+
+*Engineering & QA:*
+- [ ] **tRPC/React Query:** After mutations that change **aggregates** (tasks, time entries, project budget), **`report.projectsSummary`** invalidates so `/`, `/projects`, `/reports` stay fresh without hard refresh.
+- [ ] **Tests:** Update brittle string assertions (e.g. Story 3.3 upload page tests unaffected; add or adjust tests for `projectsSummary` / dashboard copy if present); **Murdock:** README screenshot pass **optional** if dashboard strings change materially (Hannibal: schedule with 5.2 hygiene note in `van/qa.md`).
+
+*Documentation:*
+- [ ] **`README.md`** (short): One paragraph or bullet under product description — **project budget** vs **task estimates** vs **actuals**.
+- [ ] **`VANDURA_ARCHITECTURE.md`**: One subsection or table row clarifying the two fields and which surfaces show which.
+
+---
+
+### Story 6.2: Tasks missing estimates — project “TBD” card & fast edit (P2) — **4–6h** (Hannibal informal) · **B.A.: 4–6h** (project-detail card + invalidation + focused test); **+1–2h** if including dashboard “tasks TBD” aggregate stretch · **Murdock QA: 2–3h** · **Combined (planning): ~6–9h** *(+1–2h stretch)*
+**Status:** Not Started  
+**Owner:** B.A.
+
+**Goal:** Make it obvious **which tasks** still need an **estimated hours** value, and make adding that estimate **low-friction** (without forcing estimates at task creation).
+
+**Scope:**
+- **Primary surface — project detail (`/projects/[id]`):** Add a **second card** (placement: e.g. below the project header / budget strip or below the tasks table — B.A. chooses in mockup) titled along the lines of **“Tasks awaiting estimates”** or **“Estimates TBD”** listing **tasks for this project** where `estimatedHours` is `null` (and optionally treat `0` as set vs unset per PR — default: **null only**).
+- Each row: task name (and status if helpful) + **primary action** to **open the existing task edit flow** (modal or inline) focused on the estimate field — **no duplicate task editor** unless cheaper to ship a minimal inline hours control; prefer reuse of `TasksSection` / `TaskForm`.
+- **Empty state:** When all tasks have estimates, card shows a short **“All tasks have estimates”** (or hide card — **pick one** in PR; Hannibal prefers **short affirmative** so the layout does not jump).
+- **Optional stretch (same story if time):** A **compact** aggregate on **dashboard** (`/`) — e.g. count of tasks TBD across **active** projects with a link to **first project** or to `/projects` — **only** if it does not bloat scope; otherwise **defer** to Phase C+.
+
+**Acceptance Criteria:**
+- [ ] Second card on **project detail** lists tasks missing `estimatedHours` (per rules above); copy uses **TBD** language aligned with 6.1.
+- [ ] From a row, user can reach **task estimate edit** in **≤2 clicks** from card interaction (Hannibal bar).
+- [ ] After saving an estimate, card list **updates** without full page reload (invalidate/refetch `task.listByProject` and card query).
+- [ ] **Tests:** At least one test or Playwright-free assertion that the list query/filter matches `null` estimates (or unit test on selector/helper if UI test too heavy).
+
+**Out of scope for 6.2:** Bulk edit across projects; mandatory estimates on create; notification emails; **column sorting / story number** (**Story 6.3**); **hide completed tasks** (**Story 6.4**).
+
+---
+
+### Story 6.3: Task list sorting & optional story number (P2) — **3–5h** (Hannibal informal) · **B.A.: 5–8h** (Drizzle migration + `listByProject` sort args + nulls-last + table headers + TaskForm story # + ≥2 router/SQL ordering tests) · **Murdock QA: 2–4h** · **Combined (planning): ~7–12h**
+**Status:** Not Started  
+**Owner:** B.A.
+
+**Context:** `/projects/[id]` task table today has **no** `orderBy` in `task.listByProject` — row order is effectively arbitrary. There is **no** `story_number` column on **`tasks`** today; “sort by story number” needs a **stored, optional** field (parsing story IDs from free-text **`name`** is **out of scope** — fragile).
+
+**Product choice (Hannibal):** Use a **dedicated Story # column** (not embedded-only in task name) — clearer for imports, sorting, and reporting.
+
+**Goal:** In **one pass** through this table and `listByProject`, ship **sortable headers** for **all** primary task columns: **Story #**, **Name**, **Status**, and **Estimated hours** — same affordance as Developer Productivity (click header, toggle asc/desc, visible sort indicator). **Rationale:** wiring sort for **status** and **estimated hours** while already touching router + table is **low marginal cost** vs a later “sort polish” story. **Actions** column stays non-sortable.
+
+**Default** when opening a project: **story number ascending, nulls last** (tasks without a story number after numbered ones).
+
+**Scope:**
+- **Schema:** Add nullable **`story_number`** `INTEGER` on `tasks` (Drizzle + SQL migration); seed updates if sample tasks should demo sorting.
+- **API:** Extend **`task.listByProject`** with sort key + direction (validated enum covering **`story_number`**, **`name`**, **`status`**, **`estimated_hours`**); stable tie-breaker (e.g. `id` or `name`) when values equal; **nulls-last** policy for story # and for estimated hours when sorting those columns (document in PR).
+- **UI (`TasksSection` / `TaskForm`):** Dedicated **Story #** column (optional on create/edit); **all four** data columns have **sortable** headers; **Story #** and **estimated hours** cells use **TBD** when null (aligned with **6.1**).
+- **Surfaces:** **Project detail** task table is **required** for 6.3 v1; any other task lists — **document** in PR if touched or explicitly “unchanged.”
+
+**Acceptance Criteria:**
+- [ ] Migration applied; existing tasks have `story_number` **null** — no data loss.
+- [ ] Create/edit task can set/clear **story number** (integer validation: non-negative or positive-only — **B.A. documents** in PR).
+- [ ] Task table: **every** of **Story #**, **Name**, **Status**, **Estimated hours** is **sortable** (asc/desc + indicator); **default** sort **story number asc, nulls last**; **Actions** not sortable.
+- [ ] **Tests:** Ordering covered for **at least two** keys (e.g. `story_number` + `status` or `estimated_hours`) at router/SQL level — expand if cheap.
+
+**Out of scope for 6.3:** Parse story numbers from **task name**; Excel import mapping into `story_number` (**capture** under parse/Excel backlog if wanted); **parent/child** tree sort (`parentTaskId` exists; flat-task MVP unchanged unless expanded); **hide completed tasks** (**Story 6.4**).
+
+---
+
+### Story 6.4: Hide / show completed tasks (project task board) (P2) — **2–3h** (Hannibal informal) · **B.A.: 2–3h** · **Murdock QA: 1.5–2h** · **Combined (planning): ~3.5–5h**
+**Status:** Not Started  
+**Owner:** B.A.
+
+**Goal:** On **`/projects/[id]`** task table, let users **temporarily hide** rows where **`status === 'completed'`** so the board stays readable; one control to **toggle** visibility without deleting data.
+
+**UX (Hannibal):**
+- Small **eye** icon (or eye-off when hidden) placed **beside the Status column** — e.g. in the **Status** header cell (right-aligned in header next to label) or immediately adjacent per mockup — **single control** for the whole table.
+- **Click:** toggles **hidden** vs **visible** for completed tasks; **accessible**: `aria-pressed`, `title` / tooltip (“Hide completed tasks” / “Show completed tasks”).
+- **Default:** completed tasks **visible** (current behavior) unless PR documents a different default.
+
+**Implementation notes:**
+- **Schedule:** Phase plan uses **6.3** then **6.4** (sort UI before hide toggle). B.A.: **either** merge order is acceptable; if **6.4** lands first, keep behavior consistent with **filter-after-sort** once **6.3** exists (see Phase C **Planning**).
+- **v1 preference:** **Client-side** filter on the data already loaded by `task.listByProject` (no API change required) — apply **after** sort from **6.3** so order stays stable for visible rows.
+- **Persistence (recommended):** Remember choice **per project** in **`localStorage`** (e.g. key `vandura.tasks.hideCompleted.{projectId}`) so refresh keeps state; **session-only** is acceptable if B.A. wants zero persistence — document in PR.
+- **Story 6.2 card:** The **“tasks awaiting estimates”** card remains driven by **`estimatedHours` null** across **all** statuses (or document if it should respect the same toggle — **default: card unchanged** so PMs still see completed work missing estimates).
+
+**Acceptance Criteria:**
+- [ ] Toggle hides **only** tasks with status **`completed`**; all other statuses always visible in v1.
+- [ ] Icon state reflects mode (eye vs struck / eye-off — **B.A. picks** icon set consistent with app; avoid ambiguous icons).
+- [ ] Toggling does **not** mutate server data; completed tasks reappear when shown again.
+- [ ] **Tests:** Optional lightweight test of filter helper or component state; **Murdock:** manual check hide + edit completed task + unhide.
+
+**Out of scope for 6.4:** Multi-status filters (e.g. hide blocked); hiding on other pages; server-side `includeCompleted` query param (**defer** unless needed for performance).
+
+---
+
+### Story 6.5: Past project end date — visual cue (non-completed) (P2) — **2–4h** (Hannibal informal) · **B.A.: 3–5h** (`projectsSummary` + dates on consumers + badge/icon + injectable-clock unit test) · **Murdock QA: 2–3h** · **Combined (planning): ~5–8h**
+**Status:** Not Started  
+**Owner:** B.A.
+
+**Problem:** If **`projects.endDate`** is set and that **calendar date has passed**, but **`projects.status`** is still **`active`**, **`on-hold`**, or **`cancelled`** (anything other than **`completed`**), nothing in the UI calls out that the plan window is over. PMs want a **quick visual** without changing data automatically.
+
+**Rule (Hannibal — v1):**
+- **Trigger:** `endDate != null` **and** the project’s end date is **strictly before today’s local calendar date** (inclusive end-of-day boundary — **match** date handling used elsewhere in the app, e.g. report presets).
+- **Show cue when:** `status !== 'completed'`.
+- **`cancelled`:** **Default:** **no** overdue-style cue (treat as intentionally stopped); **optional** muted label — **B.A. documents** if product prefers otherwise.
+- **`on-hold`:** Show cue (deadline still meaningful) unless PR agrees with a softer treatment.
+
+**Visual (B.A. picks one or combines subtly):** e.g. **badge** (“Past end” / “End date passed”), **row or card left border** tint, **icon** beside project name, **tooltip** with the stored end date — must meet **contrast** and **accessibility** (not color-only; `title` or visible text).
+
+**Surfaces (all that show project + status + should reflect schedule):**
+- [ ] **`/projects`** list (uses `report.projectsSummary` today — **extend** summary payload with **`endDate`** (and **`startDate`** if needed for symmetry) so the client can compute **past end** without a second round-trip).
+- [ ] **Dashboard** (`/`) active-projects table (same `projectsSummary`).
+- [ ] **`/reports`** project picker / summary table if it lists projects from the same query.
+- [ ] **Project detail** header (`/projects/[id]`) — project already loaded via `project.get`; add cue near dates or title.
+
+**Acceptance Criteria:**
+- [ ] Past-end + not-`completed` → at least **one** clear visual on **each** surface above that applies.
+- [ ] **`completed`** projects **never** show the overdue/past-end cue (even if `endDate` in the past).
+- [ ] **`endDate` null** → no cue.
+- [ ] **Tests:** Unit test for `isProjectPastEndDate({ endDate, status, now })` helper (inject clock) or equivalent — **timezone = local calendar day** per app convention.
+
+**Out of scope for 6.5:** Auto-flip status to completed; email/notifications; gantt timeline.
+
+---
+
+### Story 6.6: Developers page → Developer productivity report (IA) (P2) — **0.5–1h** (Hannibal informal) · **B.A.: 0.5–1h** · **Murdock QA: 0.5–1h** · **Combined (planning): ~1–2h**
+**Status:** Not Started  
+**Owner:** B.A.
+
+**Problem:** **`/reports/productivity`** (Developer productivity) exists but is **hard to find** from **`/developers`** — users must know to open **Reports** first and spot the right destination.
+
+**Scope:** On **`/developers`**, add a **visible text link** (and optional short subline) to **`/reports/productivity`** — e.g. next to the page title or in the top action row near **Add developer** — copy along the lines of **“View developer productivity report →”**. Use **`next/link`**; no new data fetching.
+
+**Acceptance Criteria:**
+- [ ] From **`/developers`**, user reaches **`/reports/productivity`** in **one click** without using the main Reports hub first.
+- [ ] Link is keyboard-focusable and has clear accessible **name** (not “click here”).
+- [ ] **Out of scope:** Duplicating report content on `/developers`; changing `/reports` layout.
+
+**Phase note:** **First** in Hannibal’s Phase C execution order (see **Planning** above) — small IA before budget/summary/task-board batch.
+
+---
+
+### B.A.: Optional Phase C candidates (triage — not in Hannibal’s base 6.1–6.6 list)
+
+Small items that **fit the same release train** (budget / tasks / IA) if Hannibal wants them **without** expanding Phase C scope to import integrity (**7.x**) or deferred **1.2** / **3.4**.
+
+| Candidate | Rationale | Rough size |
+|-----------|-----------|------------|
+| **Reports hub → Upload** (`/reports` → `/timesheets/upload`) | Mirrors **6.6** (“where do I upload?”); one `next/link` + copy. | **0.5–1h** |
+| **README / screenshot hygiene** after **6.1** | Budget + TBD copy may change dashboard strings; optional Murdock pass per `van/qa.md`. | **0.5–1.5h** |
+| **Excel → `story_number`** (follow **6.3**) | Optional once column exists; needs parser + sheet contract + tests. | **3–6h** |
+| **“Sync project budget from sum of task estimates”** (explicit control) | Hannibal kept **auto-sync** out of **6.1**; gated button + confirmation is a **separate** product story. | **2–4h** |
+
+**Keep out of Phase C by default:** **7.1–7.2** (import pack — own milestone), **1.2** (dev stability), **3.4** (parse remediation), **pie/donut** idea until interpretation A/B/C is chosen (see **Captured ideas** below).
+
+---
+
+## Captured ideas (not in Phase C sequence — backlog)
+
+These items are **on record for planning** but are **not** committed deliverables for **Stories 6.1–6.6** unless Hannibal explicitly expands Phase C.
+
+### Idea: Budget vs task status — pie / donut report
+
+**Intent:** A visual report (e.g. **pie or donut chart**) so PMs can see how **project budget** lines up with work **by task status** — e.g. share of scope in **completed** vs **pending** vs **in progress** vs **blocked** (per Vandura’s task status enum).
+
+**Product / data definition (must be resolved before sizing):** **Budget** is a **project-level** number; **status** lives on **tasks**. The chart could mean different things:
+
+- **Interpretation A — Task estimates by status:** Slices = **sum of `tasks.estimatedHours`** grouped by `tasks.status` (only tasks with numeric estimates; **TBD** tasks need a rule: separate “Unestimated” slice, exclude from chart, or force 6.2 cleanup first).
+- **Interpretation B — Actuals by status:** Slices = **sum of logged hours** on time entries, grouped by the **task’s current status** (or status at entry time — **snapshot vs current** is a schema/product choice).
+- **Interpretation C — Composite:** e.g. donut = budget vs **remaining budget**; inner ring or second chart = distribution of task estimates across statuses — richer but more build + test cost.
+
+**Placement ideas:** Tab or card on **`/projects/[id]`**, section on **`/reports/[projectId]`**, or linked “Budget breakdown” from project detail after 6.1 lands.
+
+**Stack note:** **Recharts** is already a dependency; pie/donut is feasible once metrics are defined.
+
+**Phase placement:** Treat as **Phase C+** or a **small “report pack”** story after **6.1–6.6** (or whatever set remains after **B.A. estimate triage**) — **not** in the current Phase C sequence until Hannibal picks A/B/C (or a hybrid) and B.A. estimates.
+
+---
+
+## Import integrity (future — Stories 7.1–7.2)
+
+**Context:** MVP shipped with **explicit “allow duplicate imports”** (see `tests/timesheet-router-excel.test.ts`, `VANDURA_ARCHITECTURE.md`). **Story 7.1** — row-level policy: **no duplicate** logical entries; **identical** re-import **no-op**; **conflicts** need **user review**. **Story 7.2** — separate batch concern: users sometimes want to **“dump the whole timesheet”** (replace a whole slice of work) and, if they **reject** after problems, to **drop only the entries from that import/timesheet** — not hand-delete row by row.
+
+### Story 7.1: Excel import — no duplicate entries; no-op on identical re-import; review on conflict (P1–P2) — **B.A.: 14–22h** (full draft AC: canonical identity row + weekly grid, preview warnings, conflict review UI, tests + docs); **10–14h** only if Hannibal narrows to **block import + summary** without per-row resolution UI
+**Status:** Not Started  
+**Owner:** B.A.
+
+**Goal:**
+1. **No duplicates:** Do not insert a new `time_entries` row when it would duplicate **the same logged work** (definition below).
+2. **Identical replacement attempt:** If incoming rows **match** existing rows on the canonical key **and** all compared fields are **equal** (no net change), **skip** those rows — **no DB write**, user sees a clear summary (e.g. “0 new rows — data already matches” / per-row skipped counts).
+3. **Conflict:** If incoming data **targets the same logical slot** as an existing entry (same developer / project / task / time identity — **exact key TBD in PR**) but **differs** in any user-visible field (e.g. duration, description, times), **do not** silently overwrite. The user must **review** (e.g. side-by-side or “existing vs proposed”) and **choose** per row or batch: **replace**, **keep existing**, or **skip** — **Import** commits only after conflicts are resolved or deferred rows excluded.
+
+**Hannibal — design notes (B.A. refines in PR):**
+- **Canonical identity** for “same work” is the crux — likely includes **developer**, **task** (or project-level null task), **local calendar date**, and **start time + duration** (or start + end). **Weekly-grid** vs **row** Excel paths must map to the **same** comparison rules.
+- **Overlap without exact key** (e.g. adjacent 15-min slots) — **out of scope for v1** unless B.A. expands; document edge cases.
+- **Parse preview** step should surface **warnings**: would-create-duplicate vs **would-conflict** before final import where feasible.
+
+**Acceptance Criteria (draft):**
+- [ ] Import path enforces **no silent duplicate** inserts per canonical rule.
+- [ ] **Fully identical** re-import produces **no new rows** and a **clear** user-visible outcome (counts / message).
+- [ ] **Conflicts** block or gate final commit until user **reviews and decides** (minimum UX defined in PR — table + actions).
+- [ ] **Docs:** Update **README**, **`/timesheets/upload`** copy, **`VANDURA_ARCHITECTURE.md`**, **`van/project.md`** Key Technical Decisions — remove “duplicates allowed” as the long-term policy once behavior ships.
+- [ ] **Tests:** Replace or extend **`tests/timesheet-router-excel.test.ts`** duplicate-import expectation; add cases for **identical skip** and **conflict review** (mock-friendly where possible).
+
+**Phase placement:** **Not** part of Phase **6.x** unless explicitly triaged in; default **Story 7.1** / **import pack** after Phase C or as its own milestone. **Depends on:** stable parse → row mapping (Story **3.2** foundation already in place).
+
+**Out of scope for 7.1:** **Whole-timesheet replace** semantics and **discard this import’s rows** after user abort — **Story 7.2** (needs batch identity on rows or a staging model).
+
+---
+
+### Story 7.2: Whole-timesheet import / replace scope + “discard this import” (P1–P2) — **B.A.: ~10–16h** fork **A** (`import_batch_id` + discard UI + tests); **~16–26h** fork **B** (staging); **~12–20h** fork **C** (window replace, higher product/QA risk). **Import pack rollup (7.1 + 7.2):** ~**24–45h** depending on fork + conflict UX — **not** folded into Phase C unless explicitly triaged in.
+**Status:** Not Started  
+**Owner:** B.A.
+
+**Problem:** Today **`importExcel`** commits **one atomic transaction** for all parsed rows once parse errors are clear — there is **no** persisted **import batch id** on `time_entries`, so the product **cannot** say “delete everything we just added from *this* timesheet upload” if the user later decides the sheet had **too many problems** to keep. Users who think in **whole timesheet** units want either: (a) **replace** all rows attributable to a prior upload of “this sheet,” or (b) after a **staged** or **multi-step** flow, **rollback only that batch**.
+
+**Goal (directional — B.A. picks model in PR):**
+- Support a mental model of **“this upload / this timesheet”** as a **unit** the user can **accept** or **reject**.
+- On **reject** (too many issues after review): **remove** (or never commit) **only** the entries tied to that **import attempt** — must **not** delete unrelated historical entries.
+
+**Design forks (document choice in PR):**
+- **A — Batch id on commit:** Add **`import_batch_id`** (UUID or monotonic id) to **`time_entries`** (nullable for legacy/manual rows); `importExcel` sets it on every row in the transaction; UI offers **“Discard this import”** deleting `WHERE import_batch_id = ?` (with safeguards).
+- **B — Staging table:** Rows land in **`time_entries_staging`** until user confirms → promote to **`time_entries`** or drop staging rows on cancel.
+- **C — Replace by window:** User selects **developer + date range** (or file fingerprint) and confirms **“Replace timesheet for this period”** — deletes existing rows in window then inserts new (**dangerous** — needs strong confirmation; overlaps 7.1 conflict rules).
+
+**Current code note:** `TimesheetService.bulkCreateEntries` is **already atomic** per import call — “partial commit then regret” only arises if the product later introduces **multi-step** commit or **non-atomic** paths; 7.2 still matters for **explicit discard** and **whole-sheet replace** even with today’s atomicity.
+
+**Acceptance Criteria (draft):**
+- [ ] User can **abandon** an import batch (or equivalent) without hunting individual row IDs — **exact UX tied to fork A/B/C**.
+- [ ] **Replace whole timesheet** (if in scope) is **explicit**, **confirmed**, and **documented** vs 7.1 row-level merge rules.
+- [ ] **Tests:** Delete-by-batch or staging lifecycle covered; **Murdock:** destructive paths + edge cases (overlap week, two developers on one file).
+
+**Phase placement:** **Separate** from **7.1** (can ship in either order; **7.2** often **larger** if schema + UI). Default **import pack** milestone after estimates.
+
+---
+
 ## Deferred Stories (P2 - Post-MVP)
 
 ### Story 1.2: Dev Server Stability (Windows/OneDrive) — 1-2h
@@ -559,4 +873,4 @@ All **data queries** below use **`meta: { suppressGlobalError: true }`** → on 
 ---
 
 **End of Document**  
-Last Updated: 2026-04-17 — Story 5.2 Hannibal sign-off; Phase B closed (`van/qa.md` evidence block)
+Last Updated: 2026-04-17 — Phase C **B.A. estimates** + **Murdock QA / testing-time rollup** (`QA / Murdock — Phase C`); 7.1–7.2; optional Phase C candidates; captured idea: budget vs status pie; Phase B closed (`van/qa.md` evidence block)

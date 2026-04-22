@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-04-17  
 **Milestone:** M1 - MVP Showcase  
-**Status:** Phase B complete — Story **5.2** shipped (README, screenshots, `VANDURA_ARCHITECTURE.md`); next work is M2 / deferred items in `van/stories.md`
+**Status:** Phase B complete — Story **5.2** shipped. **Next:** **Phase C** (**Hannibal order:** **6.6** → **6.1** → **6.5** → **6.2** → **6.3** → **6.4**; **~34–54h** combined B.A.+Murdock — **does not fit ~20h M1 remainder**; triage in [`van/stories.md`](stories.md) → Phase C **Planning**). **M2** / **deferred** there as well.
 
 > **Navigation:** This is the entry point. Read this first for project context.  
 > Story details → [`van/stories.md`](stories.md) | QA strategy & results → [`van/qa.md`](qa.md)
@@ -53,7 +53,7 @@
 **Backend Services:**
 - ✅ `AggregationEngine.ts` — time entry aggregation (developer lookup bug fixed)
 - ✅ `TimesheetService.ts` — CRUD operations (bulkCreate uses a synchronous transaction)
-- ✅ `ExcelParser.ts` — Excel parsing (header mapping hardened; duplicates allowed; local timezone; weekly-grid support)
+- ✅ `ExcelParser.ts` — Excel parsing (header mapping hardened; **duplicate imports currently allowed** until Story **7.1**; local timezone; weekly-grid support)
 - ✅ `ReportService.ts` — report generation + CSV formatting
 
 **tRPC API Routers:** Project, Developer, Task, Timesheet, Report
@@ -84,7 +84,16 @@
 - ✅ Story 5.2 — README setup/walkthrough/screenshots + `VANDURA_ARCHITECTURE.md` pass
 
 **Still Missing (Phase B scope):**
-- _(none — Phase B backlog cleared; M2 / deferred items live in `van/stories.md`)_
+- _(none — Phase B backlog cleared.)_
+
+**Phase C** (planned — post-M1 showcase, in-repo; scope & order provisional until Hannibal + B.A. triage) — per-story **B.A. estimates** in [`van/stories.md`](stories.md) → Phase C:
+- **Story 6.1** — Project **budget** vs **task estimates**; **`TBD`** instead of **`N/A`**; invalidation, report/CSV, docs. Hannibal **6–10h** · **B.A. 8–12h** (+**2–3h** if `budget_hours` migration).
+- **Story 6.2** — **Second card** on project detail: tasks missing estimates, fast path to edit. Hannibal **4–6h** · **B.A. 4–6h** (+**1–2h** dashboard stretch).
+- **Story 6.3** — **Story #** column + migration; sortable **Story #, Name, Status, Estimated hours**. Hannibal **3–5h** · **B.A. 5–8h**.
+- **Story 6.4** — Hide/show **`completed`** tasks (client + optional **localStorage**). Hannibal **2–3h** · **B.A. 2–3h**.
+- **Story 6.5** — Past **`endDate`** cue; extend **`projectsSummary`**. Hannibal **2–4h** · **B.A. 3–5h**.
+- **Story 6.6** — **`/developers`** → productivity report link. Hannibal **0.5–1h** · **B.A. 0.5–1h**. May **move or ship first** after triage.
+- **Backlog (not sequenced in Phase C):** Pie/donut **budget vs task status** — [`van/stories.md`](stories.md) → **Captured ideas**.
 
 ### What's IN PROGRESS 🚧
 
@@ -92,7 +101,10 @@
 - _(none)_
 
 ### What's PLANNED 📋
-See Roadmap section below. Full story details in [`van/stories.md`](stories.md).
+- **Phase C:** **6.1**–**6.6** (**execution order** in [`van/stories.md`](stories.md)); **~34–54h** combined (B.A. + Murdock); **M1 ~20h** needs scope slice ([`van/stories.md`](stories.md) Phase C **Planning** + optional candidates).
+- **Story 7.1** — Excel import **duplicate policy** — **B.A. 10–22h** (scope-dependent) — [`van/stories.md`](stories.md) **Import integrity** (not Phase C unless triaged in).
+- **Story 7.2** — **Whole-timesheet** / **discard import** — **B.A. ~10–26h** (fork A/B/C) — same section; **7.1+7.2 ~24–45h** combined if both ship.
+- **M2 / hosting**, **Story 1.2** (dev hardening), **Story 3.4** (parse remediation), and other **deferred** work — see [`van/stories.md`](stories.md) Deferred section.
 
 ---
 
@@ -119,7 +131,8 @@ See Roadmap section below. Full story details in [`van/stories.md`](stories.md).
 - **Week boundaries:** Calendar days, no UTC offset
 
 ### Excel Import Behavior
-- **Duplicates:** Importing the same file twice will create duplicate entries.
+- **Current (MVP, until Story 7.1 ships):** Importing the same file twice **creates duplicate** `time_entries` rows (by design — simple parser, no dedupe).
+- **Planned (Stories 7.1–7.2 — [`van/stories.md`](stories.md) → Import integrity):** **7.1** — **No duplicate entries** for the same logical logged work; **identical** re-import → **no-op**; **conflicts** → **user review** before overwrite (canonical key in PR). **7.2** — **Whole-timesheet** workflows: e.g. **discard all rows from one import** if the user rejects the sheet after review, or explicit **replace** scope — requires **batch identity** or staging (see story).
 - **Task matching:** Auto-create missing tasks by `(project_id, task_name)`
 - **Column detection:** Flexible, case-insensitive matching
 - **Batch size:** 1000 rows per transaction
@@ -189,6 +202,13 @@ See Roadmap section below. Full story details in [`van/stories.md`](stories.md).
 **Deliverable:** Production-grade system ready for public GitHub showcase
 
 **Go-Live Target:** End of Week 2
+
+### Phase C: Budget clarity & reporting UX (**combined ~34–54h** for 6.1–6.6 = **B.A. ~22.5–35h** + **Murdock ~11.5–18.5h**; **does not fit ~20h M1 remainder** — see triage in [`van/stories.md`](stories.md) Phase C **Planning**)
+**Sequence (Hannibal):** **6.6 → 6.1 → 6.5 → 6.2 → 6.3 → 6.4** _(B.A.: **6.6** first; **6.3**/**6.4** may be flipped for schedule if desired—Hannibal uses **6.3→6.4** for sort-before-hide and **6.4** AC filter-after-sort; see [`van/stories.md`](stories.md) Phase C **Planning**)_
+
+**Deliverable (current intent — may split after estimates):** **(6.1)** Budget vs estimates + **TBD** copy + **`projectsSummary`** invalidation. **(6.2)** Tasks missing estimates card. **(6.3)** Story # + full column sort. **(6.4)** Hide completed tasks. **(6.5)** Past **end date** visual + summary **`endDate`**. **(6.6)** **`/developers`** link to **Developer productivity** report.
+
+**Notes:** Optional follow-ons: DB rename `estimatedHours` → `budgetHours`, “sync budget from tasks”, dashboard-wide “tasks TBD” aggregate (6.2 stretch). **Captured backlog (not Phase C):** pie/donut **budget vs task status** report — see [`van/stories.md`](stories.md) → **Captured ideas** (product interpretation A/B/C TBD before estimate).
 
 ### Optional (Deferred): Dev Environment Hardening (1-2 hours)
 Story 1.2 can be done any time after MVP if Windows/OneDrive instability recurs.
@@ -359,4 +379,4 @@ _Log questions and blockers here. Tag the owner._
 ---
 
 **End of Document**  
-Last Updated: 2026-04-17 — Story 5.2 Hannibal sign-off recorded in `van/qa.md`; Phase B closed; `excel-upload.png` recaptured (clean UI)
+Last Updated: 2026-04-17 — Phase C **B.A. estimates** logged (`van/stories.md`); Stories **7.1–7.2** import integrity; Phase B closed; Story 5.2 sign-off in `van/qa.md`

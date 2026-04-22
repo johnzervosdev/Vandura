@@ -1,6 +1,6 @@
 # Project Vandura — QA Strategy, Test Plans & Results
 
-**Last Updated:** 2026-04-17 (Story 5.2 — Hannibal sign-off + Murdock README doc smoke; cross-platform `.env` steps; screenshot registry)  
+**Last Updated:** 2026-04-17 (Story 5.2 sign-off; Phase C — Murdock QA pointer in **Test Strategy**; Story 5.2 README / `.env` / screenshot evidence)  
 **Owner:** Murdock
 
 > **Navigation:** [`van/project.md`](project.md) — project dashboard | [`van/stories.md`](stories.md) — story ACs & QA checklists
@@ -36,6 +36,9 @@
 - Manual testing during Phase A (fast iteration)
 - Automated tests for critical paths in Phase B (if time)
 - Murdock documents test cases + results in this file
+
+### Phase C (planned — QA)
+Per-story testing focus and an **informal Murdock time rollup (~12–18h for Stories 6.1–6.6**, excluding **7.x** import pack unless triaged) live in **`van/stories.md` → Phase C → `QA / Murdock — Phase C`**. As stories land, add evidence rows or a short sign-off block in this file.
 
 ---
 

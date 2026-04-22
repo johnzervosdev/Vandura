@@ -137,7 +137,8 @@ Rules:
 - Provide either **Duration (min)** or both **Start Time + End Time** — Vandura calculates whichever is missing
 - Duration must be a multiple of **15 minutes**
 - Missing developers, projects, or tasks are created automatically on import
-- Importing the same file twice will create duplicate entries.
+- **Current behavior:** Importing the same file twice **creates duplicate** time entries (MVP — no dedupe in the import path).
+- **Planned (not shipped yet):** **Story 7.1** — block true duplicates; **identical** re-import **changes nothing**; **conflicts** need **user review** before commit. **Story 7.2** — **whole-timesheet** flows (e.g. **discard this import’s rows** if the sheet is rejected after review, or explicit replace scope) — **separate**, usually needs **batch id** or staging on `time_entries`. Both in [`van/stories.md`](van/stories.md) under **Import integrity**.
 - All times are treated as local machine time (no timezone conversion).
 
 Full column rules, date/time detail, and downloadable template: **Timesheets → Upload** (`/timesheets/upload`).
