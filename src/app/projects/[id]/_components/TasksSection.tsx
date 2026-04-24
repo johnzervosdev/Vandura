@@ -10,6 +10,7 @@ import {
 } from '../../_components/TaskForm';
 import { Modal } from '@/components/Modal';
 import type { TaskByProjectRow } from '@/lib/router-types';
+import { formatTaskEstimatedHours } from '@/lib/budget-display';
 
 export function TasksSection({
   projectId,
@@ -47,6 +48,7 @@ export function TasksSection({
   const createTask = trpc.task.create.useMutation({
     onSuccess: async () => {
       await utils.task.listByProject.invalidate({ projectId });
+      await utils.report.projectsSummary.invalidate();
       setToast('Task created.');
       setCreateOpen(false);
     },
@@ -57,6 +59,7 @@ export function TasksSection({
   const updateTaskFromModal = trpc.task.update.useMutation({
     onSuccess: async () => {
       await utils.task.listByProject.invalidate({ projectId });
+      await utils.report.projectsSummary.invalidate();
       setToast('Task updated.');
       setEditTask(null);
     },
@@ -75,6 +78,7 @@ export function TasksSection({
   const deleteTask = trpc.task.delete.useMutation({
     onSuccess: async () => {
       await utils.task.listByProject.invalidate({ projectId });
+      await utils.report.projectsSummary.invalidate();
       setToast('Task deleted.');
       setConfirmDelete(null);
     },
@@ -171,9 +175,7 @@ export function TasksSection({
                         </select>
                       </td>
                       <td className="py-3 px-4 text-right">
-                        {t.estimatedHours === null || t.estimatedHours === undefined
-                          ? 'N/A'
-                          : `${t.estimatedHours.toFixed(1)}h`}
+                        {formatTaskEstimatedHours(t.estimatedHours)}
                       </td>
                       <td className="py-3 px-4 text-right">
                         <div className="inline-flex gap-2">

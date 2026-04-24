@@ -57,8 +57,8 @@ export function ProjectForm({
 
     if (v.estimatedHours.trim()) {
       const n = Number(v.estimatedHours);
-      if (!Number.isFinite(n)) next.estimatedHours = 'Estimated hours must be a number';
-      else if (n < 0) next.estimatedHours = 'Estimated hours must be 0 or greater';
+      if (!Number.isFinite(n)) next.estimatedHours = 'Budget must be a number';
+      else if (n < 0) next.estimatedHours = 'Budget must be 0 or greater';
     }
 
     return next;
@@ -136,7 +136,7 @@ export function ProjectForm({
           </div>
 
           <div className="space-y-2">
-            <label className="text-sm font-medium">Estimated Hours (optional)</label>
+            <label className="text-sm font-medium">Budget (optional, hours)</label>
             <input
               className="w-full rounded-md border bg-background px-3 py-2 text-sm"
               value={values.estimatedHours}
@@ -147,6 +147,10 @@ export function ProjectForm({
             {fieldErrors.estimatedHours ? (
               <div className="text-sm text-destructive">{fieldErrors.estimatedHours}</div>
             ) : null}
+            <p className="text-xs text-muted-foreground">
+              Project-level hour cap (budget). Per-task estimates are set separately on the
+              project&apos;s tasks table.
+            </p>
           </div>
 
           <div className="space-y-2">

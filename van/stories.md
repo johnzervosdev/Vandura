@@ -1,6 +1,6 @@
 # Project Vandura — User Stories & Acceptance Criteria
 
-**Last Updated:** 2026-04-17 (Story **6.6** ✅; Phase C — **6.3/6.4** schedule note; **M1 ~20h** triage; 7.1–7.2)  
+**Last Updated:** 2026-04-12 (Story **6.1** ✅ **Murdock + Hannibal sign-off**; Story **6.6** ✅; Phase C notes; 7.1–7.2)  
 **Owner:** B.A. (maintains ACs + implementation notes) | Murdock (updates QA checklists)
 
 > **Navigation:** [`van/project.md`](project.md) — project dashboard | [`van/qa.md`](qa.md) — test plans & results
@@ -537,7 +537,7 @@ All **data queries** below use **`meta: { suppressGlobalError: true }`** → on 
 - **6.5 third:** Extends **`projectsSummary` / `project.get`** and multi-surface cues **after** 6.1 copy and cache behavior are stable.
 - **6.2 → 6.3 → 6.4:** Keeps **project-detail task work** contiguous. **Hannibal picks 6.3 before 6.4** (B.A.: either order acceptable): sort UI and migration land first; **6.4** then implements filter-after-sort per AC; Murdock still batches **6.3 + 6.4** regression.
 
-**B.A. Phase C rollup (6.1–6.6, dev only):** ~**23–35h** (upper band if **6.1** adds **`budget_hours`** migration **and** **6.2** includes the dashboard “tasks TBD” stretch).
+**B.A. Phase C rollup (6.1–6.6, dev only):** ~**23–35h** (upper band mainly if **6.2** includes the dashboard “tasks TBD” stretch **and/or** B.A. does an optional **post–6.1** **`budget_hours`** migration PR — **6.1** itself is **copy-only**, no migration).
 
 **Per-story Murdock QA (testing) — Hannibal allocation** (sums to **~12–18h** total Murdock for 6.1–6.6; aligns with Murdock’s informal rollup):
 
@@ -554,7 +554,7 @@ All **data queries** below use **`meta: { suppressGlobalError: true }`** → on 
 
 | Story | B.A. (h) | + Murdock (h) | Combined (h) |
 |-------|----------|---------------|----------------|
-| **6.1** | 8–12 *(+2–3 if `budget_hours` migration)* | 3.5–5.5 | **11.5–17.5** *(+2–3 migration)* |
+| **6.1** | 8–12 *(+2–3 only for optional **follow-up** `budget_hours` PR — not in 6.1)* | 3.5–5.5 | **11.5–17.5** *(same follow-up note)* |
 | **6.2** | 4–6 *(+1–2 dashboard stretch)* | 2–3 | **6–9** *(+1–2 stretch)* |
 | **6.3** | 5–8 | 2–4 | **7–12** |
 | **6.4** | 2–3 | 1.5–2 | **3.5–5** |
@@ -571,9 +571,9 @@ All **data queries** below use **`meta: { suppressGlobalError: true }`** → on 
 
 ---
 
-### Story 6.1: Project budget vs task estimates (P2) — **6–10h** (Hannibal informal) · **B.A.: 8–12h** (copy + surfaces + `projectsSummary` invalidation + report/CSV on **`projects.estimatedHours`** as budget); **+2–3h** if shipping **`budget_hours`** column + migration + rename call sites · **Murdock QA: 3.5–5.5h** · **Combined (planning): ~11.5–17.5h** *(+2–3h if migration)*
+### Story 6.1: Project budget vs task estimates (P2) — **6–10h** (Hannibal informal) · **B.A.: 8–12h** (**copy-only** on **`projects.estimatedHours`** per Hannibal — no DB rename in 6.1; surfaces + `projectsSummary` invalidation + report/CSV + README/legend) · *Optional **follow-up** PR: `budget_hours` migration + rename ~**+2–3h** — not required to close 6.1* · **Murdock QA: 3.5–5.5h** · **Combined (planning): ~11.5–17.5h** *(migration band applies only to follow-up)*
 
-**Status:** Not Started  
+**Status:** ✅ Complete — **Murdock QA ✅** · **Hannibal sign-off ✅** (evidence: [`van/qa.md`](qa.md) → Story 6.1)  
 **Owner:** B.A.
 
 **Problem statement:** The projects list and dashboard aggregate **actual hours** from time entries but treat **`projects.estimatedHours`** as the baseline for variance. That field is **not** a roll-up of task estimates; task edits do not change it. Users expect either one coherent “estimate” story or clear **budget vs task forecast** language plus optional comparison UI.
@@ -587,32 +587,46 @@ All **data queries** below use **`meta: { suppressGlobalError: true }`** → on 
 - **Cache / freshness:** Invalidate **`report.projectsSummary`** (and any other consumers) when **task** create/update/delete and **time entry** create/update/delete affect numbers users see on `/projects` and `/`. Treat as **in scope** for 6.1 so actuals refresh without full reload.
 - **Out of scope for 6.1:** Auto-writing project budget from sum of tasks (requires explicit product rule); the **“tasks missing estimates”** second card (**Story 6.2**); **task list sorting / story number** (**Story 6.3**); **hide completed tasks toggle** (**Story 6.4**); **past end date visual** (**Story 6.5**); Story **3.4** parse remediation; **1.2** dev scripts.
 
+**Decisions (Hannibal — Story 6.1, B.A. Q&A):**
+
+- **Project budget: `0` vs `null`:** **`null` / unset → `TBD`**. **`estimatedHours === 0` on the project** is an **intentional zero budget** — show **`0` / `0h`** (not **TBD**). **Variance vs actual:** keep **today’s behavior** for null/0 budget (no change to math unless a bug is discovered).
+- **Sum of task estimates when some tasks have `estimatedHours === null`:** Hannibal chooses **(B)** — show the **sum line as `TBD`** if **any** task in the project still has **unset** (`null`) **task** `estimatedHours`. **Do not** imply a complete numeric total until every task has a numeric estimate (including explicit **`0`** where **0** means “set to zero”). **Rationale:** avoids false precision; aligns with **TBD = not fully specified yet**.
+- **Project detail comparison block — partial data:** **Always show both labels** (**Budget** and **Task estimates total**) so the block does not appear/disappear. **Budget set, all task estimates `null`:** **Budget: Xh** · **Task estimates total: TBD**. **Budget `null`, every task has a numeric estimate:** **Budget: TBD** · **Task estimates total: Xh**. **Budget `null` and any task estimate still `null`:** both totals that depend on unknowns stay **TBD** (numeric sum **not** shown until **(B)** is satisfied).
+- **CSV — compatibility vs clarity:** **Default for 6.1:** keep **existing column headers** where external consumers might depend on shape; add **README + export legend** (and/or tooltip copy in-app) to spell **budget vs task estimated** semantics. **Column renames** are **allowed** only if the PR **documents** the breaking shape change and B.A. calls it out for integrators — **not required**; Hannibal has **no** “must rename in M1 follow-up” rule and **no** “must never rename” rule — **legend-first**, rename **optional** with disclosure.
+- **Scope sweep beyond named routes:** **Yes** — include **`/timesheets`** and **`/timesheets/upload`** (and any other in-app surface) if it shows **project** or **task** hour cells that today use **`N/A`** (or equivalent **unset** treatment) for **budget** or **task estimate**. **Developer productivity** (`/reports/productivity`): **out of scope for 6.1** by default (no project budget / task estimate grid there today); if a string slips in during audit, **incidental copy fix** in the same PR is OK if trivial.
+- **`N/A` vs other empty glyphs:** **6.1 goal:** replace the **literal `N/A`** (and UI paths that **explicitly** mean “unset budget / unset task estimate”) with **`TBD`**. **Optional consistency:** where **`—`** / **empty** in the **same columns** clearly means the same **unset** semantic, align to **`TBD`** for **budget** and **task estimate** columns only — **do not** refactor unrelated empty states; **list exceptions** in the PR.
+- **`budgetHours` DB rename:** Hannibal **prefers `copy-only` for 6.1** (no migration): ship **labels + invalidation + docs** on existing **`projects.estimatedHours`**. A follow-up PR may introduce **`budget_hours`** + migration if B.A. still wants SQL clarity — **not required** to close **6.1**.
+
 **Acceptance Criteria:**
 
 *Naming & copy (project-level baseline):*
-- [ ] **Dashboard** (`/`): Summary card and active-projects table label **budget** (e.g. “Total budgeted hours”, column “Budget”) — not “Estimated” for the project cap; subtitle/help text if needed so readers know this is the **project** field from create/edit.
-- [ ] **Projects list** (`/projects`): Column header and row copy use **Budget** / **budgeted hours** (or equivalent); page subtitle updated (“budget vs actual” not “estimated vs actual” if that is the only meaning).
-- [ ] **Reports list** (`/reports`): Same column semantics for the summary table driven by `projectsSummary`.
-- [ ] **Project detail header** (`/projects/[id]`): Field currently labeled “Estimated hours” for the **project** shows **Budget** (or “Budgeted hours”) with one-line helper: task estimates are separate.
-- [ ] **Project create/edit** (`ProjectForm`): Label + validation messages use **budget** wording; optional inline note that **task estimates** on the tasks tab are independent.
+- [x] **Dashboard** (`/`): Summary card and active-projects table label **budget** (e.g. “Total budgeted hours”, column “Budget”) — not “Estimated” for the project cap; subtitle/help text if needed so readers know this is the **project** field from create/edit.
+- [x] **Projects list** (`/projects`): Column header and row copy use **Budget** / **budgeted hours** (or equivalent); page subtitle updated (“budget vs actual” not “estimated vs actual” if that is the only meaning).
+- [x] **Projects list + dashboard active table + reports list — three-way hours:** Surfaces driven by `report.projectsSummary` show **project budget** (`projects.estimatedHours`), **task estimates total** (sum of task `estimatedHours` with **Hannibal (B)**: numeric only when every task has a set estimate; otherwise **TBD**), and **actual hours** (time entries), so users can compare all three at a glance. **`projectsSummary`** exposes **`taskEstimatesTotal`** (server-computed via `taskEstimatesTotalFromRollup` in `budget-display.ts`, same rule as project-detail / **B**). Applies to **`/projects`**, **`/`** (active-projects table), and **`/reports`** summary table; actuals report (`/reports/[projectId]`) top cards include **Task est. total** from the same query.
+- [x] **Project detail header** (`/projects/[id]`): Field currently labeled “Estimated hours” for the **project** shows **Budget** (or “Budgeted hours”) with one-line helper: task estimates are separate.
+- [x] **Project create/edit** (`ProjectForm`): Label + validation messages use **budget** wording; optional inline note that **task estimates** on the tasks tab are independent.
 
 *Unset values (TBD):*
-- [ ] Replace **`N/A`** display for **unset** project budget and **unset** task estimate cells with **`TBD`** everywhere in scope for Story 6.1 (lists, detail, actuals report, dashboard cards/tables as applicable). **Exception list** (if any) documented in PR — e.g. CSV column policy.
+- [x] Replace **`N/A`** display for **unset** (`null`) project budget and **unset** (`null`) task estimate cells with **`TBD`** everywhere in scope for Story 6.1 (lists, detail, actuals report, dashboard cards/tables, **timesheets** / upload **import** path via cache invalidation per B.A. Q&A, as applicable). **Project budget `0`:** show numeric **zero**, not **TBD**. **Exception list** (if any) documented in PR — e.g. CSV column policy.
 
 *Comparison & insight:*
-- [ ] **Project detail:** Display **sum of task `estimatedHours`** (for the sum: **treat null task estimates as 0** for numeric total **or** show “TBD” for the sum when any contributing task is unset — **pick one** in PR and stay consistent with the TBD rules above); show alongside **project budget**; when both present and differ, show a neutral comparison (no alarmism—copy TBD in PR, e.g. “Task estimates total Xh · Project budget Yh”).
+- [x] **Project detail:** Display **Budget** and **Task estimates total** side by side. **Sum rule (Hannibal):** show a **numeric** sum only when **every** task has **`estimatedHours` not `null`** ( **`0` allowed** as “set”); if **any** task is still **`null`**, show **Task estimates total: TBD** (see **B.A. Q&A**). Show a neutral comparison line when both sides are numeric **and** differ (no alarmism—copy TBD in PR, e.g. “Task estimates total Xh · Project budget Yh”). **Partial data:** still render both labels (**Budget** + **Task estimates total**) with **TBD** where unknown.
 
 *Reports & export:*
-- [ ] **Actuals vs estimates** (`/reports/[projectId]`): Disambiguate **project** summary line: user-facing label for project baseline = **Budget** (task rows keep “Estimated” for task hours). Sort/tooltips updated for consistency.
-- [ ] **CSV export** from that report: Header or legend distinguishes **project budget** vs **task estimated** columns (wording only unless schema of CSV changes—keep backward compatibility if external users rely on file shape; document in PR if columns rename).
+- [x] **Actuals vs estimates** (`/reports/[projectId]`): Disambiguate **project** summary line: user-facing label for project baseline = **Budget** (task rows keep “Estimated” for task hours). Sort/tooltips updated for consistency.
+- [x] **CSV export** from that report: **Prefer** unchanged headers + **README/legend** for semantics (**Hannibal**). Header renames **allowed** if documented for integrators; not required (**B.A. Q&A**).
 
 *Engineering & QA:*
-- [ ] **tRPC/React Query:** After mutations that change **aggregates** (tasks, time entries, project budget), **`report.projectsSummary`** invalidates so `/`, `/projects`, `/reports` stay fresh without hard refresh.
-- [ ] **Tests:** Update brittle string assertions (e.g. Story 3.3 upload page tests unaffected; add or adjust tests for `projectsSummary` / dashboard copy if present); **Murdock:** README screenshot pass **optional** if dashboard strings change materially (Hannibal: schedule with 5.2 hygiene note in `van/qa.md`).
+- [x] **tRPC/React Query:** After mutations that change **aggregates** (tasks, time entries, project budget), **`report.projectsSummary`** invalidates so `/`, `/projects`, `/reports` stay fresh without hard refresh.
+- [x] **Tests:** `tests/budget-display.test.ts` (incl. `taskEstimatesTotalFromRollup`), `report-service` CSV/TBD; Story 3.3 upload page tests **unaffected**; **Murdock:** README screenshot pass **optional** if dashboard strings change materially (`van/qa.md`).
 
 *Documentation:*
-- [ ] **`README.md`** (short): One paragraph or bullet under product description — **project budget** vs **task estimates** vs **actuals**.
-- [ ] **`VANDURA_ARCHITECTURE.md`**: One subsection or table row clarifying the two fields and which surfaces show which.
+- [x] **`README.md`** (short): One paragraph or bullet under product description — **project budget** vs **task estimates** vs **actuals**.
+- [x] **`VANDURA_ARCHITECTURE.md`**: One subsection or table row clarifying the two fields and which surfaces show which.
+
+**Implementation (shipped):** `src/lib/budget-display.ts` (format + task-sum rule **B** + `taskEstimatesTotalFromRollup` + active-project budget rollup). **`projectsSummary`:** `ReportService.getAllProjectsSummary` includes **`taskEstimatesTotal`**. UI: `page.tsx`, `projects/page.tsx`, `reports/page.tsx` (columns **Budget**, **Task est. total**, **Actual** + variance); `reports/[projectId]/page.tsx` (fourth summary card). CSV: `ReportService.exportToCSV` — unchanged. Invalidation: unchanged.
+
+**QA sign-off:** **[`van/qa.md`](qa.md) → Story 6.1** — Murdock regression + Hannibal definition-of-done. **README screenshots** were **not** recaptured for this story (explicit skip per handoff); sign-off is **not** blocked on pixel drift in `docs/screenshots/`.
 
 ---
 
@@ -886,4 +900,4 @@ These items are **on record for planning** but are **not** committed deliverable
 ---
 
 **End of Document**  
-Last Updated: 2026-04-17 — Story **6.6** ✅; Phase C **B.A. estimates** + **Murdock QA / testing-time rollup** (`QA / Murdock — Phase C`); 7.1–7.2; optional Phase C candidates; captured idea: budget vs status pie; Phase B closed (`van/qa.md` evidence block)
+Last Updated: 2026-04-12 — Story **6.1** complete, **ready for Murdock** (`van/qa.md`); Story **6.6** ✅; Phase C **B.A. estimates** + **Murdock QA** rollup; 7.1–7.2; optional Phase C candidates; captured idea: budget vs status pie; Phase B closed

@@ -6,6 +6,7 @@ import { useParams } from 'next/navigation';
 import { trpc } from '@/lib/trpc-client';
 import type { ProjectSummaryRow } from '@/lib/router-types';
 import { type DatePreset, endOfDay, getPresetRange, startOfDay } from '@/lib/date-utils';
+import { formatProjectBudgetHours, formatTaskEstimatedHours } from '@/lib/budget-display';
 
 function downloadTextFile(filename: string, content: string, mime = 'text/plain') {
   const blob = new Blob([content], { type: mime });
@@ -61,12 +62,16 @@ export default function ProjectReportPage() {
 
   const totals = useMemo(() => {
     if (!data) return null;
-    const estimated = data.totalEstimatedHours;
+    const budget = data.totalEstimatedHours;
     const actual = data.totalActualHours;
-    const hasEstimate = estimated !== null && estimated !== undefined;
-    const variance = hasEstimate ? actual - estimated : null;
-    return { estimated, actual, variance, hasEstimate };
+    const hasBudget = budget !== null && budget !== undefined;
+    const variance = hasBudget ? actual - budget : null;
+    return { budget, actual, variance, hasBudget };
   }, [data]);
+
+  const projectRow = useMemo(() => {
+    return projectsSummary.data?.find((p) => p.projectId === projectId) ?? null;
+  }, [projectsSummary.data, projectId]);
 
   const sortedTasks = useMemo(() => {
     if (!data) return [];
@@ -124,7 +129,10 @@ export default function ProjectReportPage() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold">Actuals vs Estimates</h1>
-          <p className="text-muted-foreground mt-2">Project #{projectId}</p>
+          <p className="text-muted-foreground mt-2">
+            Project #{projectId} — project row uses <span className="text-foreground">budget</span>; task
+            rows use per-task <span className="text-foreground">estimated</span> hours.
+          </p>
         </div>
         <div className="flex items-center gap-3">
           <button
@@ -178,7 +186,8 @@ export default function ProjectReportPage() {
           </div>
 
           <div className="text-sm text-muted-foreground">
-            Filters apply to both the report and CSV export.
+            Filters apply to both the report and CSV export. CSV column names are documented in the README
+            (project budget vs task estimates).
           </div>
         </div>
 
@@ -233,11 +242,21 @@ export default function ProjectReportPage() {
 
       {data && totals ? (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
             <div className="rounded-lg border bg-card p-4">
-              <div className="text-sm text-muted-foreground">Estimated</div>
+              <div className="text-sm text-muted-foreground">Budget (project)</div>
               <div className="text-2xl font-bold mt-1">
-                {totals.hasEstimate ? `${totals.estimated!.toFixed(1)}h` : 'N/A'}
+                {formatProjectBudgetHours(data.totalEstimatedHours)}
+              </div>
+            </div>
+            <div className="rounded-lg border bg-card p-4">
+              <div className="text-sm text-muted-foreground">Task est. total</div>
+              <div className="text-2xl font-bold mt-1">
+                {projectsSummary.isLoading
+                  ? '…'
+                  : projectRow
+                    ? formatProjectBudgetHours(projectRow.taskEstimatesTotal)
+                    : '—'}
               </div>
             </div>
             <div className="rounded-lg border bg-card p-4">
@@ -246,7 +265,7 @@ export default function ProjectReportPage() {
             </div>
             <div className="rounded-lg border bg-card p-4">
               <div className="text-sm text-muted-foreground">Variance</div>
-              {totals.hasEstimate ? (
+              {totals.hasBudget ? (
                 <div
                   className={`text-2xl font-bold mt-1 ${
                     data.variance > 0 ? 'text-destructive' : 'text-green-600'
@@ -260,7 +279,7 @@ export default function ProjectReportPage() {
                 </div>
               ) : (
                 <div className="text-2xl font-bold mt-1 text-muted-foreground">
-                  N/A
+                  TBD
                 </div>
               )}
             </div>
@@ -277,7 +296,7 @@ export default function ProjectReportPage() {
                   </th>
                   <th className="text-right py-3 px-4">
                     <button type="button" className="hover:underline" onClick={() => toggleSort('estimatedHours')}>
-                      Estimated
+                      Est. (task)
                     </button>
                   </th>
                   <th className="text-right py-3 px-4">
@@ -313,9 +332,7 @@ export default function ProjectReportPage() {
                       <tr key={t.taskId} className="border-b last:border-b-0">
                         <td className="py-3 px-4">{t.taskName}</td>
                         <td className="py-3 px-4 text-right">
-                          {taskHasEstimate
-                            ? `${t.estimatedHours!.toFixed(1)}h`
-                            : 'N/A'}
+                          {formatTaskEstimatedHours(t.estimatedHours)}
                         </td>
                         <td className="py-3 px-4 text-right">
                           {t.actualHours.toFixed(1)}h
@@ -330,7 +347,7 @@ export default function ProjectReportPage() {
                               </span>
                             </>
                           ) : (
-                            'N/A'
+                            'TBD'
                           )}
                         </td>
                       </tr>

@@ -14,22 +14,25 @@ Teams track time in spreadsheets. At the end of a sprint, a project manager comp
 Upload an `.xlsx` file and see a preview of what will be imported before anything is saved. Vandura parses each row, validates the data, flags issues as errors or warnings, and loads all entries into the database in a single transaction. It handles two common Excel timesheet layouts automatically, including weekly-grid formats where days of the week are columns rather than rows.
 
 **Track projects and tasks**
-Create projects with estimated hour budgets, break them into tasks with their own estimates, and set statuses. As timesheets are imported, actuals accumulate automatically — no manual rollup required.
+Each project has a **budget** (hour cap) stored on the project; **tasks** have their own **estimated hours** for forecasting. Those are independent — the app never auto-syncs them. As timesheets are imported, **actuals** roll up from time entries automatically.
 
 **Actuals vs. Estimates Reports**
-See exactly where each project stands: estimated hours vs. actual hours spent, broken down by task, with the variance color-coded green (under budget) or red (over budget). Filter by preset date ranges (Last 7 Days, This Month, All Time) or a custom date range. Tasks with no estimate show "N/A" rather than a misleading zero.
+The project summary line uses **budget** (actuals vs. project cap). Per-**task** rows use **estimated** hours. Variance is color-coded green (under) or red (over). Filter by date presets or a custom range. Unset values show **TBD** (to be filled in), not a fake zero.
 
 **Export to CSV**
-One click to download the full report as a formatted spreadsheet, named and timestamped, ready to share with stakeholders.
+One click downloads the report. The first rows include a short **legend**; column names keep historic labels — **“Total Estimated Hours”** in the file is the **project budget** (see legend + this README). **TBD** means not set.
+
+**Project lists (dashboard, Projects, Reports hub)**
+**Budget** (per-project cap), **Task est. total** (sum of task estimates, or **TBD** if any task still has unset hours), and **actual** hours appear together so you can compare all three. Variance vs budget uses the project cap; unset budget shows **TBD** in variance where applicable.
 
 **Dashboard**
-An at-a-glance view of all active projects: total estimated hours, total hours logged, and overall variance — so problem projects surface the moment you log in.
+At-a-glance: **total budgeted hours** across active projects (or **TBD** if any active project has no budget yet), **actual** hours, and variance when the total budget is known. The **active projects** table includes **Budget**, **Task est. total**, and **Actual** per project.
 
 ---
 
 ## Screenshots
 
-Captured from a local dev server (your tables and counts may differ after `db:seed`).
+Captured from a local dev server (your tables and counts may differ after `db:seed`). Pixels are not guaranteed to match the latest **Budget** / **Task est. total** column layout on the dashboard and project tables until images are recaptured.
 
 **Dashboard** (`/`)
 

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { trpc } from '@/lib/trpc-client';
 import type { ProjectSummaryRow } from '@/lib/router-types';
+import { formatProjectBudgetHours } from '@/lib/budget-display';
 
 export default function ReportsPage() {
   const { data, isLoading, error, refetch } = trpc.report.projectsSummary.useQuery(undefined, {
@@ -23,7 +24,9 @@ export default function ReportsPage() {
       <div className="flex flex-col sm:flex-row sm:items-end sm:justify-between gap-3">
         <div>
           <h1 className="text-3xl font-bold">Reports</h1>
-          <p className="text-muted-foreground mt-2">Actuals vs estimates by project.</p>
+          <p className="text-muted-foreground mt-2">
+            Actuals vs budget and task estimates by project (see README for field definitions).
+          </p>
         </div>
         <Link
           href="/reports/productivity"
@@ -81,7 +84,8 @@ export default function ReportsPage() {
             <thead>
               <tr className="border-b">
                 <th className="text-left py-3 px-4">Project</th>
-                <th className="text-right py-3 px-4">Estimated</th>
+                <th className="text-right py-3 px-4">Budget</th>
+                <th className="text-right py-3 px-4">Task est. total</th>
                 <th className="text-right py-3 px-4">Actual</th>
                 <th className="text-right py-3 px-4">Variance</th>
               </tr>
@@ -89,15 +93,15 @@ export default function ReportsPage() {
             <tbody>
               {data.length === 0 ? (
                 <tr>
-                  <td className="py-6 px-4 text-muted-foreground" colSpan={4}>
+                  <td className="py-6 px-4 text-muted-foreground" colSpan={5}>
                     No data yet. Create a project and import a timesheet.
                   </td>
                 </tr>
               ) : (
                 data.map((p: ProjectSummaryRow) => {
-                  const hasEstimate =
+                  const hasBudget =
                     p.estimatedHours !== null && p.estimatedHours !== undefined;
-                  const varianceClass = hasEstimate
+                  const varianceClass = hasBudget
                     ? p.variance > 0
                       ? 'text-destructive'
                       : 'text-green-600'
@@ -117,13 +121,16 @@ export default function ReportsPage() {
                         </div>
                       </td>
                       <td className="py-3 px-4 text-right">
-                        {hasEstimate ? `${p.estimatedHours!.toFixed(1)}h` : 'N/A'}
+                        {formatProjectBudgetHours(p.estimatedHours)}
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        {formatProjectBudgetHours(p.taskEstimatesTotal)}
                       </td>
                       <td className="py-3 px-4 text-right">
                         {p.actualHours.toFixed(1)}h
                       </td>
                       <td className={`py-3 px-4 text-right ${varianceClass}`}>
-                        {hasEstimate ? (
+                        {hasBudget ? (
                           <>
                             {p.variance > 0 ? '+' : ''}
                             {p.variance.toFixed(1)}h
@@ -132,7 +139,7 @@ export default function ReportsPage() {
                             </span>
                           </>
                         ) : (
-                          'N/A'
+                          'TBD'
                         )}
                       </td>
                     </tr>

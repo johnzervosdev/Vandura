@@ -1,8 +1,8 @@
 # Project Vandura — Project Dashboard
 
-**Last Updated:** 2026-04-17  
+**Last Updated:** 2026-04-12  
 **Milestone:** M1 - MVP Showcase  
-**Status:** Phase B complete — Story **5.2** shipped. **Phase C:** **Story 6.6** ✅ (developers → productivity report). **Next:** **6.1** (budget / **TBD** / `projectsSummary`) per [`van/stories.md`](stories.md). Remaining Phase C order after **6.1** per Hannibal — **M2** / **deferred** in stories.
+**Status:** Phase B complete — Story **5.2** shipped. **Phase C:** **6.1** ✅ (budget, **task estimates total** (Hannibal **B**), **actual** on `projectsSummary` tables; **TBD**; invalidation; CSV legend) + **6.6** ✅ (developers → productivity). **Next:** **6.2** (tasks missing estimates) per [`van/stories.md`](stories.md). Remaining Phase C: **6.2**–**6.5**; **M2** / **deferred** in stories.
 
 > **Navigation:** This is the entry point. Read this first for project context.  
 > Story details → [`van/stories.md`](stories.md) | QA strategy & results → [`van/qa.md`](qa.md)
@@ -84,13 +84,13 @@
 - ✅ Story 5.2 — README setup/walkthrough/screenshots + `VANDURA_ARCHITECTURE.md` pass
 
 **Phase C (in flight — see [`van/stories.md`](stories.md) Phase C):**
+- ✅ Story **6.1** — **`projectsSummary.taskEstimatesTotal`** (SQL + `taskEstimatesTotalFromRollup`); **`/`**, **`/projects`**, **`/reports`** show **Budget**, **Task est. total**, **Actual**; actuals report top row adds **Task est. total** card; **TBD** + variance **TBD** when no project budget; CSV **Note** row; `tests/budget-display.test.ts` (incl. rollup) + `ReportService` / `projectsSummary` path — **QA complete** (`van/qa.md` → Story 6.1)
 - ✅ Story **6.6** — **`/developers`** → **`/reports/productivity`** link (top action row, Hannibal copy + B.A. draft subline; `tests/story-6-6-developers-productivity-link.test.ts`)
 
 **Still Missing (Phase B scope):**
 - _(none — Phase B backlog cleared.)_
 
 **Phase C (remaining — planned, in-repo; order provisional)** — per-story **B.A. estimates** in [`van/stories.md`](stories.md) → Phase C:
-- **Story 6.1** — Project **budget** vs **task estimates**; **`TBD`** instead of **`N/A`**; invalidation, report/CSV, docs. Hannibal **6–10h** · **B.A. 8–12h** (+**2–3h** if `budget_hours` migration).
 - **Story 6.2** — **Second card** on project detail: tasks missing estimates, fast path to edit. Hannibal **4–6h** · **B.A. 4–6h** (+**1–2h** dashboard stretch).
 - **Story 6.3** — **Story #** column + migration; sortable **Story #, Name, Status, Estimated hours**. Hannibal **3–5h** · **B.A. 5–8h**.
 - **Story 6.4** — Hide/show **`completed`** tasks (client + optional **localStorage**). Hannibal **2–3h** · **B.A. 2–3h**.
@@ -103,7 +103,7 @@
 - _(none)_
 
 ### What's PLANNED 📋
-- **Phase C:** **6.6** shipped; **6.1**–**6.5** remaining (**execution order** in [`van/stories.md`](stories.md)); full-phase **~34–54h** combined (B.A. + Murdock) — **M1 ~20h** triage in stories **Planning** + optional candidates.
+- **Phase C:** **6.1** + **6.6** shipped; **6.2**–**6.5** remaining (**execution order** in [`van/stories.md`](stories.md)); full-phase **~34–54h** combined (B.A. + Murdock) — **M1 ~20h** triage in stories **Planning** + optional candidates.
 - **Story 7.1** — Excel import **duplicate policy** — **B.A. 10–22h** (scope-dependent) — [`van/stories.md`](stories.md) **Import integrity** (not Phase C unless triaged in).
 - **Story 7.2** — **Whole-timesheet** / **discard import** — **B.A. ~10–26h** (fork A/B/C) — same section; **7.1+7.2 ~24–45h** combined if both ship.
 - **M2 / hosting**, **Story 1.2** (dev hardening), **Story 3.4** (parse remediation), and other **deferred** work — see [`van/stories.md`](stories.md) Deferred section.

@@ -4,6 +4,7 @@ import { useParams } from 'next/navigation';
 import { useState } from 'react';
 import { trpc } from '@/lib/trpc-client';
 import { TasksSection } from './_components/TasksSection';
+import { formatProjectBudgetHours, taskEstimatesTotal, taskEstimatesTotalDisplay } from '@/lib/budget-display';
 
 export default function ProjectDetailPage() {
   const params = useParams();
@@ -12,6 +13,10 @@ export default function ProjectDetailPage() {
   const projectId = Number(idParam);
   const { data, isLoading, error, refetch } = trpc.project.get.useQuery(
     { id: projectId },
+    { enabled: Number.isFinite(projectId), meta: { suppressGlobalError: true } }
+  );
+  const { data: projectTasks } = trpc.task.listByProject.useQuery(
+    { projectId },
     { enabled: Number.isFinite(projectId), meta: { suppressGlobalError: true } }
   );
   const [taskCount, setTaskCount] = useState<number>(0);
@@ -40,12 +45,28 @@ export default function ProjectDetailPage() {
   }
   if (!data) return <div className="text-muted-foreground">Project not found.</div>;
 
+  const tasks = projectTasks ?? [];
+  const budgetLabel = formatProjectBudgetHours(data.estimatedHours);
+  const taskTotalLine = taskEstimatesTotalDisplay(tasks);
+  const taskSum = taskEstimatesTotal(tasks);
+  const budgetNum = data.estimatedHours;
+  const showCompare =
+    taskSum.kind === 'hours' &&
+    typeof budgetNum === 'number' &&
+    Math.abs(budgetNum - taskSum.value) > 0.001;
+
   return (
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold">{data.name}</h1>
           {data.description ? <p className="text-muted-foreground mt-2">{data.description}</p> : null}
+          <p className="text-sm text-muted-foreground mt-2 max-w-2xl">
+            <span className="text-foreground font-medium">Budget</span> (below) is the project hour cap
+            from this page&apos;s edit form. <span className="text-foreground font-medium">Task
+            estimates</span> on the tasks table are separate roll-ups used for the &quot;Task estimates
+            total&quot; line.
+          </p>
         </div>
         <div className="flex gap-3">
             <a
@@ -74,13 +95,22 @@ export default function ProjectDetailPage() {
           <div className="text-sm text-muted-foreground">Status</div>
           <div className="text-lg font-semibold mt-1">{data.status}</div>
         </div>
-        <div className="rounded-lg border bg-card p-4">
-          <div className="text-sm text-muted-foreground">Estimated hours</div>
-          <div className="text-lg font-semibold mt-1">
-            {data.estimatedHours === null || data.estimatedHours === undefined
-              ? 'N/A'
-              : `${data.estimatedHours.toFixed(1)}h`}
+        <div className="rounded-lg border bg-card p-4 md:col-span-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <div className="text-sm text-muted-foreground">Budget</div>
+              <div className="text-lg font-semibold mt-1">{budgetLabel}</div>
+            </div>
+            <div>
+              <div className="text-sm text-muted-foreground">Task estimates total</div>
+              <div className="text-lg font-semibold mt-1">{taskTotalLine}</div>
+            </div>
           </div>
+          {showCompare && taskSum.kind === 'hours' && typeof budgetNum === 'number' ? (
+            <p className="text-sm text-muted-foreground mt-3">
+              Task estimates total {taskSum.value.toFixed(1)}h · Project budget {budgetNum.toFixed(1)}h
+            </p>
+          ) : null}
         </div>
         <div className="rounded-lg border bg-card p-4">
           <div className="text-sm text-muted-foreground">Tasks</div>

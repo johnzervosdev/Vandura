@@ -6,6 +6,7 @@ import { useSearchParams } from 'next/navigation';
 import { trpc } from '@/lib/trpc-client';
 import type { ProjectSummaryRow } from '@/lib/router-types';
 import { Modal } from '@/components/Modal';
+import { formatProjectBudgetHours } from '@/lib/budget-display';
 
 export default function ProjectsPage() {
   const utils = trpc.useUtils();
@@ -55,7 +56,9 @@ export default function ProjectsPage() {
         <div>
           <h1 className="text-3xl font-bold">Projects</h1>
           <p className="text-muted-foreground mt-2">
-            Manage projects and track estimated vs actual hours.
+            Per-project <span className="text-foreground">budget</span>,{' '}
+            <span className="text-foreground">task estimates total</span>, and{' '}
+            <span className="text-foreground">actual</span> hours (from time entries).
           </p>
         </div>
         <Link
@@ -111,14 +114,22 @@ export default function ProjectsPage() {
                   <tr className="border-b">
                     <th className="text-left py-3 px-4">Name</th>
                     <th className="text-left py-3 px-4">Status</th>
-                    <th className="text-right py-3 px-4">Estimated Hours</th>
-                    <th className="text-right py-3 px-4">Actual Hours</th>
+                    <th className="text-right py-3 px-4">Budget</th>
+                    <th className="text-right py-3 px-4">Task est. total</th>
+                    <th className="text-right py-3 px-4">Actual</th>
                     <th className="text-right py-3 px-4">Variance</th>
                     <th className="text-right py-3 px-4">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {rows.map((p) => (
+                  {rows.map((p) => {
+                    const hasBudget = p.estimatedHours !== null && p.estimatedHours !== undefined;
+                    const varianceClass = hasBudget
+                      ? p.variance > 0
+                        ? 'text-destructive'
+                        : 'text-green-600'
+                      : 'text-muted-foreground';
+                    return (
                     <tr key={p.projectId} className="border-b last:border-b-0">
                       <td className="py-3 px-4">
                         <a className="font-medium hover:underline" href={`/projects/${p.projectId}`}>
@@ -145,12 +156,21 @@ export default function ProjectsPage() {
                         </select>
                       </td>
                       <td className="py-3 px-4 text-right">
-                        {p.estimatedHours === null || p.estimatedHours === undefined ? 'N/A' : `${p.estimatedHours.toFixed(1)}h`}
+                        {formatProjectBudgetHours(p.estimatedHours)}
+                      </td>
+                      <td className="py-3 px-4 text-right">
+                        {formatProjectBudgetHours(p.taskEstimatesTotal)}
                       </td>
                       <td className="py-3 px-4 text-right">{p.actualHours.toFixed(1)}h</td>
-                      <td className={`py-3 px-4 text-right ${p.variance > 0 ? 'text-destructive' : 'text-green-600'}`}>
-                        {p.variance > 0 ? '+' : ''}
-                        {p.variance.toFixed(1)}h
+                      <td className={`py-3 px-4 text-right ${varianceClass}`}>
+                        {hasBudget ? (
+                          <>
+                            {p.variance > 0 ? '+' : ''}
+                            {p.variance.toFixed(1)}h
+                          </>
+                        ) : (
+                          'TBD'
+                        )}
                       </td>
                       <td className="py-3 px-4 text-right">
                         <div className="inline-flex gap-2">
@@ -172,7 +192,8 @@ export default function ProjectsPage() {
                         </div>
                       </td>
                     </tr>
-                  ))}
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

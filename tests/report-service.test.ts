@@ -22,8 +22,32 @@ test('exportToCSV preserves zero estimated hours (project + task)', () => {
     ],
   });
 
+  assert.match(csv, /Note,.*README/);
   assert.match(csv, /Total Estimated Hours,0/);
   assert.match(csv, /"QA Task",0,1\.25,1\.25,0\.0%/);
+});
+
+test('exportToCSV uses TBD for null project budget and null task estimate', () => {
+  const csv = reportService.exportToCSV({
+    projectId: 1,
+    projectName: 'P',
+    totalEstimatedHours: null,
+    totalActualHours: 2,
+    variance: 0,
+    variancePercentage: 0,
+    tasks: [
+      {
+        taskId: 1,
+        taskName: 'T',
+        estimatedHours: null,
+        actualHours: 1,
+        variance: 0,
+        variancePercentage: 0,
+      },
+    ],
+  });
+  assert.match(csv, /Total Estimated Hours,TBD/);
+  assert.match(csv, /"T",TBD,/);
 });
 
 test('exportToCSV escapes project name containing commas', () => {

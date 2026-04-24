@@ -3,6 +3,7 @@ import { db } from '../db';
 import { projects, tasks, developers, timeEntries } from '../db/schema';
 import { eq, and, gte, lte, desc, sql } from 'drizzle-orm';
 import { startOfDay, endOfDay, startOfWeek, endOfWeek } from '@/lib/date-utils';
+import { taskEstimatesTotalFromRollup } from '@/lib/budget-display';
 
 /**
  * ReportService
@@ -14,7 +15,13 @@ export interface ProjectSummary {
   projectId: number;
   projectName: string;
   status: string;
+  /** Project cap (`projects.estimatedHours`). */
   estimatedHours: number | null;
+  /**
+   * Sum of per-task `estimatedHours` (Hannibal B): a number when every task has a set estimate;
+   * `null` means TBD.
+   */
+  taskEstimatesTotal: number | null;
   actualHours: number;
   variance: number;
   variancePercentage: number;
@@ -76,6 +83,12 @@ export class ReportService {
       .select({
         projectId: tasks.projectId,
         taskCount: sql<number>`CAST(COUNT(*) AS INTEGER)`.as('taskCount'),
+        nullEstimateCount:
+          sql<number>`CAST(COALESCE(SUM(CASE WHEN ${tasks.estimatedHours} IS NULL THEN 1 ELSE 0 END), 0) AS INTEGER)`.as(
+            'nullEstimateCount'
+          ),
+        sumTaskEstimatedHours:
+          sql<number>`COALESCE(SUM(${tasks.estimatedHours}), 0)`.as('sumTaskEstimatedHours'),
       })
       .from(tasks)
       .groupBy(tasks.projectId)
@@ -91,6 +104,8 @@ export class ReportService {
           totalMinutes: timeAgg.totalMinutes,
           developerCount: timeAgg.developerCount,
           taskCount: taskAgg.taskCount,
+          nullEstimateCount: taskAgg.nullEstimateCount,
+          sumTaskEstimatedHours: taskAgg.sumTaskEstimatedHours,
         })
         .from(projects)
         .leftJoin(timeAgg, eq(timeAgg.projectId, projects.id))
@@ -99,6 +114,10 @@ export class ReportService {
       return rows.map((r) => {
         const actualHours = (r.totalMinutes ?? 0) / 60;
         const estimatedHours = r.estimatedHours;
+        const taskCount = r.taskCount ?? 0;
+        const nullEst = r.nullEstimateCount ?? 0;
+        const sumTask = r.sumTaskEstimatedHours ?? 0;
+        const taskEstimatesTotal = taskEstimatesTotalFromRollup(taskCount, nullEst, sumTask);
 
         // Keep behavior consistent with AggregationEngine: when estimated hours is null/0, variance is 0.
         const variance = estimatedHours ? actualHours - estimatedHours : 0;
@@ -109,11 +128,12 @@ export class ReportService {
           projectName: r.projectName,
           status: r.status,
           estimatedHours,
+          taskEstimatesTotal,
           actualHours,
           variance,
           variancePercentage,
           developerCount: r.developerCount ?? 0,
-          taskCount: r.taskCount ?? 0,
+          taskCount,
         };
       });
     } catch (error) {
@@ -229,12 +249,16 @@ export class ReportService {
     const csvEscape = (value: string) => value.replace(/"/g, '""');
     const csvString = (value: string) => `"${csvEscape(value)}"`;
 
+    const cell = (h: number | null | undefined) =>
+      h === null || h === undefined ? 'TBD' : String(h);
+
     const lines: string[] = [];
 
-    // Header
+    // Story 6.1: keep legacy column names; spell semantics in legend (see README).
+    lines.push('Note,See README: "Total Estimated Hours" row = project budget (projects.estimatedHours). Task section "Estimated Hours" = per-task estimate. TBD = not set.');
     lines.push('Project Summary');
     lines.push(`Project,${csvString(report.projectName)}`);
-    lines.push(`Total Estimated Hours,${report.totalEstimatedHours ?? 'N/A'}`);
+    lines.push(`Total Estimated Hours,${cell(report.totalEstimatedHours)}`);
     lines.push(`Total Actual Hours,${report.totalActualHours.toFixed(2)}`);
     lines.push(`Variance,${report.variance.toFixed(2)}`);
     lines.push(`Variance %,${report.variancePercentage.toFixed(1)}%`);
@@ -244,7 +268,7 @@ export class ReportService {
     lines.push('Task,Estimated Hours,Actual Hours,Variance,Variance %');
     for (const task of report.tasks) {
       lines.push(
-        `${csvString(task.taskName)},${task.estimatedHours ?? 'N/A'},${task.actualHours.toFixed(2)},${task.variance.toFixed(2)},${task.variancePercentage.toFixed(1)}%`
+        `${csvString(task.taskName)},${cell(task.estimatedHours)},${task.actualHours.toFixed(2)},${task.variance.toFixed(2)},${task.variancePercentage.toFixed(1)}%`
       );
     }
 

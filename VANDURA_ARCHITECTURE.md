@@ -187,6 +187,8 @@ const variancePercentage =
 
 Formats aggregation output for the tRPC response and handles CSV generation. The CSV export uses string formatting (no third-party CSV library) with correct comma escaping for fields that may contain commas or quotes.
 
+**Field semantics (Story 6.1):** In the app and docs, **project** `estimatedHours` is the **budget** (hour cap). **Task** `estimatedHours` is the per-task **estimate**. The CSV keeps the historical row label **“Total Estimated Hours”** for the project line but adds a **Note** row: that value is the project **budget**; task rows use per-task **Estimated Hours**. **TBD** in exports means unset (`null`). Shared display helpers: `src/lib/budget-display.ts`.
+
 ---
 
 ## API Layer (tRPC)
@@ -210,7 +212,7 @@ All API calls go through tRPC, served at **`/api/trpc`** via `src/app/api/trpc/[
 - `parseExcel` / `importExcel` — preview vs commit (`TimesheetService.bulkCreateEntries`)
 
 **`report`**
-- `projectsSummary` — dashboard + `/reports` table
+- `projectsSummary` — dashboard + `/projects` + `/reports` tables; includes **`estimatedHours`** (project budget), **`taskEstimatesTotal`** (Hannibal **B** roll-up), **`actualHours`**, variance helpers
 - `actualsVsEstimates` — `/reports/[projectId]` task breakdown + presets
 - `developerProductivity` — `/reports/productivity`
 - `timeline` — chart-oriented series *(wired for future UI)*
@@ -279,11 +281,11 @@ Excel → preview → import, tasks, actuals report, CSV, dashboard.
 Manual timesheets UI, developers + active flag, developer productivity report, Excel in-app documentation + `public/timesheet-template.xlsx`, global error handling + `not-found`, README/screenshots and this architecture pass (Story 5.2).
 
 **Phase C — In progress**  
-Story **6.6:** discoverability — `/developers` links to `/reports/productivity` (no hub changes). Next: **6.1** budget / **TBD** / `projectsSummary` invalidation (`van/stories.md`).
+Story **6.6** ✅: discoverability — `/developers` → `/reports/productivity`. Story **6.1** ✅: **`projectsSummary.taskEstimatesTotal`** (Hannibal **B**), **`/`** / **`/projects`** / **`/reports`** three-way hour columns, actuals report **Task est. total** card, **TBD** for unset, project detail **Budget** + **Task estimates total**, `projectsSummary` invalidation on task/timesheet changes, CSV legend — see `src/lib/budget-display.ts` and README. **Next:** `van/stories.md` (e.g. **6.2**).
 
 **Deferred (post-MVP)**  
 **Stories 7.1–7.2** import integrity (dedupe / conflict review + whole-timesheet discard/replace — see `van/stories.md`), audit log, **Story 1.2** dev-server hardening (`dev:win` / `dev:clean`), parse-preview remediation (Story 3.4).
 
 ---
 
-*Last Updated: 2026-04-17 — Story 6.6 developers → productivity link; Story 7.1 import policy (planned) under Import deduplication.*
+*Last Updated: 2026-04-12 — Story 6.1 `taskEstimatesTotal` + list UIs; Story 6.6 developers link; Story 7.1 import policy (planned) under Import deduplication.*

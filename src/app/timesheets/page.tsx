@@ -201,6 +201,7 @@ export default function TimesheetsPage() {
       }
 
       await utils.timesheet.list.invalidate();
+      await utils.report.projectsSummary.invalidate();
       setCreateOpen(false);
       setEditOpen(false);
     } catch (e) {
@@ -214,6 +215,7 @@ export default function TimesheetsPage() {
     try {
       await deleteEntry.mutateAsync({ id: selectedId });
       await utils.timesheet.list.invalidate();
+      await utils.report.projectsSummary.invalidate();
       setDeleteOpen(false);
       setSelectedId(null);
     } catch (e) {

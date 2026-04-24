@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { trpc } from '@/lib/trpc-client';
 import type { ProjectSummaryRow } from '@/lib/router-types';
+import { formatProjectBudgetHours, totalActiveProjectBudget } from '@/lib/budget-display';
 
 export default function HomePage() {
   const { data: projects, isLoading, error, refetch } = trpc.report.projectsSummary.useQuery(undefined, {
@@ -35,20 +36,24 @@ export default function HomePage() {
   const allProjects = projects || [];
   const activeProjects = allProjects.filter((p) => p.status === 'active');
   const hasAnyProjects = allProjects.length > 0;
-  const totalEstimated = activeProjects.reduce(
-    (sum: number, p: ProjectSummaryRow) => sum + (p.estimatedHours || 0),
-    0
-  );
+  const totalBudgetAgg = totalActiveProjectBudget(allProjects);
   const totalActual = activeProjects.reduce((sum: number, p: ProjectSummaryRow) => sum + p.actualHours, 0);
-  const totalVariance = totalActual - totalEstimated;
-  const variancePercent = totalEstimated > 0 ? (totalVariance / totalEstimated) * 100 : 0;
+  const totalVariance =
+    totalBudgetAgg.kind === 'hours' ? totalActual - totalBudgetAgg.value : null;
+  const variancePercent =
+    totalBudgetAgg.kind === 'hours' && totalBudgetAgg.value > 0 && totalVariance !== null
+      ? (totalVariance / totalBudgetAgg.value) * 100
+      : null;
 
   return (
     <div className="space-y-8">
       <div>
         <h1 className="text-4xl font-bold">Dashboard</h1>
         <p className="text-muted-foreground mt-2">
-          Welcome to Project Vandura - Your automated time tracking system
+          Welcome to Project Vandura - Your automated time tracking system. The table below shows
+          per-project <span className="text-foreground font-medium">budget</span> (hour cap),{' '}
+          <span className="text-foreground font-medium">task estimates total</span> (roll-up of task
+          hours), and <span className="text-foreground font-medium">actuals</span> from time entries.
         </p>
       </div>
 
@@ -60,8 +65,10 @@ export default function HomePage() {
         </div>
 
         <div className="bg-card border rounded-lg p-6">
-          <div className="text-sm text-muted-foreground">Total Estimated Hours</div>
-          <div className="text-3xl font-bold mt-2">{totalEstimated.toFixed(1)}h</div>
+          <div className="text-sm text-muted-foreground">Total budgeted hours (active projects)</div>
+          <div className="text-3xl font-bold mt-2">
+            {totalBudgetAgg.kind === 'tbd' ? 'TBD' : `${totalBudgetAgg.value.toFixed(1)}h`}
+          </div>
         </div>
 
         <div className="bg-card border rounded-lg p-6">
@@ -70,11 +77,20 @@ export default function HomePage() {
         </div>
 
         <div className="bg-card border rounded-lg p-6">
-          <div className="text-sm text-muted-foreground">Variance</div>
-          <div className={`text-3xl font-bold mt-2 ${totalVariance > 0 ? 'text-destructive' : 'text-green-600'}`}>
-            {totalVariance > 0 ? '+' : ''}{totalVariance.toFixed(1)}h
-            <span className="text-sm ml-2">({variancePercent.toFixed(1)}%)</span>
-          </div>
+          <div className="text-sm text-muted-foreground">Variance (actual − budget)</div>
+          {totalBudgetAgg.kind === 'tbd' || totalVariance === null ? (
+            <div className="text-3xl font-bold mt-2 text-muted-foreground">TBD</div>
+          ) : (
+            <div
+              className={`text-3xl font-bold mt-2 ${totalVariance > 0 ? 'text-destructive' : 'text-green-600'}`}
+            >
+              {totalVariance > 0 ? '+' : ''}
+              {totalVariance.toFixed(1)}h
+              {variancePercent !== null ? (
+                <span className="text-sm ml-2">({variancePercent.toFixed(1)}%)</span>
+              ) : null}
+            </div>
+          )}
         </div>
       </div>
 
@@ -96,7 +112,8 @@ export default function HomePage() {
                 <thead>
                   <tr className="border-b">
                     <th className="text-left py-3 px-4">Project</th>
-                    <th className="text-right py-3 px-4">Estimated</th>
+                    <th className="text-right py-3 px-4">Budget</th>
+                    <th className="text-right py-3 px-4">Task est. total</th>
                     <th className="text-right py-3 px-4">Actual</th>
                     <th className="text-right py-3 px-4">Variance</th>
                     <th className="text-right py-3 px-4">Tasks</th>
@@ -104,32 +121,51 @@ export default function HomePage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {activeProjects.map((project: ProjectSummaryRow) => (
-                    <tr key={project.projectId} className="border-b hover:bg-muted/50">
-                      <td className="py-3 px-4">
-                        <Link
-                          href={`/projects/${project.projectId}`}
-                          className="font-medium hover:text-primary"
-                        >
-                          {project.projectName}
-                        </Link>
-                      </td>
-                      <td className="text-right py-3 px-4">
-                        {project.estimatedHours != null ? `${project.estimatedHours.toFixed(1)}h` : 'N/A'}
-                      </td>
-                      <td className="text-right py-3 px-4">
-                        {project.actualHours.toFixed(1)}h
-                      </td>
-                      <td className={`text-right py-3 px-4 ${project.variance > 0 ? 'text-destructive' : 'text-green-600'}`}>
-                        {project.variance > 0 ? '+' : ''}{project.variance.toFixed(1)}h
-                        <span className="text-xs ml-1">
-                          ({project.variancePercentage.toFixed(0)}%)
-                        </span>
-                      </td>
-                      <td className="text-right py-3 px-4">{project.taskCount}</td>
-                      <td className="text-right py-3 px-4">{project.developerCount}</td>
-                    </tr>
-                  ))}
+                  {activeProjects.map((project: ProjectSummaryRow) => {
+                    const hasBudget =
+                      project.estimatedHours !== null && project.estimatedHours !== undefined;
+                    const varianceClass = hasBudget
+                      ? project.variance > 0
+                        ? 'text-destructive'
+                        : 'text-green-600'
+                      : 'text-muted-foreground';
+                    return (
+                      <tr key={project.projectId} className="border-b hover:bg-muted/50">
+                        <td className="py-3 px-4">
+                          <Link
+                            href={`/projects/${project.projectId}`}
+                            className="font-medium hover:text-primary"
+                          >
+                            {project.projectName}
+                          </Link>
+                        </td>
+                        <td className="text-right py-3 px-4">
+                          {formatProjectBudgetHours(project.estimatedHours)}
+                        </td>
+                        <td className="text-right py-3 px-4">
+                          {formatProjectBudgetHours(project.taskEstimatesTotal)}
+                        </td>
+                        <td className="text-right py-3 px-4">
+                          {project.actualHours.toFixed(1)}h
+                        </td>
+                        <td className={`text-right py-3 px-4 ${varianceClass}`}>
+                          {hasBudget ? (
+                            <>
+                              {project.variance > 0 ? '+' : ''}
+                              {project.variance.toFixed(1)}h
+                              <span className="text-xs ml-1">
+                                ({project.variancePercentage.toFixed(0)}%)
+                              </span>
+                            </>
+                          ) : (
+                            'TBD'
+                          )}
+                        </td>
+                        <td className="text-right py-3 px-4">{project.taskCount}</td>
+                        <td className="text-right py-3 px-4">{project.developerCount}</td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>

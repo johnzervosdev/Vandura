@@ -20,6 +20,7 @@ function arrayBufferToBase64(buffer: ArrayBuffer): string {
 }
 
 export default function TimesheetUploadPage() {
+  const utils = trpc.useUtils();
   const [file, setFile] = useState<File | null>(null);
   const [fileBuffer, setFileBuffer] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -66,6 +67,7 @@ export default function TimesheetUploadPage() {
 
     try {
       const result = await importExcel.mutateAsync({ fileBuffer });
+      await utils.report.projectsSummary.invalidate();
       setSuccess(`Imported ${result.imported} time entries.`);
       setPreviewOpen(false);
     } catch (e) {
