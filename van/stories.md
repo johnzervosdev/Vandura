@@ -1,6 +1,6 @@
 # Project Vandura — User Stories & Acceptance Criteria
 
-**Last Updated:** 2026-04-12 (Phase C — **B.A. sequencing tweak** 6.6 first + **6.3/6.4** schedule flexibility; **Hannibal** keeps **6.3→6.4**; **M1 ~20h** triage; 7.1–7.2)  
+**Last Updated:** 2026-04-17 (Story **6.6** ✅; Phase C — **6.3/6.4** schedule note; **M1 ~20h** triage; 7.1–7.2)  
 **Owner:** B.A. (maintains ACs + implementation notes) | Murdock (updates QA checklists)
 
 > **Navigation:** [`van/project.md`](project.md) — project dashboard | [`van/qa.md`](qa.md) — test plans & results
@@ -724,19 +724,32 @@ All **data queries** below use **`meta: { suppressGlobalError: true }`** → on 
 ---
 
 ### Story 6.6: Developers page → Developer productivity report (IA) (P2) — **0.5–1h** (Hannibal informal) · **B.A.: 0.5–1h** · **Murdock QA: 0.5–1h** · **Combined (planning): ~1–2h**
-**Status:** Not Started  
+**Status:** ✅ Complete
 **Owner:** B.A.
 
 **Problem:** **`/reports/productivity`** (Developer productivity) exists but is **hard to find** from **`/developers`** — users must know to open **Reports** first and spot the right destination.
 
 **Scope:** On **`/developers`**, add a **visible text link** (and optional short subline) to **`/reports/productivity`** — e.g. next to the page title or in the top action row near **Add developer** — copy along the lines of **“View developer productivity report →”**. Use **`next/link`**; no new data fetching.
 
-**Acceptance Criteria:**
-- [ ] From **`/developers`**, user reaches **`/reports/productivity`** in **one click** without using the main Reports hub first.
-- [ ] Link is keyboard-focusable and has clear accessible **name** (not “click here”).
-- [ ] **Out of scope:** Duplicating report content on `/developers`; changing `/reports` layout.
+**Decisions (Hannibal — Story 6.6, B.A. Q&A):**
 
-**Phase note:** **First** in Hannibal’s Phase C execution order (see **Planning** above) — small IA before budget/summary/task-board batch.
+- **Link label (copy & tone):** Primary visible text: **“View developer productivity report”** (verb + destination; matches in-app language: it lives under **Reports**). A trailing **→** or light chevron is **optional** if it stays one focusable control with a single clear **accessible name** (prefer **name** = the full sentence without relying on the arrow alone). Avoid **“dashboard”** here — the destination is the **Developer productivity** **report** route (`/reports/productivity`).
+- **Optional subtext:** **Yes, one line is allowed** under the page title **or** directly under the link — **Hannibal approves** final product copy; B.A. may ship a draft (e.g. *“See hours, projects, and tasks by developer for a date range.”*); Murdock may flag a11y/length only — no separate PM beyond Hannibal for this microcopy.
+- **Placement:** **Primary:** top **action row**, **next to “Add developer”** (same visual band as other primary actions). **Do not** duplicate the same link in two places for 6.6 unless one is clearly secondary (Hannibal: **one** primary link is enough). **Mobile:** Prefer **one row** when it fits; if the row crowds, **stack** the link **below** the title + actions block so it remains **tappable** and **above the fold** when reasonable — not a hard AC.
+- **`/reports` hub:** **Strict:** no layout or navigation changes to **`/reports`** in **6.6** (AC unchanged).
+- **After 6.6 (Phase C order):** **Next story is 6.1** (budget / **TBD** / `projectsSummary` invalidation) per Hannibal execution order — **not** 6.2 unless Hannibal explicitly re-sequences.
+- **Demo / sign-off bar:** Success = **one click** from **`/developers`** to **`/reports/productivity`**, link **keyboard-focusable**, **accessible name** reads sensibly in a screen reader (not “click here”). **1366×768 above the fold** is **desired** for the primary link, **not** a formal AC — ship the best default layout B.A. chooses within the placement rules above.
+
+**Acceptance Criteria:**
+- [x] From **`/developers`**, user reaches **`/reports/productivity`** in **one click** without using the main Reports hub first.
+- [x] Link is keyboard-focusable and has clear accessible **name** (not “click here”).
+- [x] **Out of scope:** Duplicating report content on `/developers`; changing `/reports` layout.
+
+**Implementation (shipped):** `src/app/developers/page.tsx` — **`next/link`** in the top action row next to **Add developer**; label **“View developer productivity report”**; subline (Hannibal editorial, aligned with **Developers** page title): *“Hours, projects, and tasks by developer for a selected date range.”* `tests/story-6-6-developers-productivity-link.test.ts` locks link text + `href`, subline copy, and source-order vs **Add Developer**. **`/reports` hub untouched.**
+
+**Hannibal sign-off:** Likes the page. **Optional polish (not blockers):** (1) The app **shell** still renders an **h1** “Vandura” in `layout` while the page has its own **h1** (e.g. “Developers”) — **two top-level headings** is a **pre-existing** pattern across the app, **not** introduced by 6.6; fixing it would be a **global** nav / heading-level **a11y** pass, out of scope for 6.6. (2) The report **text link** is visually **lighter** than the **Add developer** primary button — **appropriate** so the main CTA stays “add” while the report stays discoverable.
+
+**Phase note:** **First** in Hannibal’s Phase C execution order (see **Planning** above) — small IA before budget/summary/task-board batch. **Next:** **6.1**.
 
 ---
 
@@ -873,4 +886,4 @@ These items are **on record for planning** but are **not** committed deliverable
 ---
 
 **End of Document**  
-Last Updated: 2026-04-17 — Phase C **B.A. estimates** + **Murdock QA / testing-time rollup** (`QA / Murdock — Phase C`); 7.1–7.2; optional Phase C candidates; captured idea: budget vs status pie; Phase B closed (`van/qa.md` evidence block)
+Last Updated: 2026-04-17 — Story **6.6** ✅; Phase C **B.A. estimates** + **Murdock QA / testing-time rollup** (`QA / Murdock — Phase C`); 7.1–7.2; optional Phase C candidates; captured idea: budget vs status pie; Phase B closed (`van/qa.md` evidence block)

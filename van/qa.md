@@ -1,6 +1,6 @@
 # Project Vandura — QA Strategy, Test Plans & Results
 
-**Last Updated:** 2026-04-17 (Story 5.2 sign-off; Phase C — Murdock QA pointer in **Test Strategy**; Story 5.2 README / `.env` / screenshot evidence)  
+**Last Updated:** 2026-04-17 (Story 6.6 Hannibal sign-off; Story 5.2 sign-off; Phase C Murdock pointer; automated registry)  
 **Owner:** Murdock
 
 > **Navigation:** [`van/project.md`](project.md) — project dashboard | [`van/stories.md`](stories.md) — story ACs & QA checklists
@@ -40,6 +40,11 @@
 ### Phase C (planned — QA)
 Per-story testing focus and an **informal Murdock time rollup (~12–18h for Stories 6.1–6.6**, excluding **7.x** import pack unless triaged) live in **`van/stories.md` → Phase C → `QA / Murdock — Phase C`**. As stories land, add evidence rows or a short sign-off block in this file.
 
+#### Story 6.6 — Hannibal sign-off
+- **Product:** Approved — “likes the page.”
+- **Automated:** `tests/story-6-6-developers-productivity-link.test.ts` (link label, `href`, `next/link`, Hannibal subline copy, top-band order vs **Add Developer**).
+- **Optional follow-ups (not 6.6 blockers):** (1) **Duplicate h1** — shell `layout` **h1** “Vandura” + per-page **h1** is an **existing** app pattern; a **single-h1** / landmark cleanup would be a **global** story. (2) **Visual hierarchy** — secondary report link vs primary **Add developer** CTA: **intentional**; no change.
+
 ---
 
 ## Automated Test Registry
@@ -77,11 +82,12 @@ Per-story testing focus and an **informal Murdock time rollup (~12–18h for Sto
 | `tests/timesheet-router-excel.test.ts` | Story 3.2: `parseExcel` / `importExcel` with **mocked** `parseFile` + `bulkCreateEntries` | ✅ Passing |
 | `tests/timesheet-sample-extract.test.ts` | Weekly-grid sample extraction (JZER-style; synthetic workbook); **preview-mode** | ✅ Passing — Known Issue #3 |
 | `tests/story-3-3-excel-format-docs.test.ts` | Story 3.3: `public/timesheet-template.xlsx` shape, preview parse of template, upload page DoD strings | ✅ Passing |
+| `tests/story-6-6-developers-productivity-link.test.ts` | Story 6.6: `/developers` → `/reports/productivity` (`next/link`, label, subline, **Add Developer** band order) | ✅ Passing |
 | `tests/story-5-1-global-errors.test.ts` | Story 5.1: `getApiErrorMessage`, `createAppQueryClient` global query/mutation handlers + toast dedupe | ✅ Passing |
 | `tests/trpc-error-sanitize.test.ts` | Story 5.1: `sanitizeTrpcShapeForClient` production heuristics (INTERNAL unsafe/safe, BAD_REQUEST+zod, SQLite cause) | ✅ Passing |
 | `tests/validators.test.ts` | Schema validation (createProject, createTask, createTimeEntry) | ✅ Passing |
 
-**Suite status:** **93/93** passing — **20** test files under `tests/*.test.ts` (last full run: **2026-04-17** — post–Story 5.2 Hannibal doc sign-off sanity).
+**Suite status:** **96/96** passing — **21** test files under `tests/*.test.ts` (last full run: Story **6.6** contract tests expanded).
 
 **Story 5.1 production sanitize sign-off:** Hannibal — **`tests/trpc-error-sanitize.test.ts` green in CI** plus **code review** of the production error path satisfies sign-off **layer (2)**. A separate `next build` + `next start` + forced failure smoke is **optional** (nice-to-have), not a second gate. Full wording: **`van/stories.md` → Story 5.1** (AC, Murdock checklist, **QA expectations — Hannibal**).
 
@@ -120,7 +126,7 @@ Committed paths under **`docs/screenshots/`** (referenced from **README** / docs
 
 **`VANDURA_ARCHITECTURE.md` (5.2 accuracy):** Hannibal **spot-check** of B.A.’s refresh vs current repo: stack, App Router + tRPC, SQLite/Drizzle, core services (`TimesheetService`, `ExcelParser`, `ReportService`, `AggregationEngine`), and testing/CI framing vs `scripts/run-tests.mjs` / this file. **No conflicting claims** surfaced during sign-off.
 
-**Automated suite:** **`npm test`** — **93/93** passing, run **2026-04-17** after Hannibal doc edits (README is doc-only for code paths; optional Murdock sanity satisfied).
+**Automated suite:** **`npm test`** — **96/96** passing, last run after Story **6.6** (developers → productivity link test).
 
 ### Next Test Targets (Deferred to Phase B)
 The following were explicitly deferred during Phase A — known debt, not a blocker:

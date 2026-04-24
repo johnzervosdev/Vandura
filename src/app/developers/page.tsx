@@ -1,6 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
+import Link from 'next/link';
 import { trpc } from '@/lib/trpc-client';
 import type { DeveloperListRow } from '@/lib/router-types';
 import { Modal } from '@/components/Modal';
@@ -121,18 +122,31 @@ export default function DevelopersPage() {
         </div>
       ) : null}
 
-      <div className="flex items-start justify-between gap-4">
+      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
         <div>
           <h1 className="text-3xl font-bold">Developers</h1>
           <p className="text-muted-foreground mt-2">Manage who can log time entries.</p>
         </div>
-        <button
-          type="button"
-          className="inline-flex items-center rounded-md bg-primary px-4 py-2 text-primary-foreground"
-          onClick={() => setCreateOpen(true)}
-        >
-          Add Developer
-        </button>
+        <div className="flex w-full min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-start sm:justify-end sm:gap-x-4 sm:gap-y-2 md:w-auto md:shrink-0">
+          <div className="flex min-w-0 flex-col gap-1 sm:max-w-md sm:items-end sm:text-right">
+            <Link
+              href="/reports/productivity"
+              className="text-sm font-medium text-primary underline-offset-4 hover:underline"
+            >
+              View developer productivity report
+            </Link>
+            <p className="text-xs text-muted-foreground sm:text-right">
+              Hours, projects, and tasks by developer for a selected date range.
+            </p>
+          </div>
+          <button
+            type="button"
+            className="inline-flex shrink-0 items-center self-start rounded-md bg-primary px-4 py-2 text-primary-foreground sm:self-center"
+            onClick={() => setCreateOpen(true)}
+          >
+            Add Developer
+          </button>
+        </div>
       </div>
 
       <div className="rounded-lg border bg-card p-4">

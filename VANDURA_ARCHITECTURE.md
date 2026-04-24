@@ -50,7 +50,7 @@ vandura/
 │   │   ├── page.tsx                   # Dashboard (/)
 │   │   ├── globals.css
 │   │   ├── api/trpc/[trpc]/route.ts   # tRPC HTTP adapter (POST /api/trpc)
-│   │   ├── developers/page.tsx        # Developer list + modals
+│   │   ├── developers/page.tsx        # Developer list + modals; link to /reports/productivity (Story 6.6)
 │   │   ├── projects/
 │   │   │   ├── page.tsx               # /projects
 │   │   │   ├── new/page.tsx
@@ -278,9 +278,12 @@ Excel → preview → import, tasks, actuals report, CSV, dashboard.
 **Phase B — Complete**  
 Manual timesheets UI, developers + active flag, developer productivity report, Excel in-app documentation + `public/timesheet-template.xlsx`, global error handling + `not-found`, README/screenshots and this architecture pass (Story 5.2).
 
+**Phase C — In progress**  
+Story **6.6:** discoverability — `/developers` links to `/reports/productivity` (no hub changes). Next: **6.1** budget / **TBD** / `projectsSummary` invalidation (`van/stories.md`).
+
 **Deferred (post-MVP)**  
 **Stories 7.1–7.2** import integrity (dedupe / conflict review + whole-timesheet discard/replace — see `van/stories.md`), audit log, **Story 1.2** dev-server hardening (`dev:win` / `dev:clean`), parse-preview remediation (Story 3.4).
 
 ---
 
-*Last Updated: 2026-04-17 — Story 7.1 import policy (planned) noted under Import deduplication.*
+*Last Updated: 2026-04-17 — Story 6.6 developers → productivity link; Story 7.1 import policy (planned) under Import deduplication.*

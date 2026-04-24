@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-04-17  
 **Milestone:** M1 - MVP Showcase  
-**Status:** Phase B complete — Story **5.2** shipped. **Next:** **Phase C** (**Hannibal order:** **6.6** → **6.1** → **6.5** → **6.2** → **6.3** → **6.4**; **~34–54h** combined B.A.+Murdock — **does not fit ~20h M1 remainder**; triage in [`van/stories.md`](stories.md) → Phase C **Planning**). **M2** / **deferred** there as well.
+**Status:** Phase B complete — Story **5.2** shipped. **Phase C:** **Story 6.6** ✅ (developers → productivity report). **Next:** **6.1** (budget / **TBD** / `projectsSummary`) per [`van/stories.md`](stories.md). Remaining Phase C order after **6.1** per Hannibal — **M2** / **deferred** in stories.
 
 > **Navigation:** This is the entry point. Read this first for project context.  
 > Story details → [`van/stories.md`](stories.md) | QA strategy & results → [`van/qa.md`](qa.md)
@@ -83,16 +83,18 @@
 - ✅ Story 5.1 — Error handling (global toasts, `not-found`, production-safe tRPC errors)
 - ✅ Story 5.2 — README setup/walkthrough/screenshots + `VANDURA_ARCHITECTURE.md` pass
 
+**Phase C (in flight — see [`van/stories.md`](stories.md) Phase C):**
+- ✅ Story **6.6** — **`/developers`** → **`/reports/productivity`** link (top action row, Hannibal copy + B.A. draft subline; `tests/story-6-6-developers-productivity-link.test.ts`)
+
 **Still Missing (Phase B scope):**
 - _(none — Phase B backlog cleared.)_
 
-**Phase C** (planned — post-M1 showcase, in-repo; scope & order provisional until Hannibal + B.A. triage) — per-story **B.A. estimates** in [`van/stories.md`](stories.md) → Phase C:
+**Phase C (remaining — planned, in-repo; order provisional)** — per-story **B.A. estimates** in [`van/stories.md`](stories.md) → Phase C:
 - **Story 6.1** — Project **budget** vs **task estimates**; **`TBD`** instead of **`N/A`**; invalidation, report/CSV, docs. Hannibal **6–10h** · **B.A. 8–12h** (+**2–3h** if `budget_hours` migration).
 - **Story 6.2** — **Second card** on project detail: tasks missing estimates, fast path to edit. Hannibal **4–6h** · **B.A. 4–6h** (+**1–2h** dashboard stretch).
 - **Story 6.3** — **Story #** column + migration; sortable **Story #, Name, Status, Estimated hours**. Hannibal **3–5h** · **B.A. 5–8h**.
 - **Story 6.4** — Hide/show **`completed`** tasks (client + optional **localStorage**). Hannibal **2–3h** · **B.A. 2–3h**.
 - **Story 6.5** — Past **`endDate`** cue; extend **`projectsSummary`**. Hannibal **2–4h** · **B.A. 3–5h**.
-- **Story 6.6** — **`/developers`** → productivity report link. Hannibal **0.5–1h** · **B.A. 0.5–1h**. May **move or ship first** after triage.
 - **Backlog (not sequenced in Phase C):** Pie/donut **budget vs task status** — [`van/stories.md`](stories.md) → **Captured ideas**.
 
 ### What's IN PROGRESS 🚧
@@ -101,7 +103,7 @@
 - _(none)_
 
 ### What's PLANNED 📋
-- **Phase C:** **6.1**–**6.6** (**execution order** in [`van/stories.md`](stories.md)); **~34–54h** combined (B.A. + Murdock); **M1 ~20h** needs scope slice ([`van/stories.md`](stories.md) Phase C **Planning** + optional candidates).
+- **Phase C:** **6.6** shipped; **6.1**–**6.5** remaining (**execution order** in [`van/stories.md`](stories.md)); full-phase **~34–54h** combined (B.A. + Murdock) — **M1 ~20h** triage in stories **Planning** + optional candidates.
 - **Story 7.1** — Excel import **duplicate policy** — **B.A. 10–22h** (scope-dependent) — [`van/stories.md`](stories.md) **Import integrity** (not Phase C unless triaged in).
 - **Story 7.2** — **Whole-timesheet** / **discard import** — **B.A. ~10–26h** (fork A/B/C) — same section; **7.1+7.2 ~24–45h** combined if both ship.
 - **M2 / hosting**, **Story 1.2** (dev hardening), **Story 3.4** (parse remediation), and other **deferred** work — see [`van/stories.md`](stories.md) Deferred section.
