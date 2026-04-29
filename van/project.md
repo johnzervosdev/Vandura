@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-04-12  
 **Milestone:** M1 - MVP Showcase  
-**Status:** Phase B complete — Story **5.2** shipped. **Phase C:** **6.1** ✅ (budget, **task estimates total** (Hannibal **B**), **actual** on `projectsSummary` tables; **TBD**; invalidation; CSV legend) + **6.6** ✅ (developers → productivity). **Next:** **6.2** (tasks missing estimates) per [`van/stories.md`](stories.md). Remaining Phase C: **6.2**–**6.5**; **M2** / **deferred** in stories.
+**Status:** Phase B complete — Story **5.2** shipped. **Phase C:** **6.1** ✅ (budget, **task estimates total** (Hannibal **B**), **actual** on `projectsSummary` tables; **TBD**; invalidation; CSV legend) + **6.6** ✅ (developers → productivity). **Next:** **6.2** (tasks missing estimates) or **Epic 8 / 8.1** (in-app bug reports — **Hannibal priority**) per [`van/stories.md`](stories.md). Remaining Phase C: **6.2**–**6.5**; **Epic 8** is separate; **M2** / **deferred** in stories.
 
 > **Navigation:** This is the entry point. Read this first for project context.  
 > Story details → [`van/stories.md`](stories.md) | QA strategy & results → [`van/qa.md`](qa.md)
@@ -95,6 +95,7 @@
 - **Story 6.3** — **Story #** column + migration; sortable **Story #, Name, Status, Estimated hours**. Hannibal **3–5h** · **B.A. 5–8h**.
 - **Story 6.4** — Hide/show **`completed`** tasks (client + optional **localStorage**). Hannibal **2–3h** · **B.A. 2–3h**.
 - **Story 6.5** — Past **`endDate`** cue; extend **`projectsSummary`**. Hannibal **2–4h** · **B.A. 3–5h**.
+- **Story 8.1** (**Epic 8**) — **In-app bug reports** (floating control + **open** backlog + close). Hannibal **~10–18h** combined (see [`van/stories.md`](stories.md) **Epic 8**) — **separate epic**, **additive** capacity vs Phase C.
 - **Backlog (not sequenced in Phase C):** Pie/donut **budget vs task status** — [`van/stories.md`](stories.md) → **Captured ideas**.
 
 ### What's IN PROGRESS 🚧
@@ -103,7 +104,7 @@
 - _(none)_
 
 ### What's PLANNED 📋
-- **Phase C:** **6.1** + **6.6** shipped; **6.2**–**6.5** remaining (**execution order** in [`van/stories.md`](stories.md)); full-phase **~34–54h** combined (B.A. + Murdock) — **M1 ~20h** triage in stories **Planning** + optional candidates.
+- **Phase C:** **6.1** + **6.6** shipped; **6.2**–**6.5** remaining (**execution order** in [`van/stories.md`](stories.md)); **Epic 8 / 8.1** optional parallel (**bug control**). Phase C band **~34–54h** (**6.1–6.6**) — **M1 ~20h** triage in stories **Planning** + optional candidates. **+ ~10–18h** if **8.1** lands in same window.
 - **Story 7.1** — Excel import **duplicate policy** — **B.A. 10–22h** (scope-dependent) — [`van/stories.md`](stories.md) **Import integrity** (not Phase C unless triaged in).
 - **Story 7.2** — **Whole-timesheet** / **discard import** — **B.A. ~10–26h** (fork A/B/C) — same section; **7.1+7.2 ~24–45h** combined if both ship.
 - **M2 / hosting**, **Story 1.2** (dev hardening), **Story 3.4** (parse remediation), and other **deferred** work — see [`van/stories.md`](stories.md) Deferred section.
@@ -205,10 +206,17 @@
 
 **Go-Live Target:** End of Week 2
 
-### Phase C: Budget clarity & reporting UX (**combined ~34–54h** for 6.1–6.6 = **B.A. ~22.5–35h** + **Murdock ~11.5–18.5h**; **does not fit ~20h M1 remainder** — see triage in [`van/stories.md`](stories.md) Phase C **Planning**)
-**Sequence (Hannibal):** **6.6 → 6.1 → 6.5 → 6.2 → 6.3 → 6.4** _(B.A.: **6.6** first; **6.3**/**6.4** may be flipped for schedule if desired—Hannibal uses **6.3→6.4** for sort-before-hide and **6.4** AC filter-after-sort; see [`van/stories.md`](stories.md) Phase C **Planning**)_
+### Phase C: Budget clarity & reporting UX (**~34–54h** for **6.1–6.6** — see [`van/stories.md`](stories.md) **Planning**; **does not fit ~20h M1 remainder** without triage)
 
-**Deliverable (current intent — may split after estimates):** **(6.1)** Budget vs estimates + **TBD** copy + **`projectsSummary`** invalidation. **(6.2)** Tasks missing estimates card. **(6.3)** Story # + full column sort. **(6.4)** Hide completed tasks. **(6.5)** Past **end date** visual + summary **`endDate`**. **(6.6)** **`/developers`** link to **Developer productivity** report.
+### Epic 8: In-app feedback (**Story 8.1 ~10–18h** combined — parallel / optional; see [`van/stories.md`](stories.md) **Epic 8**)
+
+**Sequence (Hannibal — Phase C):** **6.6 → 6.1 → 6.5 → 6.2 → 6.3 → 6.4** _(B.A.: **6.6** first; **6.3**/**6.4** may be flipped for schedule—Hannibal uses **6.3→6.4** for sort-before-hide; [`van/stories.md`](stories.md) Phase C **Planning**.)_
+
+**Sequence (Epic 8):** **8.1** slots **independently** — often **parallel** to Phase C **6.2–6.5** when feedback capture is prioritized.
+
+**Deliverable — Phase C:** **(6.1)** Budget vs estimates + **TBD** copy + **`projectsSummary`** invalidation. **(6.2)** Tasks missing estimates card. **(6.3)** Story # + full column sort. **(6.4)** Hide completed tasks. **(6.5)** Past **end date** visual + summary **`endDate`**. **(6.6)** **`/developers`** link to **Developer productivity** report.
+
+**Deliverable — Epic 8:** **(8.1)** Global **bug** control + **open** backlog + **close** workflow (SQLite + modal).
 
 **Notes:** Optional follow-ons: DB rename `estimatedHours` → `budgetHours`, “sync budget from tasks”, dashboard-wide “tasks TBD” aggregate (6.2 stretch). **Captured backlog (not Phase C):** pie/donut **budget vs task status** report — see [`van/stories.md`](stories.md) → **Captured ideas** (product interpretation A/B/C TBD before estimate).
 

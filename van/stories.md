@@ -1,6 +1,6 @@
 # Project Vandura — User Stories & Acceptance Criteria
 
-**Last Updated:** 2026-04-12 (Story **6.1** ✅ **Murdock + Hannibal sign-off**; Story **6.6** ✅; Phase C notes; 7.1–7.2)  
+**Last Updated:** 2026-04-12 (Story **6.1** ✅; Story **6.6** ✅; **Epic 8 / Story 8.1** drafted — bug FAB; Phase C **6.2**–**6.5**; 7.1–7.2)  
 **Owner:** B.A. (maintains ACs + implementation notes) | Murdock (updates QA checklists)
 
 > **Navigation:** [`van/project.md`](project.md) — project dashboard | [`van/qa.md`](qa.md) — test plans & results
@@ -524,7 +524,7 @@ All **data queries** below use **`meta: { suppressGlobalError: true }`** → on 
 
 **Goal:** Make the **project-level hour cap** (`projects.estimatedHours` in DB) explicitly **budgeted time**, separate from **per-task estimates** (`tasks.estimatedHours`). Align copy and variance UX. Replace **`N/A`** for **unset** hours with **`TBD`**. **Story 6.2** adds a project-detail **second card** to surface tasks still missing estimates and make filling them in easy. **Story 6.3** adds **sortable** task lists, with **story number** as a first-class optional field for ordering. **Story 6.4** adds **hide/show completed** tasks on the project task board to reduce clutter. **Story 6.5** surfaces when a project’s **end date has passed** but it is **not** marked **completed**. **Story 6.6** improves **discoverability** of the Developer productivity report from **`/developers`**.
 
-**Planning — Phase C scope is provisional (Hannibal):** **B.A. estimates** and **Murdock QA bands** are logged per story below. **Combined planning hours** = **B.A. implementation** + **Murdock testing** (same story). Optional B.A. add-ons (**6.1** migration, **6.2** dashboard stretch) are **not** included in the combined low band unless explicitly taken.
+**Planning — Phase C scope is provisional (Hannibal):** **B.A. estimates** and **Murdock QA bands** are logged per story below (**Stories 6.1–6.6**). **Combined planning hours** = **B.A. implementation** + **Murdock testing** (same story). **Epic 8 / Story 8.1** (in-app bug reports) is **outside** Phase C thematically — see **Epic 8** below; schedule and hours are **additive** to any milestone that includes it.
 
 **B.A. original reference sequence:** **6.1 → 6.2 → 6.3 → 6.4 → 6.5 → 6.6** (dependency-friendly linear build).
 
@@ -537,9 +537,11 @@ All **data queries** below use **`meta: { suppressGlobalError: true }`** → on 
 - **6.5 third:** Extends **`projectsSummary` / `project.get`** and multi-surface cues **after** 6.1 copy and cache behavior are stable.
 - **6.2 → 6.3 → 6.4:** Keeps **project-detail task work** contiguous. **Hannibal picks 6.3 before 6.4** (B.A.: either order acceptable): sort UI and migration land first; **6.4** then implements filter-after-sort per AC; Murdock still batches **6.3 + 6.4** regression.
 
+**Epic 8 (parallel):** **Story 8.1** (bug FAB + backlog) — **not** in the Phase C sequence; slot by **Hannibal** (often **parallel** to **6.2–6.5** when feedback capture is prioritized).
+
 **B.A. Phase C rollup (6.1–6.6, dev only):** ~**23–35h** (upper band mainly if **6.2** includes the dashboard “tasks TBD” stretch **and/or** B.A. does an optional **post–6.1** **`budget_hours`** migration PR — **6.1** itself is **copy-only**, no migration).
 
-**Per-story Murdock QA (testing) — Hannibal allocation** (sums to **~12–18h** total Murdock for 6.1–6.6; aligns with Murdock’s informal rollup):
+**Per-story Murdock QA (testing) — Hannibal allocation** (sums to **~12–18h** total Murdock for **6.1–6.6**; aligns with Murdock’s informal rollup):
 
 | Story | Murdock QA (h) | Murdock focus |
 |-------|----------------|----------------|
@@ -549,6 +551,8 @@ All **data queries** below use **`meta: { suppressGlobalError: true }`** → on 
 | **6.4** | **1.5–2** | Hide toggle + **6.3** interaction, `localStorage`, a11y |
 | **6.5** | **2–3** | `isProjectPastEndDate`, all consumers, injectable-clock test |
 | **6.6** | **0.5–1** | One-click link, accessible name — smoke |
+
+**Epic 8 — Story 8.1 (separate from Phase C table above):** Murdock **2–4h** — bug FAB + modal: create, list **open**, close; migration + router smoke; no overlap with primary nav.
 
 **Combined Phase C (B.A. + Murdock per story, planning bands):**
 
@@ -561,7 +565,11 @@ All **data queries** below use **`meta: { suppressGlobalError: true }`** → on 
 | **6.5** | 3–5 | 2–3 | **5–8** |
 | **6.6** | 0.5–1 | 0.5–1 | **1–2** |
 
-**Rollup (6.1–6.6, no B.A. optionals):** B.A. **~22.5–35h** + Murdock **~11.5–18.5h** → **~34–54h** end-to-end planning band for the full phase.
+**Story 8.1 (Epic 8) planning band:** B.A. **8–14** + Murdock **2–4** → **~10–18h** combined — **not** included in the **6.1–6.6** rollup in the table above.
+
+**Rollup (6.1–6.6, no B.A. optionals):** B.A. **~22.5–35h** + Murdock **~11.5–18.5h** → **~34–54h** end-to-end planning band for **Stories 6.1–6.6** only.
+
+**If Epic 8.1 ships in the same milestone window:** add **~10–18h** combined on top — **re-triage** Phase C vs **8.1** order when capacity-limited.
 
 **M1 remainder vs Phase C (Hannibal):** **~20 hours** remain on the **first MVP** hour bank. **Full Phase C does not fit** inside 20h at current scope—even the **low-low** combined band (~**34h**) exceeds 20h. **Triage for M1 tail:** ship **6.6** + **6.4** + **6.5** at **low** estimates (~**9.5–15h** combined) *or* prioritize **6.1** (copy-only, no migration) + **6.6** (~**12.5–19.5h** combined) and **defer** remaining stories to **Phase C+** / next milestone—**Hannibal + B.A. confirm** which slice before locking sprint.
 
@@ -767,7 +775,73 @@ All **data queries** below use **`meta: { suppressGlobalError: true }`** → on 
 
 ---
 
-### B.A.: Optional Phase C candidates (triage — not in Hannibal’s base 6.1–6.6 list)
+## Epic 8: In-app feedback & bug capture (P2 — may ship parallel to Phase C)
+
+**Epic goal:** Lightweight **in-app** channel for **bugs and feedback** without external tooling (**SQLite**, **no** third-party bug tracker). **Story 8.1** is the first slice; future stories (**8.2+**) could add integrations, closed-history view, or attachments — **not committed** until drafted.
+
+### Story 8.1: In-app bug reports — floating control & backlog (P2 — cross-cutting UX)
+
+**Status:** Not Started  
+**Owner:** B.A.
+
+**Hannibal informal:** **6–10h** · **B.A.: 8–14h** (SQLite **`bug_reports`** table + Drizzle migration; **`bugReport` tRPC router**: create, list **open**, close; **`BugReportButton`** + modal in **root layout**; **clipart-style** bug **image** in **`public/`** or inline **SVG**; tests) · **Murdock QA: 2–4h** · **Combined (planning): ~10–18h**
+
+**Problem:** Feedback and defects are **invisible** inside the running app — users fall back to chat or memory. A **lightweight, always-available** surface to log issues and see **what is still open** improves iteration without standing up a separate bug tracker.
+
+**Goal:** A **global “bug” affordance** on **every page**: click → **modal / dialog** where users can **(a)** file a **new** bug report, **(b)** **scroll** a list of **open** reports (newest first or oldest first — **pick one** in PR and document), and **(c)** **close** a report when it is fixed or **absorbed into product scope** (no separate “resolved” vs “won’t fix” requirement in v1 — **one close action** with optional note).
+
+**Product rules (v1):**
+- **Open vs closed:** Reports are **`open`** until explicitly **closed**; closed reports **do not appear** in the default “open backlog” list (optional **“Show closed”** toggle is **out of scope** for v1 unless cheap — **defer**).
+- **Fields (minimum):** **Title** (required, short), **Description** (required, free text — steps to reproduce encouraged). Optional **context** auto-capture: **current route path** (e.g. `/projects/3`) stored on create — **recommended** for triage; document in PR if omitted.
+- **Close:** User picks **Close** on an **open** row; optional **close note** (e.g. “fixed in PR #12” / “tracked as **Story 6.3** or **8.2**”). **Closed-at** timestamp stored server-side.
+- **Identity:** No login in MVP — **no** “reported by” user table required; treat as **single-tenant / demo** capture (same as rest of app).
+
+**UX (Hannibal):**
+- **Trigger:** Fixed-position **control** (e.g. **bottom-right**) so it does **not** obscure primary nav; **`z-index`** above page content, below global blocking modals if applicable.
+- **Art:** **Clipart-style bug** image — **friendly**, not alarmist (PNG/SVG under **`public/`** or inline SVG). **Alt text** / **`aria-label`** on the button: e.g. **“Report a bug or feedback”** (not emoji-only for the sole control — screen readers).
+- **Panel:** **Modal** (`Modal` component or `dialog`) with: **tab** or **clear sections** — **“New report”** form + **“Open reports”** scrollable list **in the same dialog** (stacked layout acceptable: form on top, list below with **`max-height`** + scroll). **Esc** closes; focus returns to trigger; **focus trap** inside modal while open.
+- **Empty open list:** Short line: **“No open reports.”** when count is 0.
+
+**Engineering notes:**
+- **Persistence:** New table **`bug_reports`** (`id`, `title`, `description`, `status` **`open` | `closed`**, `createdAt`, `closedAt` nullable, `closeNote` nullable, `pagePath` nullable string). **Drizzle** schema + **migration** + seed untouched or **optional** seed row — B.A. chooses.
+- **API:** **`bugReport.create`**, **`bugReport.listOpen`**, **`bugReport.close`** (by `id`) — **protected** only by same trust model as rest of app (local demo); document **no auth** in README if relevant.
+- **Layout:** Mount **`BugReportFab`** (or similar) once in **`src/app/layout.tsx`** (client boundary as needed) so it appears on **all routes** including **`not-found`** if feasible — if **`not-found`** is excluded, document.
+
+**Acceptance Criteria:**
+
+*Global affordance*
+- [ ] A **single** bug **button/control** with **clipart-style bug** artwork appears on **every main app page** (same shell as primary nav — **Dashboard** through **Reports** / **Timesheets** / **Developers** / **Projects** routes). **Exception list** in PR if any route must be excluded.
+- [ ] Control is **keyboard-focusable**, has **visible focus** ring consistent with app, and **`aria-label`** (or visible text + `aria-hidden` on decorative image) suitable for screen readers.
+- [ ] Control does **not** block reading or clicking primary navigation on **desktop** and **mobile** (resize test at **375px** width — **no overlap** with nav hamburger if present).
+
+*Modal / dialog*
+- [ ] Clicking the control **opens** a **modal** (or native **`dialog`**) containing **both**: **(a)** form to **add** a new report (**title** + **description** required, validation messages inline) and **(b)** a **scrollable** list of **all open** reports (title + created date **or** relative time — B.A. picks).
+- [ ] **Submitting** a valid new report **persists** to SQLite, **clears** or **keeps** form per PR choice, and the **open list refreshes** without full page reload.
+- [ ] **Closing** a report: each **open** row has a **Close** action; confirming stores **`closed`**, **`closedAt`**, optional **close note**, and **removes** that row from the open list (or marks visually then disappears — **consistent** with list definition).
+
+*Quality*
+- [ ] **`npm test`** includes coverage for **core logic**: e.g. **router** or **service** tests for create/list open/close; **optional** source-level test that layout includes the bug control **string/href** pattern — at least **one** automated guard so the feature does not vanish silently.
+- [ ] **`npm run lint`** and **`npm run type-check`** clean.
+
+**Out of scope for 8.1:** Email / Slack / GitHub Issues integration; **file uploads** or screenshots; **comments thread** on a report; **assignee** / **priority** fields; **edit** report after create; **delete** report; **rate limiting**; authenticated multi-user attribution; **show closed** history (unless shipped as trivial toggle — **stretch**).
+
+---
+
+#### Definition of done (Story 8.1)
+
+Story **8.1** is **done** when **all** of the following are true:
+
+1. **Acceptance criteria** above are **checked** and verified by **Murdock** (manual pass + automated suite green).
+2. **Database:** Migration applied; **`bug_reports`** table exists in dev and **documented** in **`VANDURA_ARCHITECTURE.md`** (schema or data model subsection).
+3. **Product:** A user can **open** the control from **multiple routes**, **create** a report, see it in the **open** list, and **close** it — end-to-end **without** console errors.
+4. **Accessibility:** Button has an **accessible name**; modal is **dismissible** via **Esc** and **focus** behaves predictably (no lost focus on close).
+5. **Docs:** **`README.md`** — one sentence that **in-app bug reports** exist and data is **local SQLite** (no external service).
+6. **`van/stories.md`:** Status set to **Complete** with **implementation** pointer (files); **`van/qa.md`** holds **Murdock sign-off** (or equivalent evidence block).
+7. **Roadmap honesty:** **`van/project.md`** updated if **8.1** displaces or reorders other planned work — **Hannibal** confirms **remaining** stories for the milestone.
+
+---
+
+### B.A.: Optional Phase C candidates (triage — small items **not** covered by **Stories 6.1–6.6**; **Epic 8** is its own track)
 
 Small items that **fit the same release train** (budget / tasks / IA) if Hannibal wants them **without** expanding Phase C scope to import integrity (**7.x**) or deferred **1.2** / **3.4**.
 
@@ -900,4 +974,4 @@ These items are **on record for planning** but are **not** committed deliverable
 ---
 
 **End of Document**  
-Last Updated: 2026-04-12 — Story **6.1** complete, **ready for Murdock** (`van/qa.md`); Story **6.6** ✅; Phase C **B.A. estimates** + **Murdock QA** rollup; 7.1–7.2; optional Phase C candidates; captured idea: budget vs status pie; Phase B closed
+Last Updated: 2026-04-12 — Story **6.1** ✅; Story **6.6** ✅; **Epic 8 / Story 8.1** — in-app bug FAB + backlog (**draft AC**); Phase C rollup **6.1–6.6**; 7.1–7.2; Phase B closed
