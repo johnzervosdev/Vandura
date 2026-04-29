@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { trpc } from '@/lib/trpc-client';
@@ -8,7 +8,7 @@ import type { ProjectSummaryRow } from '@/lib/router-types';
 import { Modal } from '@/components/Modal';
 import { formatProjectBudgetHours } from '@/lib/budget-display';
 
-export default function ProjectsPage() {
+function ProjectsPageContent() {
   const utils = trpc.useUtils();
   const searchParams = useSearchParams();
   const created = searchParams.get('created');
@@ -234,3 +234,16 @@ export default function ProjectsPage() {
   );
 }
 
+export default function ProjectsPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="space-y-8">
+          <div className="text-muted-foreground">Loading…</div>
+        </div>
+      }
+    >
+      <ProjectsPageContent />
+    </Suspense>
+  );
+}

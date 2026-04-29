@@ -60,3 +60,15 @@ export const actualsReportInputSchema = z.object({
   endDate: z.date().optional(),
   groupBy: z.enum(['task', 'developer', 'day', 'week']).default('task'),
 });
+
+/** Epic 8 — Story 8.1 */
+export const createBugReportSchema = z.object({
+  title: z.string().min(1, 'Title is required').max(200),
+  description: z.string().min(1, 'Description is required').max(8000),
+  pagePath: z.string().max(500).optional(),
+});
+
+export const closeBugReportSchema = z.object({
+  id: z.number().int().positive(),
+  closeNote: z.string().max(2000).optional(),
+});

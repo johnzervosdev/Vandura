@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-04-12  
 **Milestone:** M1 - MVP Showcase  
-**Status:** Phase B complete — Story **5.2** shipped. **Phase C:** **6.1** ✅ (budget, **task estimates total** (Hannibal **B**), **actual** on `projectsSummary` tables; **TBD**; invalidation; CSV legend) + **6.6** ✅ (developers → productivity). **Next:** **6.2** (tasks missing estimates) or **Epic 8 / 8.1** (in-app bug reports — **Hannibal priority**) per [`van/stories.md`](stories.md). Remaining Phase C: **6.2**–**6.5**; **Epic 8** is separate; **M2** / **deferred** in stories.
+**Status:** Phase B complete — Story **5.2** shipped. **Phase C:** **6.1** ✅ + **6.6** ✅ + **Epic 8 / 8.1** ✅ (in-app bug reports — `bug_reports`, `bugReport` router, **`BugReportFab`** in `providers.tsx`). **Next:** **6.2** (tasks missing estimates) or **Epic 8.2+** per [`van/stories.md`](stories.md). Remaining Phase C: **6.2**–**6.5**; further **Epic 8** optional; **M2** / **deferred** in stories.
 
 > **Navigation:** This is the entry point. Read this first for project context.  
 > Story details → [`van/stories.md`](stories.md) | QA strategy & results → [`van/qa.md`](qa.md)
@@ -45,7 +45,7 @@
 **Infrastructure:**
 - ✅ Next.js 15 + TypeScript + tRPC project structure
 - ✅ SQLite database with Drizzle ORM
-- ✅ Database schema (5 tables: developers, projects, tasks, time_entries, actuals_cache)
+- ✅ Database schema (**6** tables: developers, projects, tasks, time_entries, actuals_cache, **bug_reports** — Epic **8.1**)
 - ✅ Database migrations + seeding scripts
 - ✅ Local dev environment functional (`npm run dev`) on **Node 20 LTS**
 - ✅ Windows/OneDrive mitigation documented (WATCHPACK polling + `.next` reset)
@@ -56,7 +56,7 @@
 - ✅ `ExcelParser.ts` — Excel parsing (header mapping hardened; **duplicate imports currently allowed** until Story **7.1**; local timezone; weekly-grid support)
 - ✅ `ReportService.ts` — report generation + CSV formatting
 
-**tRPC API Routers:** Project, Developer, Task, Timesheet, Report
+**tRPC API Routers:** Project, Developer, Task, Timesheet, Report, **BugReport** (Epic **8.1**)
 
 **Phase A Stories Complete ✅ (Gate Cleared 2026-03-15):**
 - ✅ Story 1.1 — Local Dev Environment
@@ -86,6 +86,7 @@
 **Phase C (in flight — see [`van/stories.md`](stories.md) Phase C):**
 - ✅ Story **6.1** — **`projectsSummary.taskEstimatesTotal`** (SQL + `taskEstimatesTotalFromRollup`); **`/`**, **`/projects`**, **`/reports`** show **Budget**, **Task est. total**, **Actual**; actuals report top row adds **Task est. total** card; **TBD** + variance **TBD** when no project budget; CSV **Note** row; `tests/budget-display.test.ts` (incl. rollup) + `ReportService` / `projectsSummary` path — **QA complete** (`van/qa.md` → Story 6.1)
 - ✅ Story **6.6** — **`/developers`** → **`/reports/productivity`** link (top action row, Hannibal copy + B.A. draft subline; `tests/story-6-6-developers-productivity-link.test.ts`)
+- ✅ Story **8.1** (**Epic 8**) — **`bug_reports`** table + **`bugReport`** tRPC router + **`BugReportFab`** (`tests/story-8-1-*.test.ts`; `van/qa.md` → Story 8.1)
 
 **Still Missing (Phase B scope):**
 - _(none — Phase B backlog cleared.)_
@@ -95,7 +96,7 @@
 - **Story 6.3** — **Story #** column + migration; sortable **Story #, Name, Status, Estimated hours**. Hannibal **3–5h** · **B.A. 5–8h**.
 - **Story 6.4** — Hide/show **`completed`** tasks (client + optional **localStorage**). Hannibal **2–3h** · **B.A. 2–3h**.
 - **Story 6.5** — Past **`endDate`** cue; extend **`projectsSummary`**. Hannibal **2–4h** · **B.A. 3–5h**.
-- **Story 8.1** (**Epic 8**) — **In-app bug reports** (floating control + **open** backlog + close). Hannibal **~10–18h** combined (see [`van/stories.md`](stories.md) **Epic 8**) — **separate epic**, **additive** capacity vs Phase C.
+- **Story 8.2+** (**Epic 8**) — follow-ups from [`van/stories.md`](stories.md) **Epic 8** (optional; **8.1** shipped).
 - **Backlog (not sequenced in Phase C):** Pie/donut **budget vs task status** — [`van/stories.md`](stories.md) → **Captured ideas**.
 
 ### What's IN PROGRESS 🚧
@@ -104,7 +105,7 @@
 - _(none)_
 
 ### What's PLANNED 📋
-- **Phase C:** **6.1** + **6.6** shipped; **6.2**–**6.5** remaining (**execution order** in [`van/stories.md`](stories.md)); **Epic 8 / 8.1** optional parallel (**bug control**). Phase C band **~34–54h** (**6.1–6.6**) — **M1 ~20h** triage in stories **Planning** + optional candidates. **+ ~10–18h** if **8.1** lands in same window.
+- **Phase C:** **6.1** + **6.6** + **8.1** shipped; **6.2**–**6.5** remaining (**execution order** in [`van/stories.md`](stories.md)); **Epic 8.2+** optional. Phase C band **~34–54h** (**6.1–6.6**) — **M1 ~20h** triage in stories **Planning** + optional candidates. **+ ~10–18h** for **8.1** is **spent** if counted against epic capacity.
 - **Story 7.1** — Excel import **duplicate policy** — **B.A. 10–22h** (scope-dependent) — [`van/stories.md`](stories.md) **Import integrity** (not Phase C unless triaged in).
 - **Story 7.2** — **Whole-timesheet** / **discard import** — **B.A. ~10–26h** (fork A/B/C) — same section; **7.1+7.2 ~24–45h** combined if both ship.
 - **M2 / hosting**, **Story 1.2** (dev hardening), **Story 3.4** (parse remediation), and other **deferred** work — see [`van/stories.md`](stories.md) Deferred section.

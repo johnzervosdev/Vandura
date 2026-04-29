@@ -100,6 +100,28 @@ export const timeEntries = sqliteTable(
 );
 
 /**
+ * Bug reports (Epic 8 — Story 8.1)
+ * Local feedback capture; no external bug tracker.
+ */
+export const bugReports = sqliteTable(
+  'bug_reports',
+  {
+    id: integer('id').primaryKey({ autoIncrement: true }),
+    title: text('title').notNull(),
+    description: text('description').notNull(),
+    status: text('status', { enum: ['open', 'closed'] }).notNull().default('open'),
+    pagePath: text('page_path'),
+    createdAt: integer('created_at', { mode: 'timestamp' }).notNull().default(sql`(unixepoch())`),
+    closedAt: integer('closed_at', { mode: 'timestamp' }),
+    closeNote: text('close_note'),
+  },
+  (table) => ({
+    statusIdx: index('bug_reports_status_idx').on(table.status),
+    createdAtIdx: index('bug_reports_created_at_idx').on(table.createdAt),
+  })
+);
+
+/**
  * Actuals Cache Table
  * Materialized view pattern for pre-computed aggregations
  * Improves performance for historical reports
@@ -146,6 +168,9 @@ export type NewTimeEntry = typeof timeEntries.$inferInsert;
 
 export type ActualsCache = typeof actualsCache.$inferSelect;
 export type NewActualsCache = typeof actualsCache.$inferInsert;
+
+export type BugReport = typeof bugReports.$inferSelect;
+export type NewBugReport = typeof bugReports.$inferInsert;
 
 /**
  * Drizzle Relations

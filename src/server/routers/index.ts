@@ -9,6 +9,7 @@ import { developerRouter } from './developer';
 import { taskRouter } from './task';
 import { timesheetRouter } from './timesheet';
 import { reportRouter } from './report';
+import { bugReportRouter } from './bugReport';
 
 export const appRouter = createTRPCRouter({
   project: projectRouter,
@@ -16,6 +17,7 @@ export const appRouter = createTRPCRouter({
   task: taskRouter,
   timesheet: timesheetRouter,
   report: reportRouter,
+  bugReport: bugReportRouter,
 });
 
 // Export type definition for client

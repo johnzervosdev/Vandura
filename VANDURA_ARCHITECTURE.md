@@ -45,7 +45,7 @@ vandura/
 ├── src/
 │   ├── app/
 │   │   ├── layout.tsx                 # Shell + header nav
-│   │   ├── providers.tsx              # tRPC + React Query + GlobalToastProvider
+│   │   ├── providers.tsx              # tRPC + React Query + GlobalToastProvider + BugReportFab (Epic 8)
 │   │   ├── not-found.tsx              # App Router 404
 │   │   ├── page.tsx                   # Dashboard (/)
 │   │   ├── globals.css
@@ -61,6 +61,7 @@ vandura/
 │   │
 │   ├── components/
 │   │   ├── Modal.tsx
+│   │   ├── BugReportFab.tsx       # Epic 8 — global bug / feedback FAB + modal
 │   │   └── GlobalToastProvider.tsx    # Top-right API error toasts (Story 5.1)
 │   │
 │   ├── lib/
@@ -73,7 +74,7 @@ vandura/
 │   │
 │   └── server/
 │       ├── db/schema.ts, index.ts, migrations/
-│       ├── routers/                   # project, task, developer, timesheet, report → appRouter
+│       ├── routers/                   # project, task, developer, timesheet, report, bugReport → appRouter
 │       ├── services/                  # ExcelParser, TimesheetService, AggregationEngine, ReportService
 │       ├── trpc.ts                    # initTRPC + errorFormatter → sanitizeTrpcShapeForClient (prod)
 │       └── trpc-error-sanitize.ts
@@ -82,14 +83,14 @@ vandura/
 │   ├── dev.mjs, migrate.ts, seed.ts
 │   └── generate-timesheet-template.mjs
 │
-└── tests/                             # See van/qa.md for full registry (~18 files, `npm test`)
+└── tests/                             # See van/qa.md for full registry (`npm test`)
 ```
 
 ---
 
 ## Database Schema
 
-Five tables. Defined in `src/server/db/schema.ts` using Drizzle ORM.
+**Six** tables. Defined in `src/server/db/schema.ts` using Drizzle ORM. The first five are the core time-tracking model; **`bug_reports`** (Epic 8) stores in-app bug/feedback entries (local only, no auth).
 
 ```
 ┌─────────────┐      ┌─────────────┐      ┌──────────────┐
@@ -130,6 +131,8 @@ Five tables. Defined in `src/server/db/schema.ts` using Drizzle ORM.
 │ calculated_at                             │
 └───────────────────────────────────────────┘
 ```
+
+**`bug_reports` (Epic 8 — Story 8.1):** `id`, `title`, `description`, `status` (`open` \| `closed`), `page_path`, `created_at`, `closed_at`, `close_note`. Indexed on `status` and `created_at`. Standalone table (no foreign keys) — local in-app feedback only.
 
 **Indexes on `time_entries`:** composite `(project_id, start_time)`, composite `(developer_id, start_time)`, `task_id`, `start_time` — these are the hot paths for report queries.
 
@@ -218,6 +221,11 @@ All API calls go through tRPC, served at **`/api/trpc`** via `src/app/api/trpc/[
 - `timeline` — chart-oriented series *(wired for future UI)*
 - `exportCSV` — CSV download for current report filters
 
+**`bugReport`** *(Epic 8 — Story 8.1)*
+- `create` — new open report (`title`, `description`, optional `pagePath`)
+- `listOpen` — open reports only, newest first
+- `close` — set closed + optional `closeNote`
+
 ---
 
 ## Client errors & production responses (Story 5.1)
@@ -281,11 +289,11 @@ Excel → preview → import, tasks, actuals report, CSV, dashboard.
 Manual timesheets UI, developers + active flag, developer productivity report, Excel in-app documentation + `public/timesheet-template.xlsx`, global error handling + `not-found`, README/screenshots and this architecture pass (Story 5.2).
 
 **Phase C — In progress**  
-Story **6.6** ✅: discoverability — `/developers` → `/reports/productivity`. Story **6.1** ✅: **`projectsSummary.taskEstimatesTotal`** (Hannibal **B**), **`/`** / **`/projects`** / **`/reports`** three-way hour columns, actuals report **Task est. total** card, **TBD** for unset, project detail **Budget** + **Task estimates total**, `projectsSummary` invalidation on task/timesheet changes, CSV legend — see `src/lib/budget-display.ts` and README. **Next:** `van/stories.md` (e.g. **6.2**).
+Story **6.6** ✅: discoverability — `/developers` → `/reports/productivity`. Story **6.1** ✅: **`projectsSummary.taskEstimatesTotal`** (Hannibal **B**), **`/`** / **`/projects`** / **`/reports`** three-way hour columns, actuals report **Task est. total** card, **TBD** for unset, project detail **Budget** + **Task estimates total**, `projectsSummary` invalidation on task/timesheet changes, CSV legend — see `src/lib/budget-display.ts` and README. **Epic 8 — Story 8.1** ✅: **`bug_reports`** + **`bugReport`** router + **`BugReportFab`** in `providers.tsx` — in-app bug/feedback (local SQLite only); **automated tests** — `tests/story-8-1-bug-report.test.ts`, `tests/story-8-1-providers-bug-fab.test.ts` (see **`van/qa.md`**). **Next:** `van/stories.md` (e.g. **6.2**, **8.2+**).
 
 **Deferred (post-MVP)**  
 **Stories 7.1–7.2** import integrity (dedupe / conflict review + whole-timesheet discard/replace — see `van/stories.md`), audit log, **Story 1.2** dev-server hardening (`dev:win` / `dev:clean`), parse-preview remediation (Story 3.4).
 
 ---
 
-*Last Updated: 2026-04-12 — Story 6.1 `taskEstimatesTotal` + list UIs; Story 6.6 developers link; Story 7.1 import policy (planned) under Import deduplication.*
+*Last Updated: 2026-04-29 — Epic 8 Story **8.1** `bug_reports` + `bugReport` router + `BugReportFab` + expanded automated tests (`story-8-1-*`); Story 6.1 `taskEstimatesTotal`; Story 7.1 import policy (planned) under Import deduplication.*

@@ -1,6 +1,6 @@
 # Project Vandura — User Stories & Acceptance Criteria
 
-**Last Updated:** 2026-04-12 (Story **6.1** ✅; Story **6.6** ✅; **Epic 8 / Story 8.1** drafted — bug FAB; Phase C **6.2**–**6.5**; 7.1–7.2)  
+**Last Updated:** 2026-04-29 (Story **6.1** ✅; Story **6.6** ✅; **Epic 8 / Story 8.1** — Murdock automated ✅, **ready for Hannibal** pre-publish; Phase C **6.2**–**6.5**; 7.1–7.2)  
 **Owner:** B.A. (maintains ACs + implementation notes) | Murdock (updates QA checklists)
 
 > **Navigation:** [`van/project.md`](project.md) — project dashboard | [`van/qa.md`](qa.md) — test plans & results
@@ -781,7 +781,7 @@ All **data queries** below use **`meta: { suppressGlobalError: true }`** → on 
 
 ### Story 8.1: In-app bug reports — floating control & backlog (P2 — cross-cutting UX)
 
-**Status:** Not Started  
+**Status:** ✅ Complete — **Murdock automated QA done** (**117/117** tests, **`npm run type-check`** + **`npm run lint`** clean — **2026-04-29**). **Ready for Hannibal** product review + manual DoD in [`van/qa.md`](qa.md) → Story **8.1** before **publish** / calling release notes final.  
 **Owner:** B.A.
 
 **Hannibal informal:** **6–10h** · **B.A.: 8–14h** (SQLite **`bug_reports`** table + Drizzle migration; **`bugReport` tRPC router**: create, list **open**, close; **`BugReportButton`** + modal in **root layout**; **clipart-style** bug **image** in **`public/`** or inline **SVG**; tests) · **Murdock QA: 2–4h** · **Combined (planning): ~10–18h**
@@ -805,23 +805,27 @@ All **data queries** below use **`meta: { suppressGlobalError: true }`** → on 
 **Engineering notes:**
 - **Persistence:** New table **`bug_reports`** (`id`, `title`, `description`, `status` **`open` | `closed`**, `createdAt`, `closedAt` nullable, `closeNote` nullable, `pagePath` nullable string). **Drizzle** schema + **migration** + seed untouched or **optional** seed row — B.A. chooses.
 - **API:** **`bugReport.create`**, **`bugReport.listOpen`**, **`bugReport.close`** (by `id`) — **protected** only by same trust model as rest of app (local demo); document **no auth** in README if relevant.
-- **Layout:** Mount **`BugReportFab`** (or similar) once in **`src/app/layout.tsx`** (client boundary as needed) so it appears on **all routes** including **`not-found`** if feasible — if **`not-found`** is excluded, document.
+- **Layout:** Mount **`BugReportFab`** once in **`src/app/providers.tsx`** (inside **`QueryClientProvider`** / **`trpc.Provider`**) so it appears on **all routes** that use the app shell (same pattern as global nav). **`not-found`** uses root layout → FAB appears.
 
 **Acceptance Criteria:**
 
 *Global affordance*
-- [ ] A **single** bug **button/control** with **clipart-style bug** artwork appears on **every main app page** (same shell as primary nav — **Dashboard** through **Reports** / **Timesheets** / **Developers** / **Projects** routes). **Exception list** in PR if any route must be excluded.
-- [ ] Control is **keyboard-focusable**, has **visible focus** ring consistent with app, and **`aria-label`** (or visible text + `aria-hidden` on decorative image) suitable for screen readers.
-- [ ] Control does **not** block reading or clicking primary navigation on **desktop** and **mobile** (resize test at **375px** width — **no overlap** with nav hamburger if present).
+- [x] A **single** bug **button/control** with **clipart-style bug** artwork appears on **every main app page** (same shell as primary nav — **Dashboard** through **Reports** / **Timesheets** / **Developers** / **Projects** routes). **Exception list** in PR if any route must be excluded.
+- [x] Control is **keyboard-focusable**, has **visible focus** ring consistent with app, and **`aria-label`** (or visible text + `aria-hidden` on decorative image) suitable for screen readers.
+- [x] Control does **not** block reading or clicking primary navigation on **desktop** and **mobile** (resize test at **375px** width — **no overlap** with nav hamburger if present).
 
 *Modal / dialog*
-- [ ] Clicking the control **opens** a **modal** (or native **`dialog`**) containing **both**: **(a)** form to **add** a new report (**title** + **description** required, validation messages inline) and **(b)** a **scrollable** list of **all open** reports (title + created date **or** relative time — B.A. picks).
-- [ ] **Submitting** a valid new report **persists** to SQLite, **clears** or **keeps** form per PR choice, and the **open list refreshes** without full page reload.
-- [ ] **Closing** a report: each **open** row has a **Close** action; confirming stores **`closed`**, **`closedAt`**, optional **close note**, and **removes** that row from the open list (or marks visually then disappears — **consistent** with list definition).
+- [x] Clicking the control **opens** a **modal** (or native **`dialog`**) containing **both**: **(a)** form to **add** a new report (**title** + **description** required, validation messages inline) and **(b)** a **scrollable** list of **all open** reports (title + created date **or** relative time — B.A. picks).
+- [x] **Submitting** a valid new report **persists** to SQLite, **clears** or **keeps** form per PR choice, and the **open list refreshes** without full page reload.
+- [x] **Closing** a report: each **open** row has a **Close** action; confirming stores **`closed`**, **`closedAt`**, optional **close note**, and **removes** that row from the open list (or marks visually then disappears — **consistent** with list definition).
 
 *Quality*
-- [ ] **`npm test`** includes coverage for **core logic**: e.g. **router** or **service** tests for create/list open/close; **optional** source-level test that layout includes the bug control **string/href** pattern — at least **one** automated guard so the feature does not vanish silently.
-- [ ] **`npm run lint`** and **`npm run type-check`** clean.
+- [x] **`npm test`** includes coverage for **core logic**: e.g. **router** or **service** tests for create/list open/close; **optional** source-level test that layout includes the bug control **string/href** pattern — at least **one** automated guard so the feature does not vanish silently.
+- [x] **`npm run lint`** and **`npm run type-check`** clean.
+
+**Implementation (shipped):** Migration **`0001_real_black_queen.sql`**; `src/server/db/schema.ts` → **`bug_reports`**; `src/server/routers/bugReport.ts` — **`create`**, **`listOpen`** (open only, **newest first**), **`close`**; `src/lib/validators.ts` — **`createBugReportSchema`**, **`closeBugReportSchema`**; `src/components/BugReportFab.tsx` (inline **SVG** bug art, **`aria-label`**); `src/app/providers.tsx` mounts **`BugReportFab`** (global shell). **Tests:** **`tests/story-8-1-bug-report.test.ts`** — router create/list/close, Zod boundaries, trim + optional `pagePath`, null `closeNote`, double-close, **`listOpen`** ordering; **`tests/story-8-1-providers-bug-fab.test.ts`** — providers + **`appRouter.bugReport`** + FAB **a11y/layout** source guards (**117/117** full suite — see **`van/qa.md`**).
+
+**Murdock handoff (B.A.):** [`van/qa.md`](qa.md) → **Story 8.1**.
 
 **Out of scope for 8.1:** Email / Slack / GitHub Issues integration; **file uploads** or screenshots; **comments thread** on a report; **assignee** / **priority** fields; **edit** report after create; **delete** report; **rate limiting**; authenticated multi-user attribution; **show closed** history (unless shipped as trivial toggle — **stretch**).
 
@@ -974,4 +978,4 @@ These items are **on record for planning** but are **not** committed deliverable
 ---
 
 **End of Document**  
-Last Updated: 2026-04-12 — Story **6.1** ✅; Story **6.6** ✅; **Epic 8 / Story 8.1** — in-app bug FAB + backlog (**draft AC**); Phase C rollup **6.1–6.6**; 7.1–7.2; Phase B closed
+Last Updated: 2026-04-29 — Story **6.1** ✅; Story **6.6** ✅; **Epic 8 / Story 8.1** — shipped + **Murdock automated** ✅ (**117/117**); **Hannibal** pre-publish checklist in **`van/qa.md`**; Phase C rollup **6.1–6.6**; 7.1–7.2; Phase B closed

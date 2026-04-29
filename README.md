@@ -22,6 +22,9 @@ The project summary line uses **budget** (actuals vs. project cap). Per-**task**
 **Export to CSV**
 One click downloads the report. The first rows include a short **legend**; column names keep historic labels — **“Total Estimated Hours”** in the file is the **project budget** (see legend + this README). **TBD** means not set.
 
+**Bug reports & feedback (Epic 8)**
+Use the **floating bug button** (bottom-right on every page) to file issues and view **open** reports. Data is stored only in your **local SQLite** database — no external bug tracker or login.
+
 **Project lists (dashboard, Projects, Reports hub)**
 **Budget** (per-project cap), **Task est. total** (sum of task estimates, or **TBD** if any task still has unset hours), and **actual** hours appear together so you can compare all three. Variance vs budget uses the project cap; unset budget shows **TBD** in variance where applicable.
 
