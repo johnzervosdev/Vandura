@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-04-12  
 **Milestone:** M1 - MVP Showcase  
-**Status:** Phase B complete — Story **5.2** shipped. **Phase C:** **6.1** ✅ + **6.6** ✅ + **Epic 8 / 8.1** ✅ (in-app bug reports — `bug_reports`, `bugReport` router, **`BugReportFab`** in `providers.tsx`). **Next:** **6.2** (tasks missing estimates) or **Epic 8.2+** per [`van/stories.md`](stories.md). Remaining Phase C: **6.2**–**6.5**; further **Epic 8** optional; **M2** / **deferred** in stories.
+**Status:** Phase B complete — Story **5.2** shipped. **Phase C:** **6.1** ✅ + **6.6** ✅ + **Epic 8 / 8.1** ✅ (in-app bug reports). **Open defect (code):** **BUG-REPORT-001** — actuals **“All Time”** clips to **`projects.endDate`** (**Hannibal triaged 2026-04-12** → implement as **Story 6.7** — see **`van/stories.md`**). **Next B.A. priority:** **6.7** → **6.5** → **6.2**–**6.4** (see **`van/stories.md`** Phase C **Remaining queue**). **Epic 8.2+** remains optional parallel work.
 
 > **Navigation:** This is the entry point. Read this first for project context.  
 > Story details → [`van/stories.md`](stories.md) | QA strategy & results → [`van/qa.md`](qa.md)
@@ -234,10 +234,11 @@ Story 1.2 can be done any time after MVP if Windows/OneDrive instability recurs.
 3. ~~**Excel parser weekly-grid timesheet layout**~~ — ✅ **FIXED**: weekly grid (Mon/Tue/…) converted to row-based entries. Validated via `tests/timesheet-sample-extract.test.ts` (JZER-style layout; synthetic workbook fallback for CI).
 4. ~~**Projects list fails to load (SQL alias error)**~~ — ✅ **FIXED** (see `tests/report-projects-summary-error.test.ts`)
 5. ~~**Template timesheet missing date errors**~~ — ✅ **FIXED**: weekly-grid conversion now supplies per-row dates.
-6. **Test run status** — Full suite green: **76/76** passed (`npm test`; 17 `tests/*.test.ts` files). Shared-DB tests clean up in `finally` (see `van/qa.md` — includes `tests/parser-db-cleanup.ts` for ExcelParser import-mode side effects).
-7. ~~**Next.js params Promise warning**~~ — ✅ **FIXED**: `/projects/[id]` and `/projects/[id]/edit` params handling corrected for Next.js 15.
-8. ~~**Drizzle relations missing**~~ — ✅ **FIXED**: Added Drizzle relations to schema for `with: { tasks: true }` queries.
-9. ~~**Import fails with spread error during bulk insert**~~ — ✅ **FIXED**: `bulkCreateEntries` now executes `.returning().all()` synchronously inside the transaction. Regression test: `tests/timesheet-bulkCreate.test.ts`
+6. **Test run status** — Current counts and file list: **[`van/qa.md`](qa.md)** → **Automated Test Registry** (run **`npm test`** locally). Shared-DB tests must use **`finally`** cleanup (see `van/qa.md` — includes `tests/parser-db-cleanup.ts` for ExcelParser import-mode side effects).
+7. **BUG-REPORT-001** / **Story 6.7** — Actuals report **`/reports/{id}`** can show **0h** per task while **`projectsSummary`** shows real hours: **`AggregationEngine`** uses **`projects.endDate`** when UI sends no date filter. **Hannibal triaged 2026-04-12** — implement per **`van/stories.md`** bug backlog + **Story 6.7**; **unskip** **`tests/aggregation-actuals-report-date-range.test.ts`** when fixed.
+8. ~~**Next.js params Promise warning**~~ — ✅ **FIXED**: `/projects/[id]` and `/projects/[id]/edit` params handling corrected for Next.js 15.
+9. ~~**Drizzle relations missing**~~ — ✅ **FIXED**: Added Drizzle relations to schema for `with: { tasks: true }` queries.
+10. ~~**Import fails with spread error during bulk insert**~~ — ✅ **FIXED**: `bulkCreateEntries` now executes `.returning().all()` synchronously inside the transaction. Regression test: `tests/timesheet-bulkCreate.test.ts`
 
 ### Minor (Fix in Phase B)
 - **drizzle.config.ts** — deprecated `driver` field already removed

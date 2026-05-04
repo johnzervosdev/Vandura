@@ -296,4 +296,4 @@ Story **6.6** ✅: discoverability — `/developers` → `/reports/productivity`
 
 ---
 
-*Last Updated: 2026-04-29 — Epic 8 Story **8.1** `bug_reports` + `bugReport` router + `BugReportFab` + expanded automated tests (`story-8-1-*`); Story 6.1 `taskEstimatesTotal`; Story 7.1 import policy (planned) under Import deduplication.*
+*Last Updated: 2026-04-12 — Epic 8 Story **8.1** shipped; **BUG-REPORT-001** / **Story 6.7** (actuals “All Time” vs `projects.endDate`) — **Hannibal triaged**, **open in code** until PR; tests in `tests/aggregation-actuals-report-date-range.test.ts`; Story 6.1 `taskEstimatesTotal`; Story 7.1 import policy (planned).*

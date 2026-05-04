@@ -1,9 +1,9 @@
 # Project Vandura — User Stories & Acceptance Criteria
 
-**Last Updated:** 2026-04-29 (Story **6.1** ✅; Story **6.6** ✅; **Epic 8 / Story 8.1** — Murdock automated ✅, **ready for Hannibal** pre-publish; Phase C **6.2**–**6.5**; 7.1–7.2)  
+**Last Updated:** 2026-04-12 (Story **6.7** / **BUG-REPORT-001** — Hannibal **triaged**; Story **6.1** ✅; Story **6.6** ✅; **Epic 8 / Story 8.1** — Murdock automated ✅, **ready for Hannibal** pre-publish; Phase C remainder **6.5** → **6.2**–**6.4** after **6.7**; 7.1–7.2)  
 **Owner:** B.A. (maintains ACs + implementation notes) | Murdock (updates QA checklists)
 
-> **Navigation:** [`van/project.md`](project.md) — project dashboard | [`van/qa.md`](qa.md) — test plans & results
+> **Navigation:** [`van/project.md`](project.md) — project dashboard | [`van/qa.md`](qa.md) — test plans & results | **Bug backlog** — **`BUG-REPORT-001`** (→ **Story 6.7**)
 
 ---
 
@@ -524,7 +524,7 @@ All **data queries** below use **`meta: { suppressGlobalError: true }`** → on 
 
 **Goal:** Make the **project-level hour cap** (`projects.estimatedHours` in DB) explicitly **budgeted time**, separate from **per-task estimates** (`tasks.estimatedHours`). Align copy and variance UX. Replace **`N/A`** for **unset** hours with **`TBD`**. **Story 6.2** adds a project-detail **second card** to surface tasks still missing estimates and make filling them in easy. **Story 6.3** adds **sortable** task lists, with **story number** as a first-class optional field for ordering. **Story 6.4** adds **hide/show completed** tasks on the project task board to reduce clutter. **Story 6.5** surfaces when a project’s **end date has passed** but it is **not** marked **completed**. **Story 6.6** improves **discoverability** of the Developer productivity report from **`/developers`**.
 
-**Planning — Phase C scope is provisional (Hannibal):** **B.A. estimates** and **Murdock QA bands** are logged per story below (**Stories 6.1–6.6**). **Combined planning hours** = **B.A. implementation** + **Murdock testing** (same story). **Epic 8 / Story 8.1** (in-app bug reports) is **outside** Phase C thematically — see **Epic 8** below; schedule and hours are **additive** to any milestone that includes it.
+**Planning — Phase C scope is provisional (Hannibal):** **B.A. estimates** and **Murdock QA bands** are logged per story below (**Stories 6.1–6.6**). **Story 6.7** (**BUG-REPORT-001** — report date window) is **additive** to the table below (**~3–6h** combined — narrow `AggregationEngine` + tests). **Combined planning hours** = **B.A. implementation** + **Murdock testing** (same story). **Epic 8 / Story 8.1** (in-app bug reports) is **outside** Phase C thematically — see **Epic 8** below; schedule and hours are **additive** to any milestone that includes it.
 
 **B.A. original reference sequence:** **6.1 → 6.2 → 6.3 → 6.4 → 6.5 → 6.6** (dependency-friendly linear build).
 
@@ -537,6 +537,8 @@ All **data queries** below use **`meta: { suppressGlobalError: true }`** → on 
 - **6.5 third:** Extends **`projectsSummary` / `project.get`** and multi-surface cues **after** 6.1 copy and cache behavior are stable.
 - **6.2 → 6.3 → 6.4:** Keeps **project-detail task work** contiguous. **Hannibal picks 6.3 before 6.4** (B.A.: either order acceptable): sort UI and migration land first; **6.4** then implements filter-after-sort per AC; Murdock still batches **6.3 + 6.4** regression.
 
+**Remaining queue after 6.1 + 6.6 shipped (Hannibal — 2026-04-12):** **6.7** (**BUG-REPORT-001**) → **6.5** → **6.2** → **6.3** → **6.4**. **Rationale:** **6.7** fixes user-visible **0h** actuals vs dashboard (**P1** trust); **6.5** stays next in the original Phase C plan after **6.1**; then the **6.2–6.4** task-board cluster. **Exception:** If B.A. already has **6.2** in flight, land **6.7** **immediately after** that merge so the skipped regression test does not linger across multiple releases.
+
 **Epic 8 (parallel):** **Story 8.1** (bug FAB + backlog) — **not** in the Phase C sequence; slot by **Hannibal** (often **parallel** to **6.2–6.5** when feedback capture is prioritized).
 
 **B.A. Phase C rollup (6.1–6.6, dev only):** ~**23–35h** (upper band mainly if **6.2** includes the dashboard “tasks TBD” stretch **and/or** B.A. does an optional **post–6.1** **`budget_hours`** migration PR — **6.1** itself is **copy-only**, no migration).
@@ -546,6 +548,7 @@ All **data queries** below use **`meta: { suppressGlobalError: true }`** → on 
 | Story | Murdock QA (h) | Murdock focus |
 |-------|----------------|----------------|
 | **6.1** | **3.5–5.5** | Copy sweep, `TBD`, CSV/legend, **`projectsSummary`** invalidation — largest regression surface |
+| **6.7** | **1–2** | Unskip **`aggregation-actuals-report-date-range`**; actuals vs dashboard parity smoke |
 | **6.2** | **2–3** | Second card, ≤2 clicks, empty states; +dashboard if stretch ships |
 | **6.3** | **2–4** | Migration, sort keys, nulls-last, router/SQL tests |
 | **6.4** | **1.5–2** | Hide toggle + **6.3** interaction, `localStorage`, a11y |
@@ -635,6 +638,18 @@ All **data queries** below use **`meta: { suppressGlobalError: true }`** → on 
 **Implementation (shipped):** `src/lib/budget-display.ts` (format + task-sum rule **B** + `taskEstimatesTotalFromRollup` + active-project budget rollup). **`projectsSummary`:** `ReportService.getAllProjectsSummary` includes **`taskEstimatesTotal`**. UI: `page.tsx`, `projects/page.tsx`, `reports/page.tsx` (columns **Budget**, **Task est. total**, **Actual** + variance); `reports/[projectId]/page.tsx` (fourth summary card). CSV: `ReportService.exportToCSV` — unchanged. Invalidation: unchanged.
 
 **QA sign-off:** **[`van/qa.md`](qa.md) → Story 6.1** — Murdock regression + Hannibal definition-of-done. **README screenshots** were **not** recaptured for this story (explicit skip per handoff); sign-off is **not** blocked on pixel drift in `docs/screenshots/`.
+
+---
+
+### Story 6.7: BUG-REPORT-001 — Actuals report “All Time” vs planning dates (P1) — **B.A.: 2–4h** · **Murdock: 1–2h** · **Combined (planning): ~3–6h**
+**Status:** Triaged — Hannibal product rules locked **2026-04-12**; **Not Started**  
+**Owner:** B.A.
+
+**Goal:** When the actuals report (`/reports/[projectId]`) uses the default **“All Time”** preset (no explicit range), **per-task** and **project total** **actual** hours must **not** silently drop work logged **outside** `projects.startDate` / `projects.endDate` — those fields are **planning metadata**, not an implied reporting window for “all logged time.”
+
+**Canonical acceptance criteria, root-cause notes, and test contract:** **[Bug backlog — BUG-REPORT-001](#bug-backlog--hannibal-review-pre-development)** in this file. **Single source of truth** — close **BUG-REPORT-001** there when this story ships (do not maintain a duplicate AC list here).
+
+**Hannibal queue:** See **Remaining queue after 6.1 + 6.6 shipped** in the Phase C header above (**6.7** before **6.5** / **6.2–6.4**, with the **6.2** in-flight exception).
 
 ---
 
@@ -781,7 +796,7 @@ All **data queries** below use **`meta: { suppressGlobalError: true }`** → on 
 
 ### Story 8.1: In-app bug reports — floating control & backlog (P2 — cross-cutting UX)
 
-**Status:** ✅ Complete — **Murdock automated QA done** (**117/117** tests, **`npm run type-check`** + **`npm run lint`** clean — **2026-04-29**). **Ready for Hannibal** product review + manual DoD in [`van/qa.md`](qa.md) → Story **8.1** before **publish** / calling release notes final.  
+**Status:** ✅ Complete — **Murdock automated QA done** (**119** tests — **118 pass**, **1 skip** for BUG-REPORT-001; **`npm run type-check`** + **`npm run lint`** clean — **2026-04-29**). **Ready for Hannibal** product review + manual DoD in [`van/qa.md`](qa.md) → Story **8.1** before **publish** / calling release notes final.  
 **Owner:** B.A.
 
 **Hannibal informal:** **6–10h** · **B.A.: 8–14h** (SQLite **`bug_reports`** table + Drizzle migration; **`bugReport` tRPC router**: create, list **open**, close; **`BugReportButton`** + modal in **root layout**; **clipart-style** bug **image** in **`public/`** or inline **SVG**; tests) · **Murdock QA: 2–4h** · **Combined (planning): ~10–18h**
@@ -823,7 +838,7 @@ All **data queries** below use **`meta: { suppressGlobalError: true }`** → on 
 - [x] **`npm test`** includes coverage for **core logic**: e.g. **router** or **service** tests for create/list open/close; **optional** source-level test that layout includes the bug control **string/href** pattern — at least **one** automated guard so the feature does not vanish silently.
 - [x] **`npm run lint`** and **`npm run type-check`** clean.
 
-**Implementation (shipped):** Migration **`0001_real_black_queen.sql`**; `src/server/db/schema.ts` → **`bug_reports`**; `src/server/routers/bugReport.ts` — **`create`**, **`listOpen`** (open only, **newest first**), **`close`**; `src/lib/validators.ts` — **`createBugReportSchema`**, **`closeBugReportSchema`**; `src/components/BugReportFab.tsx` (inline **SVG** bug art, **`aria-label`**); `src/app/providers.tsx` mounts **`BugReportFab`** (global shell). **Tests:** **`tests/story-8-1-bug-report.test.ts`** — router create/list/close, Zod boundaries, trim + optional `pagePath`, null `closeNote`, double-close, **`listOpen`** ordering; **`tests/story-8-1-providers-bug-fab.test.ts`** — providers + **`appRouter.bugReport`** + FAB **a11y/layout** source guards (**117/117** full suite — see **`van/qa.md`**).
+**Implementation (shipped):** Migration **`0001_real_black_queen.sql`**; `src/server/db/schema.ts` → **`bug_reports`**; `src/server/routers/bugReport.ts` — **`create`**, **`listOpen`** (open only, **newest first**), **`close`**; `src/lib/validators.ts` — **`createBugReportSchema`**, **`closeBugReportSchema`**; `src/components/BugReportFab.tsx` (inline **SVG** bug art, **`aria-label`**); `src/app/providers.tsx` mounts **`BugReportFab`** (global shell). **Tests:** **`tests/story-8-1-bug-report.test.ts`** — router create/list/close, Zod boundaries, trim + optional `pagePath`, null `closeNote`, double-close, **`listOpen`** ordering; **`tests/story-8-1-providers-bug-fab.test.ts`** — providers + **`appRouter.bugReport`** + FAB **a11y/layout** source guards (full suite counts — see **`van/qa.md`**).
 
 **Murdock handoff (B.A.):** [`van/qa.md`](qa.md) → **Story 8.1**.
 
@@ -857,6 +872,53 @@ Small items that **fit the same release train** (budget / tasks / IA) if Hanniba
 | **“Sync project budget from sum of task estimates”** (explicit control) | Hannibal kept **auto-sync** out of **6.1**; gated button + confirmation is a **separate** product story. | **2–4h** |
 
 **Keep out of Phase C by default:** **7.1–7.2** (import pack — own milestone), **1.2** (dev stability), **3.4** (parse remediation), **pie/donut** idea until interpretation A/B/C is chosen (see **Captured ideas** below).
+
+---
+
+## Bug backlog — Hannibal review (**pre-development**)
+
+These items are **verified or strongly suspected defects** with **reproduction notes** and **test gaps**. Items stay here until **shipped**; once Hannibal locks rules, B.A. implements under the **story ID** called out in the bug (**Story 6.7** for **BUG-REPORT-001**).
+
+### BUG-REPORT-001: Actuals report shows **0h** on a task despite logged time (e.g. `/reports/1`)
+
+**Status:** **Triaged — ready for B.A.** (**Story 6.7**). **Hannibal product rules locked 2026-04-12.** **Code / tests:** still **open** until PR merges (**1× `test.skip`** remains). Filed **2026-04-29** (Murdock + code review). **Owner:** B.A. (implementation) · Murdock (unskip + regression) · Hannibal (sign-off at publish).
+
+**Reported symptom:** Three time entries (e.g. **3×20m**) logged against project **Vandura** (or any project) for task **“8.1 In-app bug reports”** should total **1.0h** actual on that task row. **`/reports/{projectId}`** (e.g. **`/reports/1`**) with default **“All Time”** (no custom dates) shows **0.0h** actual for that task (and may show **no** or **misleading** totals vs dashboard / `projectsSummary`).
+
+**Verified root cause (engineering):** In `src/server/services/AggregationEngine.ts`, `getActualsVsEstimates` resolves the query window as:
+
+```ts
+const start = startDate || project.startDate || new Date(0);
+const end = endDate || project.endDate || new Date();
+```
+
+When the UI sends **`startDate` / `endDate` = `undefined`** (default **All Time** on `src/app/reports/[projectId]/page.tsx`), the engine falls back to **`projects.startDate`** and **`projects.endDate`**. Those fields are **project planning bounds**, not “all logged work.” Any **`time_entries.startTime`** **after `project.endDate`** (or before `project.startDate` if ever relevant) is **excluded** from `getActualsByTask` and therefore from **per-task actuals** and **`totalActualHours`**.
+
+**Why this slipped past QA:** **`projectsSummary`** and dashboard aggregates **do not** apply the project’s planning `endDate` to time-entry sums — only the actuals report path does. Users compare **`/`** or **`/projects`** (shows hours) to **`/reports/1`** (shows **0**) for the same project.
+
+**Secondary hypothesis (also test):** Time entries with **`task_id` NULL** roll up in SQL under a **null task** group; `getActualsVsEstimates` only merges hours into rows for **`tasks` table IDs**. Named tasks can show **0h** while hours live on **unassigned** rows (not surfaced in the task table UI). Hannibal: confirm whether **“Unassigned”** row is required vs forcing task on entry.
+
+**Hannibal — product decisions (locked 2026-04-12; supersedes prior draft questions):**
+
+1. **“All Time” (implicit / missing `startDate` and `endDate`):** **Yes** — means **all `time_entries` for the project** (and only user-visible **explicit** date bounds may clip). **Do not** substitute **`projects.startDate`** / **`projects.endDate`** as implicit filter endpoints for this preset. Align **`AggregationEngine.getActualsVsEstimates`** with **`projectsSummary` / dashboard** for the default case.
+2. **Planning dates as the default window:** **No** for **BUG-REPORT-001** — we are **not** rebadging **“All Time”** or changing **`projectsSummary`** to clip by planning dates. A **future** optional preset (e.g. **“Within project planning window”**) + cross-surface alignment is **explicitly out of scope** here; capture as a **Phase C+** idea if Hannibal wants it later.
+3. **`task_id` NULL` hours on the actuals report:** **Out of scope for Story 6.7.** The **secondary hypothesis** (hours on null-task entries not merged into named task rows) remains a **separate** backlog item once Murdock has a reproduction-first UX rule (e.g. **“Unassigned”** row). **6.7** ships the **date-window** fix only.
+
+**Acceptance criteria (fix — Hannibal approved 2026-04-12):**
+
+- [ ] **Consistency:** For **All Time** (no explicit range), task-level **actual** hours on **`/reports/[projectId]`** and **project total actual** use the **same inclusion rule** as **`projectsSummary`** / dashboard for that project (no silent **0h** solely because **`time_entries.startTime` > `projects.endDate`** or **< `projects.startDate`**).
+- [ ] **Explicit ranges unchanged:** When the user applies a **concrete** date filter, existing clipping semantics remain valid (product does not promise to show work outside the chosen window).
+- [ ] **Regression tests** — **`tests/aggregation-actuals-report-date-range.test.ts`**: the **skipped** integration test is **removed** or **enabled** and **green**; baseline “explicit wide range” test stays green.
+
+**Acceptance criteria — automated tests (must ship with fix):**
+
+- [ ] **Integration** (`AggregationEngine` or `report.actualsVsEstimates`): Project with **`endDate`** in the past; **`time_entries`** with **`task_id`** set to a real task and **`startTime` after `endDate`**; call with **no** `startDate`/`endDate` (same as UI “All Time”) — assert **task actual hours** and **project total actual** match the **1h** (or seeded) sum per **Hannibal rule (1)** above.
+- [ ] **Integration:** Same data with **explicit** wide `startDate`/`endDate` covering the entry — assert hours present (**baseline** — already covered by the non-skipped test; keep green).
+- [ ] **`task_id` NULL`:** **Not required** for **6.7** closure — track under a **future** story / bug when ruled.
+
+**Implementation notes (for B.A. after sign-off):** Likely touch `AggregationEngine.getActualsVsEstimates` (and possibly `getActualsByTask` callers), **`van/qa.md`** Murdock checklist for reports, and README one-liner if user-facing wording changes.
+
+**Tracked in:** [`van/project.md`](project.md) → **Known Issues** | [`van/qa.md`](qa.md) → **Known defects**.
 
 ---
 
@@ -978,4 +1040,4 @@ These items are **on record for planning** but are **not** committed deliverable
 ---
 
 **End of Document**  
-Last Updated: 2026-04-29 — Story **6.1** ✅; Story **6.6** ✅; **Epic 8 / Story 8.1** — shipped + **Murdock automated** ✅ (**117/117**); **Hannibal** pre-publish checklist in **`van/qa.md`**; Phase C rollup **6.1–6.6**; 7.1–7.2; Phase B closed
+Last Updated: 2026-04-12 — **Story 6.7** / **BUG-REPORT-001** Hannibal **triaged** (rules locked — **awaiting B.A.**); Story **6.1** ✅; Story **6.6** ✅; **Epic 8 / Story 8.1** — shipped + **Murdock automated** ✅ (**119** tests, **1 skip** until **6.7**); **Hannibal** pre-publish checklist in **`van/qa.md`**; Phase C remainder **6.5** → **6.2**–**6.4** after **6.7**; 7.1–7.2; Phase B closed
