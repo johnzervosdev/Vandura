@@ -896,7 +896,7 @@ When the UI sends **`startDate` / `endDate` = `undefined`** (default **All Time*
 
 **Why this slipped past QA:** **`projectsSummary`** and dashboard aggregates **do not** apply the project’s planning `endDate` to time-entry sums — only the actuals report path does. Users compare **`/`** or **`/projects`** (shows hours) to **`/reports/1`** (shows **0**) for the same project.
 
-**Secondary hypothesis (also test):** Time entries with **`task_id` NULL** roll up in SQL under a **null task** group; `getActualsVsEstimates` only merges hours into rows for **`tasks` table IDs**. Named tasks can show **0h** while hours live on **unassigned** rows (not surfaced in the task table UI). Hannibal: confirm whether **“Unassigned”** row is required vs forcing task on entry.
+**Secondary hypothesis (deferred out of Story 6.7):** Time entries with **`task_id` NULL** roll up in SQL under a **null task** group; `getActualsVsEstimates` only merges hours into rows for **`tasks` table IDs**. Named tasks can show **0h** while hours live on **unassigned** rows (not surfaced in the task table UI). **Hannibal (2026-04-12):** **not** part of **BUG-REPORT-001** / **6.7** — open a **follow-up** bug/story when Murdock has a reproduction-backed UX rule (e.g. **“Unassigned”** row vs entry validation).
 
 **Hannibal — product decisions (locked 2026-04-12; supersedes prior draft questions):**
 
