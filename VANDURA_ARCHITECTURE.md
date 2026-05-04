@@ -216,7 +216,7 @@ All API calls go through tRPC, served at **`/api/trpc`** via `src/app/api/trpc/[
 
 **`report`**
 - `projectsSummary` — dashboard + `/projects` + `/reports` tables; includes **`estimatedHours`** (project budget), **`taskEstimatesTotal`** (Hannibal **B** roll-up), **`actualHours`**, variance helpers
-- `actualsVsEstimates` — `/reports/[projectId]` task breakdown + presets
+- `actualsVsEstimates` — `/reports/[projectId]` task breakdown + presets; **implicit “All Time”** (no dates) sums **all** project time entries — **not** clipped to **`projects.startDate` / `projects.endDate`** (Story **6.7** / BUG-REPORT-001)
 - `developerProductivity` — `/reports/productivity`
 - `timeline` — chart-oriented series *(wired for future UI)*
 - `exportCSV` — CSV download for current report filters
@@ -289,11 +289,11 @@ Excel → preview → import, tasks, actuals report, CSV, dashboard.
 Manual timesheets UI, developers + active flag, developer productivity report, Excel in-app documentation + `public/timesheet-template.xlsx`, global error handling + `not-found`, README/screenshots and this architecture pass (Story 5.2).
 
 **Phase C — In progress**  
-Story **6.6** ✅: discoverability — `/developers` → `/reports/productivity`. Story **6.1** ✅: **`projectsSummary.taskEstimatesTotal`** (Hannibal **B**), **`/`** / **`/projects`** / **`/reports`** three-way hour columns, actuals report **Task est. total** card, **TBD** for unset, project detail **Budget** + **Task estimates total**, `projectsSummary` invalidation on task/timesheet changes, CSV legend — see `src/lib/budget-display.ts` and README. **Epic 8 — Story 8.1** ✅: **`bug_reports`** + **`bugReport`** router + **`BugReportFab`** in `providers.tsx` — in-app bug/feedback (local SQLite only); **automated tests** — `tests/story-8-1-bug-report.test.ts`, `tests/story-8-1-providers-bug-fab.test.ts` (see **`van/qa.md`**). **Next:** `van/stories.md` (e.g. **6.2**, **8.2+**).
+Story **6.6** ✅: discoverability — `/developers` → `/reports/productivity`. Story **6.1** ✅: **`projectsSummary.taskEstimatesTotal`** (Hannibal **B**), **`/`** / **`/projects`** / **`/reports`** three-way hour columns, actuals report **Task est. total** card, **TBD** for unset, project detail **Budget** + **Task estimates total**, `projectsSummary` invalidation on task/timesheet changes, CSV legend — see `src/lib/budget-display.ts` and README. Story **6.7** ✅ (**BUG-REPORT-001**): **`AggregationEngine.getActualsVsEstimates`** — default **All Time** aligns with **`projectsSummary`** (no planning-date clip); **`tests/aggregation-actuals-report-date-range.test.ts`**. **Epic 8 — Story 8.1** ✅: **`bug_reports`** + **`bugReport`** router + **`BugReportFab`** in `providers.tsx` — in-app bug/feedback (local SQLite only); **automated tests** — `tests/story-8-1-bug-report.test.ts`, `tests/story-8-1-providers-bug-fab.test.ts` (see **`van/qa.md`**). **Next:** `van/stories.md` (e.g. **6.2**, **8.2+**).
 
 **Deferred (post-MVP)**  
 **Stories 7.1–7.2** import integrity (dedupe / conflict review + whole-timesheet discard/replace — see `van/stories.md`), audit log, **Story 1.2** dev-server hardening (`dev:win` / `dev:clean`), parse-preview remediation (Story 3.4).
 
 ---
 
-*Last Updated: 2026-04-12 — Epic 8 Story **8.1** shipped; **BUG-REPORT-001** / **Story 6.7** (actuals “All Time” vs `projects.endDate`) — **Hannibal triaged**, **open in code** until PR; tests in `tests/aggregation-actuals-report-date-range.test.ts`; Story 6.1 `taskEstimatesTotal`; Story 7.1 import policy (planned).*
+*Last Updated: 2026-04-12 — Epic 8 Story **8.1** shipped; **BUG-REPORT-001** / **Story 6.7** ✅ (`AggregationEngine` implicit **All Time** — tests in `tests/aggregation-actuals-report-date-range.test.ts`); Story 6.1 `taskEstimatesTotal`; Story 7.1 import policy (planned).*

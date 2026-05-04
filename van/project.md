@@ -2,7 +2,7 @@
 
 **Last Updated:** 2026-04-12  
 **Milestone:** M1 - MVP Showcase  
-**Status:** Phase B complete — Story **5.2** shipped. **Phase C:** **6.1** ✅ + **6.6** ✅ + **Epic 8 / 8.1** ✅ (in-app bug reports). **Open defect (code):** **BUG-REPORT-001** — actuals **“All Time”** clips to **`projects.endDate`** (**Hannibal triaged 2026-04-12** → implement as **Story 6.7** — see **`van/stories.md`**). **Next B.A. priority:** **6.7** → **6.5** → **6.2**–**6.4** (see **`van/stories.md`** Phase C **Remaining queue**). **Epic 8.2+** remains optional parallel work.
+**Status:** Phase B complete — Story **5.2** shipped. **Phase C:** **6.1** ✅ + **6.6** ✅ + **6.7** (**BUG-REPORT-001**) ✅ + **Epic 8 / 8.1** ✅ (in-app bug reports). **Next B.A. priority:** **6.5** → **6.2**–**6.4** (see **`van/stories.md`** Phase C **Remaining queue**). **Epic 8.2+** remains optional parallel work.
 
 > **Navigation:** This is the entry point. Read this first for project context.  
 > Story details → [`van/stories.md`](stories.md) | QA strategy & results → [`van/qa.md`](qa.md)
@@ -86,6 +86,7 @@
 **Phase C (in flight — see [`van/stories.md`](stories.md) Phase C):**
 - ✅ Story **6.1** — **`projectsSummary.taskEstimatesTotal`** (SQL + `taskEstimatesTotalFromRollup`); **`/`**, **`/projects`**, **`/reports`** show **Budget**, **Task est. total**, **Actual**; actuals report top row adds **Task est. total** card; **TBD** + variance **TBD** when no project budget; CSV **Note** row; `tests/budget-display.test.ts` (incl. rollup) + `ReportService` / `projectsSummary` path — **QA complete** (`van/qa.md` → Story 6.1)
 - ✅ Story **6.6** — **`/developers`** → **`/reports/productivity`** link (top action row, Hannibal copy + B.A. draft subline; `tests/story-6-6-developers-productivity-link.test.ts`)
+- ✅ Story **6.7** — **BUG-REPORT-001**: actuals **`/reports/[projectId]`** implicit **All Time** matches **`projectsSummary`** (`tests/aggregation-actuals-report-date-range.test.ts`; `van/qa.md` → Story 6.7)
 - ✅ Story **8.1** (**Epic 8**) — **`bug_reports`** table + **`bugReport`** tRPC router + **`BugReportFab`** (`tests/story-8-1-*.test.ts`; `van/qa.md` → Story 8.1)
 
 **Still Missing (Phase B scope):**
@@ -105,7 +106,7 @@
 - _(none)_
 
 ### What's PLANNED 📋
-- **Phase C:** **6.1** + **6.6** + **8.1** shipped; **6.2**–**6.5** remaining (**execution order** in [`van/stories.md`](stories.md)); **Epic 8.2+** optional. Phase C band **~34–54h** (**6.1–6.6**) — **M1 ~20h** triage in stories **Planning** + optional candidates. **+ ~10–18h** for **8.1** is **spent** if counted against epic capacity.
+- **Phase C:** **6.1** + **6.6** + **6.7** + **8.1** shipped; **6.2**–**6.5** remaining (**execution order** in [`van/stories.md`](stories.md)); **Epic 8.2+** optional. Phase C band **~34–54h** (**6.1–6.6**) — **M1 ~20h** triage in stories **Planning** + optional candidates. **+ ~10–18h** for **8.1** is **spent** if counted against epic capacity.
 - **Story 7.1** — Excel import **duplicate policy** — **B.A. 10–22h** (scope-dependent) — [`van/stories.md`](stories.md) **Import integrity** (not Phase C unless triaged in).
 - **Story 7.2** — **Whole-timesheet** / **discard import** — **B.A. ~10–26h** (fork A/B/C) — same section; **7.1+7.2 ~24–45h** combined if both ship.
 - **M2 / hosting**, **Story 1.2** (dev hardening), **Story 3.4** (parse remediation), and other **deferred** work — see [`van/stories.md`](stories.md) Deferred section.
@@ -235,7 +236,7 @@ Story 1.2 can be done any time after MVP if Windows/OneDrive instability recurs.
 4. ~~**Projects list fails to load (SQL alias error)**~~ — ✅ **FIXED** (see `tests/report-projects-summary-error.test.ts`)
 5. ~~**Template timesheet missing date errors**~~ — ✅ **FIXED**: weekly-grid conversion now supplies per-row dates.
 6. **Test run status** — Current counts and file list: **[`van/qa.md`](qa.md)** → **Automated Test Registry** (run **`npm test`** locally). Shared-DB tests must use **`finally`** cleanup (see `van/qa.md` — includes `tests/parser-db-cleanup.ts` for ExcelParser import-mode side effects).
-7. **BUG-REPORT-001** / **Story 6.7** — Actuals report **`/reports/{id}`** can show **0h** per task while **`projectsSummary`** shows real hours: **`AggregationEngine`** uses **`projects.endDate`** when UI sends no date filter. **Hannibal triaged 2026-04-12** — implement per **`van/stories.md`** bug backlog + **Story 6.7**; **unskip** **`tests/aggregation-actuals-report-date-range.test.ts`** when fixed.
+7. ~~**BUG-REPORT-001** / **Story 6.7**~~ — **Resolved** **2026-04-12** — Implicit **All Time** on **`/reports/{id}`** no longer clips to **`projects.endDate`**; see **`van/stories.md`** bug backlog + **`AggregationEngine.getActualsVsEstimates`**.
 8. ~~**Next.js params Promise warning**~~ — ✅ **FIXED**: `/projects/[id]` and `/projects/[id]/edit` params handling corrected for Next.js 15.
 9. ~~**Drizzle relations missing**~~ — ✅ **FIXED**: Added Drizzle relations to schema for `with: { tasks: true }` queries.
 10. ~~**Import fails with spread error during bulk insert**~~ — ✅ **FIXED**: `bulkCreateEntries` now executes `.returning().all()` synchronously inside the transaction. Regression test: `tests/timesheet-bulkCreate.test.ts`

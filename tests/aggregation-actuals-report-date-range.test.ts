@@ -76,9 +76,8 @@ test('BUG-REPORT-001 baseline: explicit wide range includes time after project.e
   }
 });
 
-/** Remove `.skip` when Story 6.7 / BUG-REPORT-001 is fixed (implicit “All Time” must not clip to project.endDate — Hannibal rule locked 2026-04-12). */
-test.skip('BUG-REPORT-001: implicit date range (undefined) must include entries after project.endDate', async () => {
-  const tag = `br001-skip-${Date.now()}`;
+test('BUG-REPORT-001: implicit date range (undefined) must include entries after project.endDate', async () => {
+  const tag = `br001-implicit-${Date.now()}`;
   let devId = 0;
   let projectId = 0;
   let taskId = 0;

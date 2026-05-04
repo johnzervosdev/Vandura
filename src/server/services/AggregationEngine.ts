@@ -51,7 +51,7 @@ export class AggregationEngine {
     startDate?: Date,
     endDate?: Date
   ): Promise<ActualsVsEstimates> {
-    // Set default date range if not provided (project lifetime)
+    // Project row: variance + task list + fallback bounds when only one of start/end is set.
     const project = await db.query.projects.findFirst({
       where: eq(projects.id, projectId),
     });
@@ -60,8 +60,14 @@ export class AggregationEngine {
       throw new Error(`Project ${projectId} not found`);
     }
 
-    const start = startDate || project.startDate || new Date(0);
-    const end = endDate || project.endDate || new Date();
+    // BUG-REPORT-001 / Story 6.7: implicit "All Time" (no dates from UI) must include all
+    // time_entries for the project — do not clip to planning startDate/endDate (matches
+    // projectsSummary). Explicit date filters keep planning-date fallbacks for partial bounds.
+    const implicitAllTime = startDate === undefined && endDate === undefined;
+    const start = implicitAllTime
+      ? new Date(0)
+      : startDate ?? project.startDate ?? new Date(0);
+    const end = implicitAllTime ? new Date() : endDate ?? project.endDate ?? new Date();
 
     // Get actuals from time entries
     const actuals = await this.getActualsByTask(projectId, start, end);

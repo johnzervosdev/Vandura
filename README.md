@@ -61,7 +61,7 @@ Typical flow (**~5 minutes** with sample data). After `npm run db:seed`, use **P
 
 3. **Import** (`/timesheets/upload`) — choose an `.xlsx` / `.xls` file, **Parse** to preview rows, review errors/warnings in the expandable sections, then **Import** when valid. Use the committed blank template if you need a starting point: **[Download `/timesheet-template.xlsx`](public/timesheet-template.xlsx)** (served from `public/`). Full column rules and date/time behavior are documented on the upload page and in [README § Excel Format](#excel-format).
 
-4. **Reports** (`/reports`) — pick a project to open **Actuals vs Estimates** (`/reports/[projectId]`). Adjust preset or custom date range.
+4. **Reports** (`/reports`) — pick a project to open **Actuals vs Estimates** (`/reports/[projectId]`). Adjust preset or custom date range. Default **All Time** counts **all** logged hours for that project (it does **not** stop at the project’s planning **end date**).
 
 5. **CSV** — on the report page, **Export CSV** downloads a timestamped file for Excel.
 
