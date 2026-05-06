@@ -740,9 +740,16 @@ All **data queries** below use **`meta: { suppressGlobalError: true }`** → on 
 
 **Rule (Hannibal — v1):**
 - **Trigger:** `endDate != null` **and** the project’s end date is **strictly before today’s local calendar date** (inclusive end-of-day boundary — **match** date handling used elsewhere in the app, e.g. report presets).
-- **Show cue when:** `status !== 'completed'`.
-- **`cancelled`:** **Default:** **no** overdue-style cue (treat as intentionally stopped); **optional** muted label — **B.A. documents** if product prefers otherwise.
-- **`on-hold`:** Show cue (deadline still meaningful) unless PR agrees with a softer treatment.
+- **Show cue when:** `status !== 'completed'` **and** `status !== 'cancelled'` (see **B.A. Q&A** below — **cancelled** ships **no** cue in v1).
+- **`cancelled`:** **No** overdue-style cue **and** **no** muted “Plan ended” label in v1 — **literally nothing** (intentionally stopped; avoids false alarms). Revisit only if research asks for a muted label in a later polish.
+- **`on-hold`:** **Do** show a past-end signal (deadline still meaningful), but **lighter than `active`** — e.g. **smaller badge** and/or **neutral copy** such as **“End date passed”** (not the same alarmist treatment as **active**; B.A. documents exact tokens in PR).
+
+**Decisions (Hannibal — Story 6.5, B.A. Q&A):**
+
+- **Cancelled + past `endDate`:** **Nothing** — no badge, no “Plan ended” (locked v1 default above).
+- **`on-hold` vs `active`:** **`active`** — full-strength cue (badge/border/icon per visual rules). **`on-hold`** — **lighter variant** (smaller / softer / neutral copy); must still be **non–color-only** for meaning (text or `aria` visible).
+- **`/reports/[projectId]`:** **Yes** — show the **same** past-end logic next to **project title or report header context** so users who land straight on the actuals report see the signal (extend surfaces + tests accordingly).
+- **Inclusive end date (calendar-day rule):** **Confirmed.** Treat **`endDate`** as the **last included planning day**: the cue is **off** for the **entire local calendar day** of `endDate` (work “on the last day” is not past-end until **the next local calendar day**). Implement **`isProjectPastEndDate`** (or equivalent) with **local date** comparison consistent with report presets — **not** “same night after 23:59” overdue.
 
 **Visual (B.A. picks one or combines subtly):** e.g. **badge** (“Past end” / “End date passed”), **row or card left border** tint, **icon** beside project name, **tooltip** with the stored end date — must meet **contrast** and **accessibility** (not color-only; `title` or visible text).
 
@@ -751,12 +758,15 @@ All **data queries** below use **`meta: { suppressGlobalError: true }`** → on 
 - [ ] **Dashboard** (`/`) active-projects table (same `projectsSummary`).
 - [ ] **`/reports`** project picker / summary table if it lists projects from the same query.
 - [ ] **Project detail** header (`/projects/[id]`) — project already loaded via `project.get`; add cue near dates or title.
+- [ ] **Per-project actuals report** (`/reports/[projectId]`) — same cue near **project name / header** (Hannibal: do not omit deep-linked report).
 
 **Acceptance Criteria:**
-- [ ] Past-end + not-`completed` → at least **one** clear visual on **each** surface above that applies.
+- [ ] Past-end + **`active`** → at least **one** clear visual on **each** surface in the list above.
+- [ ] Past-end + **`on-hold`** → **lighter** cue than **active** (per Hannibal rule), still non–color-only.
+- [ ] Past-end + **`cancelled`** → **no** cue (v1).
 - [ ] **`completed`** projects **never** show the overdue/past-end cue (even if `endDate` in the past).
 - [ ] **`endDate` null** → no cue.
-- [ ] **Tests:** Unit test for `isProjectPastEndDate({ endDate, status, now })` helper (inject clock) or equivalent — **timezone = local calendar day** per app convention.
+- [ ] **Tests:** Unit test for `isProjectPastEndDate({ endDate, status, now })` helper (inject clock) or equivalent — **timezone = local calendar day** per app convention; cover **`active`**, **`on-hold`**, **`cancelled`**, **`completed`**, and **inclusive end date** (last day = no cue).
 
 **Out of scope for 6.5:** Auto-flip status to completed; email/notifications; gantt timeline.
 
@@ -776,7 +786,7 @@ All **data queries** below use **`meta: { suppressGlobalError: true }`** → on 
 - **Optional subtext:** **Yes, one line is allowed** under the page title **or** directly under the link — **Hannibal approves** final product copy; B.A. may ship a draft (e.g. *“See hours, projects, and tasks by developer for a date range.”*); Murdock may flag a11y/length only — no separate PM beyond Hannibal for this microcopy.
 - **Placement:** **Primary:** top **action row**, **next to “Add developer”** (same visual band as other primary actions). **Do not** duplicate the same link in two places for 6.6 unless one is clearly secondary (Hannibal: **one** primary link is enough). **Mobile:** Prefer **one row** when it fits; if the row crowds, **stack** the link **below** the title + actions block so it remains **tappable** and **above the fold** when reasonable — not a hard AC.
 - **`/reports` hub:** **Strict:** no layout or navigation changes to **`/reports`** in **6.6** (AC unchanged).
-- **After 6.6 (Phase C order):** **Next story is 6.1** (budget / **TBD** / `projectsSummary` invalidation) per Hannibal execution order — **not** 6.2 unless Hannibal explicitly re-sequences.
+- **After 6.6 (Phase C order — superseded by shipped work):** **6.1** and **6.7** have shipped; see **Phase C — Remaining queue** above (**6.5** → **6.2**–**6.4**).
 - **Demo / sign-off bar:** Success = **one click** from **`/developers`** to **`/reports/productivity`**, link **keyboard-focusable**, **accessible name** reads sensibly in a screen reader (not “click here”). **1366×768 above the fold** is **desired** for the primary link, **not** a formal AC — ship the best default layout B.A. chooses within the placement rules above.
 
 **Acceptance Criteria:**
@@ -788,7 +798,7 @@ All **data queries** below use **`meta: { suppressGlobalError: true }`** → on 
 
 **Hannibal sign-off:** Likes the page. **Optional polish (not blockers):** (1) The app **shell** still renders an **h1** “Vandura” in `layout` while the page has its own **h1** (e.g. “Developers”) — **two top-level headings** is a **pre-existing** pattern across the app, **not** introduced by 6.6; fixing it would be a **global** nav / heading-level **a11y** pass, out of scope for 6.6. (2) The report **text link** is visually **lighter** than the **Add developer** primary button — **appropriate** so the main CTA stays “add” while the report stays discoverable.
 
-**Phase note:** **First** in Hannibal’s Phase C execution order (see **Planning** above) — small IA before budget/summary/task-board batch. **Next:** **6.1**.
+**Phase note:** **First** in Hannibal’s Phase C execution order (see **Planning** above) — small IA before budget/summary/task-board batch. **At the time 6.6 shipped, next was 6.1** — **current** remaining queue: **`van/stories.md` → Phase C “Remaining queue”** (**6.5** → **6.2**–**6.4**).
 
 ---
 
