@@ -11,6 +11,7 @@ import {
 import { Modal } from '@/components/Modal';
 import type { TaskByProjectRow } from '@/lib/router-types';
 import { formatTaskEstimatedHours } from '@/lib/budget-display';
+import { tasksAwaitingEstimatesSorted } from '@/lib/tasks-awaiting-estimates';
 
 export function TasksSection({
   projectId,
@@ -33,6 +34,8 @@ export function TasksSection({
 
   const [toast, setToast] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
+  /** Story 6.2 — focus estimated hours when opening edit from awaiting-estimates card */
+  const [editFocusEstimate, setEditFocusEstimate] = useState(false);
   const [editTask, setEditTask] = useState<
     | null
     | {
@@ -61,6 +64,7 @@ export function TasksSection({
       await utils.task.listByProject.invalidate({ projectId });
       await utils.report.projectsSummary.invalidate();
       setToast('Task updated.');
+      setEditFocusEstimate(false);
       setEditTask(null);
     },
     meta: { suppressGlobalToast: true },
@@ -84,8 +88,9 @@ export function TasksSection({
     },
   });
 
-  const taskRows = (tasks ?? []) as TaskByProjectRow[];
+  const taskRows = useMemo(() => (tasks ?? []) as TaskByProjectRow[], [tasks]);
   const taskCount = useMemo(() => taskRows.length, [taskRows.length]);
+  const awaitingRows = useMemo(() => tasksAwaitingEstimatesSorted(taskRows), [taskRows]);
 
   useEffect(() => {
     onTaskCountChange?.(taskCount);
@@ -105,6 +110,54 @@ export function TasksSection({
           </button>
         </div>
       ) : null}
+
+      <div className="rounded-lg border bg-card">
+        <div className="p-6 border-b">
+          <h2 className="text-lg font-semibold">Tasks awaiting estimates</h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Estimated hours show <span className="text-foreground font-medium">TBD</span> until set.
+            Listed: <span className="text-foreground">pending</span>,{' '}
+            <span className="text-foreground">in-progress</span>,{' '}
+            <span className="text-foreground">blocked</span> only — completed tasks stay in the table below.
+          </p>
+        </div>
+        <div className="p-6">
+          {awaitingRows.length === 0 ? (
+            <p className="text-sm text-muted-foreground">All tasks have estimates.</p>
+          ) : (
+            <ul className="space-y-3">
+              {awaitingRows.map((t: TaskByProjectRow) => (
+                <li
+                  key={t.id}
+                  className="flex flex-wrap items-center justify-between gap-3 border-b border-border/60 pb-3 last:border-b-0 last:pb-0"
+                >
+                  <div className="min-w-0">
+                    <div className="font-medium truncate">{t.name}</div>
+                    <div className="text-xs text-muted-foreground mt-0.5">{t.status}</div>
+                  </div>
+                  <button
+                    type="button"
+                    className="rounded-md border px-3 py-1.5 text-sm hover:bg-muted shrink-0"
+                    aria-label={`Add estimate for ${t.name}`}
+                    onClick={() => {
+                      setEditFocusEstimate(true);
+                      setEditTask({
+                        id: t.id,
+                        name: t.name,
+                        description: t.description ?? null,
+                        estimatedHours: t.estimatedHours ?? null,
+                        status: t.status as TaskStatus,
+                      });
+                    }}
+                  >
+                    Add estimate
+                  </button>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
 
       <div className="rounded-lg border bg-card">
         <div className="p-6 border-b flex items-center justify-between gap-4">
@@ -182,15 +235,16 @@ export function TasksSection({
                           <button
                             type="button"
                             className="rounded-md border px-3 py-1 hover:bg-muted"
-                            onClick={() =>
+                            onClick={() => {
+                              setEditFocusEstimate(false);
                               setEditTask({
                                 id: t.id,
                                 name: t.name,
                                 description: t.description ?? null,
                                 estimatedHours: t.estimatedHours ?? null,
                                 status: t.status as TaskStatus,
-                              })
-                            }
+                              });
+                            }}
                           >
                             Edit
                           </button>
@@ -239,8 +293,16 @@ export function TasksSection({
       ) : null}
 
       {editTask ? (
-        <Modal onClose={() => setEditTask(null)} closeOnBackdrop showCloseButton>
+        <Modal
+          onClose={() => {
+            setEditFocusEstimate(false);
+            setEditTask(null);
+          }}
+          closeOnBackdrop
+          showCloseButton
+        >
           <TaskForm
+            key={editTask.id}
             title={`Edit Task: ${editTask.name}`}
             initialValues={{
               name: editTask.name,
@@ -254,7 +316,11 @@ export function TasksSection({
             submitLabel="Save Changes"
             isSubmitting={updateTaskFromModal.isPending}
             submitError={updateTaskFromModal.error?.message ?? null}
-            onCancel={() => setEditTask(null)}
+            initialFocusField={editFocusEstimate ? 'estimatedHours' : undefined}
+            onCancel={() => {
+              setEditFocusEstimate(false);
+              setEditTask(null);
+            }}
             onSubmit={async (values: TaskFormSubmitValues) => {
               await updateTaskFromModal.mutateAsync({ id: editTask.id, data: values });
             }}

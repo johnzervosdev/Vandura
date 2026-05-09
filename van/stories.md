@@ -1,6 +1,6 @@
 # Project Vandura — User Stories & Acceptance Criteria
 
-**Last Updated:** 2026-04-12 (Story **6.5** ✅; Story **6.7** / **BUG-REPORT-001** ✅; Story **6.1** ✅; Story **6.6** ✅; **Epic 8 / Story 8.1** — Murdock automated ✅; Phase C remainder **6.2**–**6.4**; 7.1–7.2)  
+**Last Updated:** 2026-05-05 (Story **6.2** ✅; Story **6.5** ✅; Story **6.7** / **BUG-REPORT-001** ✅; Story **6.1** ✅; Story **6.6** ✅; **Epic 8 / Story 8.1** — Murdock automated ✅; Phase C remainder **6.3**–**6.4**; 7.1–7.2)  
 **Owner:** B.A. (maintains ACs + implementation notes) | Murdock (updates QA checklists)
 
 > **Navigation:** [`van/project.md`](project.md) — project dashboard | [`van/qa.md`](qa.md) — test plans & results | **Bug backlog** — **`BUG-REPORT-001`** ✅ (**Story 6.7** shipped)
@@ -537,9 +537,9 @@ All **data queries** below use **`meta: { suppressGlobalError: true }`** → on 
 - **6.5 third:** Extends **`projectsSummary` / `project.get`** and multi-surface cues **after** 6.1 copy and cache behavior are stable.
 - **6.2 → 6.3 → 6.4:** Keeps **project-detail task work** contiguous. **Hannibal picks 6.3 before 6.4** (B.A.: either order acceptable): sort UI and migration land first; **6.4** then implements filter-after-sort per AC; Murdock still batches **6.3 + 6.4** regression.
 
-**Remaining queue after 6.1 + 6.5 + 6.6 + 6.7 shipped (Hannibal — 2026-04-12):** **6.2** → **6.3** → **6.4**. **6.5** (past planning **end date** cue) and **6.7** (**BUG-REPORT-001**) — **shipped**.
+**Remaining queue after 6.1 + 6.2 + 6.5 + 6.6 + 6.7 shipped (Hannibal — 2026-04-12):** **6.3** → **6.4**. **6.2** (tasks awaiting estimates card) — **shipped**.
 
-**Epic 8 (parallel):** **Story 8.1** (bug FAB + backlog) — **not** in the Phase C sequence; slot by **Hannibal** (often **parallel** to **6.2–6.5** when feedback capture is prioritized).
+**Epic 8 (parallel):** **Story 8.1** (bug FAB + backlog) — **not** in the Phase C sequence; slot by **Hannibal** (often **parallel** to Phase C **6.3–6.4** or post-MVP work when feedback capture is prioritized).
 
 **B.A. Phase C rollup (6.1–6.6, dev only):** ~**23–35h** (upper band mainly if **6.2** includes the dashboard “tasks TBD” stretch **and/or** B.A. does an optional **post–6.1** **`budget_hours`** migration PR — **6.1** itself is **copy-only**, no migration).
 
@@ -655,25 +655,35 @@ All **data queries** below use **`meta: { suppressGlobalError: true }`** → on 
 
 ---
 
-### Story 6.2: Tasks missing estimates — project “TBD” card & fast edit (P2) — **4–6h** (Hannibal informal) · **B.A.: 4–6h** (project-detail card + invalidation + focused test); **+1–2h** if including dashboard “tasks TBD” aggregate stretch · **Murdock QA: 2–3h** · **Combined (planning): ~6–9h** *(+1–2h stretch)*
-**Status:** Not Started  
+### Story 6.2: Tasks missing estimates — project “TBD” card & fast edit (P2) — **4–6h** (Hannibal informal) · **B.A.: 4–6h** (project-detail card + invalidation + focused test) · **Murdock QA: 2–3h** · **Combined (planning): ~6–9h** *(dashboard aggregate stretch **deferred** — see **Decisions**)*
+**Status:** ✅ Complete — shipped **2026-05-05**  
 **Owner:** B.A.
 
 **Goal:** Make it obvious **which tasks** still need an **estimated hours** value, and make adding that estimate **low-friction** (without forcing estimates at task creation).
 
+**Decisions (Hannibal — Story 6.2, B.A. Q&A — locked before dev):**
+
+1. **`estimatedHours === 0` vs `null`:** **`null` only** counts as “missing.” **`0`** is an **explicit zero-hour estimate** (set), aligned with **Story 6.1** task-sum semantics — **do not** list **`0h`** rows as awaiting estimates.
+2. **Which rows (status):** Include tasks where **`estimatedHours === null`** and **`status` is `pending`, `in-progress`, or `blocked`** — **exclude `completed`**. The card targets **active pipeline** work; **completed** tasks with null estimates remain visible as **TBD** in the main table for audit/edit there (**no cancelled status on tasks** in schema today).
+3. **Subtasks / `parentTaskId`:** **Flat list — include all matching tasks** (parents and children). Same completeness rule as the main task table; **do not** hide subtasks on the card.
+4. **Row order (pre–6.3):** **`name` ascending (A→Z)** within the card — stable and predictable until **6.3** sort lands on the main table.
+5. **Dashboard stretch:** **Out of scope for 6.2** — **defer** compact “tasks TBD” aggregate on **`/`** to **Phase C+**; ship **project-detail card only** so **6.2** stays bounded.
+6. **Empty state:** **Affirmative short message** when count is 0 — **do not** hide the card (layout stability — Hannibal preference unchanged).
+
 **Scope:**
-- **Primary surface — project detail (`/projects/[id]`):** Add a **second card** (placement: e.g. below the project header / budget strip or below the tasks table — B.A. chooses in mockup) titled along the lines of **“Tasks awaiting estimates”** or **“Estimates TBD”** listing **tasks for this project** where `estimatedHours` is `null` (and optionally treat `0` as set vs unset per PR — default: **null only**).
+- **Primary surface — project detail (`/projects/[id]`):** Add a **second card** (placement: e.g. below the project header / budget strip or below the tasks table — B.A. chooses in mockup) titled along the lines of **“Tasks awaiting estimates”** or **“Estimates TBD”** listing tasks per **Decisions** above.
 - Each row: task name (and status if helpful) + **primary action** to **open the existing task edit flow** (modal or inline) focused on the estimate field — **no duplicate task editor** unless cheaper to ship a minimal inline hours control; prefer reuse of `TasksSection` / `TaskForm`.
-- **Empty state:** When all tasks have estimates, card shows a short **“All tasks have estimates”** (or hide card — **pick one** in PR; Hannibal prefers **short affirmative** so the layout does not jump).
-- **Optional stretch (same story if time):** A **compact** aggregate on **dashboard** (`/`) — e.g. count of tasks TBD across **active** projects with a link to **first project** or to `/projects` — **only** if it does not bloat scope; otherwise **defer** to Phase C+.
+- **Empty state:** When no rows match, card shows a short **“All tasks have estimates”** (or equivalent — **Hannibal:** **never** hide the card when empty).
 
 **Acceptance Criteria:**
-- [ ] Second card on **project detail** lists tasks missing `estimatedHours` (per rules above); copy uses **TBD** language aligned with 6.1.
-- [ ] From a row, user can reach **task estimate edit** in **≤2 clicks** from card interaction (Hannibal bar).
-- [ ] After saving an estimate, card list **updates** without full page reload (invalidate/refetch `task.listByProject` and card query).
-- [ ] **Tests:** At least one test or Playwright-free assertion that the list query/filter matches `null` estimates (or unit test on selector/helper if UI test too heavy).
+- [x] Second card on **project detail** lists tasks missing `estimatedHours` per **Hannibal decisions** (`null` only; **`0` excluded**; **`completed` excluded**; include subtasks; **name** sort); copy uses **TBD** language aligned with 6.1.
+- [x] From a row, user can reach **task estimate edit** in **≤2 clicks** from card interaction (Hannibal bar).
+- [x] After saving an estimate, card list **updates** without full page reload (invalidate/refetch `task.listByProject` and card query).
+- [x] **Tests:** At least one test or Playwright-free assertion that the list query/filter matches `null` estimates (or unit test on selector/helper if UI test too heavy).
 
 **Out of scope for 6.2:** Bulk edit across projects; mandatory estimates on create; notification emails; **column sorting / story number** (**Story 6.3**); **hide completed tasks** (**Story 6.4**).
+
+**Implementation (shipped):** `src/lib/tasks-awaiting-estimates.ts` — `isTaskAwaitingEstimate`, `tasksAwaitingEstimatesSorted` (Hannibal rules). `TasksSection` — **Tasks awaiting estimates** card above main task table; **Add estimate** opens existing **`TaskForm`** modal with **`initialFocusField="estimatedHours"`**; **`TaskForm`** focus via ref + `useEffect`. **`tests/tasks-awaiting-estimates.test.ts`**; **`tests/story-6-2-tasks-awaiting-estimates-contract.test.ts`** (TasksSection + TaskForm wiring).
 
 ---
 
@@ -720,7 +730,7 @@ All **data queries** below use **`meta: { suppressGlobalError: true }`** → on 
 - **Schedule:** Phase plan uses **6.3** then **6.4** (sort UI before hide toggle). B.A.: **either** merge order is acceptable; if **6.4** lands first, keep behavior consistent with **filter-after-sort** once **6.3** exists (see Phase C **Planning**).
 - **v1 preference:** **Client-side** filter on the data already loaded by `task.listByProject` (no API change required) — apply **after** sort from **6.3** so order stays stable for visible rows.
 - **Persistence (recommended):** Remember choice **per project** in **`localStorage`** (e.g. key `vandura.tasks.hideCompleted.{projectId}`) so refresh keeps state; **session-only** is acceptable if B.A. wants zero persistence — document in PR.
-- **Story 6.2 card:** The **“tasks awaiting estimates”** card remains driven by **`estimatedHours` null** across **all** statuses (or document if it should respect the same toggle — **default: card unchanged** so PMs still see completed work missing estimates).
+- **Story 6.2 card:** **Decisions (Story 6.2)** define which rows appear (**null** estimates, non-completed statuses — see **`van/stories.md`**). When **6.4** ships, the hide-completed **toggle** affects the **main table only** by default; **6.2 card** logic stays per Story **6.2** unless Hannibal revises.
 
 **Acceptance Criteria:**
 - [ ] Toggle hides **only** tasks with status **`completed`**; all other statuses always visible in v1.
@@ -788,7 +798,7 @@ All **data queries** below use **`meta: { suppressGlobalError: true }`** → on 
 - **Optional subtext:** **Yes, one line is allowed** under the page title **or** directly under the link — **Hannibal approves** final product copy; B.A. may ship a draft (e.g. *“See hours, projects, and tasks by developer for a date range.”*); Murdock may flag a11y/length only — no separate PM beyond Hannibal for this microcopy.
 - **Placement:** **Primary:** top **action row**, **next to “Add developer”** (same visual band as other primary actions). **Do not** duplicate the same link in two places for 6.6 unless one is clearly secondary (Hannibal: **one** primary link is enough). **Mobile:** Prefer **one row** when it fits; if the row crowds, **stack** the link **below** the title + actions block so it remains **tappable** and **above the fold** when reasonable — not a hard AC.
 - **`/reports` hub:** **Strict:** no layout or navigation changes to **`/reports`** in **6.6** (AC unchanged).
-- **After 6.6 (Phase C order — superseded by shipped work):** **6.1**, **6.5**, and **6.7** have shipped; see **Phase C — Remaining queue** above (**6.2**–**6.4**).
+- **After 6.6 (Phase C order — superseded by shipped work):** **6.1**, **6.2**, **6.5**, and **6.7** have shipped; see **Phase C — Remaining queue** above (**6.3**–**6.4**).
 - **Demo / sign-off bar:** Success = **one click** from **`/developers`** to **`/reports/productivity`**, link **keyboard-focusable**, **accessible name** reads sensibly in a screen reader (not “click here”). **1366×768 above the fold** is **desired** for the primary link, **not** a formal AC — ship the best default layout B.A. chooses within the placement rules above.
 
 **Acceptance Criteria:**
@@ -800,7 +810,7 @@ All **data queries** below use **`meta: { suppressGlobalError: true }`** → on 
 
 **Hannibal sign-off:** Likes the page. **Optional polish (not blockers):** (1) The app **shell** still renders an **h1** “Vandura” in `layout` while the page has its own **h1** (e.g. “Developers”) — **two top-level headings** is a **pre-existing** pattern across the app, **not** introduced by 6.6; fixing it would be a **global** nav / heading-level **a11y** pass, out of scope for 6.6. (2) The report **text link** is visually **lighter** than the **Add developer** primary button — **appropriate** so the main CTA stays “add” while the report stays discoverable.
 
-**Phase note:** **First** in Hannibal’s Phase C execution order (see **Planning** above) — small IA before budget/summary/task-board batch. **At the time 6.6 shipped, next was 6.1** — **current** remaining queue: **`van/stories.md` → Phase C “Remaining queue”** (**6.2**–**6.4**).
+**Phase note:** **First** in Hannibal’s Phase C execution order (see **Planning** above) — small IA before budget/summary/task-board batch. **At the time 6.6 shipped, next was 6.1** — **current** remaining queue: **`van/stories.md` → Phase C “Remaining queue”** (**6.3**–**6.4**).
 
 ---
 
@@ -810,7 +820,7 @@ All **data queries** below use **`meta: { suppressGlobalError: true }`** → on 
 
 ### Story 8.1: In-app bug reports — floating control & backlog (P2 — cross-cutting UX)
 
-**Status:** ✅ Complete — **Murdock automated QA done** (**130** tests — **all pass**; **`npm run type-check`** + **`npm run lint`** clean — **2026-04-29**). **Ready for Hannibal** product review + manual DoD in [`van/qa.md`](qa.md) → Story **8.1** before **publish** / calling release notes final.  
+**Status:** ✅ Complete — **Murdock automated QA done** (**142** tests — **all pass**; **`npm run type-check`** + **`npm run lint`** clean — **2026-04-29**). **Ready for Hannibal** product review + manual DoD in [`van/qa.md`](qa.md) → Story **8.1** before **publish** / calling release notes final.  
 **Owner:** B.A.
 
 **Hannibal informal:** **6–10h** · **B.A.: 8–14h** (SQLite **`bug_reports`** table + Drizzle migration; **`bugReport` tRPC router**: create, list **open**, close; **`BugReportButton`** + modal in **root layout**; **clipart-style** bug **image** in **`public/`** or inline **SVG**; tests) · **Murdock QA: 2–4h** · **Combined (planning): ~10–18h**
@@ -1054,4 +1064,4 @@ These items are **on record for planning** but are **not** committed deliverable
 ---
 
 **End of Document**  
-Last Updated: 2026-04-12 — Story **6.5** past-end cue ✅; **Story 6.7** / **BUG-REPORT-001** ✅ **shipped**; Story **6.1** ✅; Story **6.6** ✅; **Epic 8 / Story 8.1** — shipped + **Murdock automated** ✅; Phase C remainder **6.2**–**6.4**; 7.1–7.2; Phase B closed
+Last Updated: 2026-05-05 — Story **6.2** ✅ **shipped**; Story **6.5** past-end cue ✅; **Story 6.7** / **BUG-REPORT-001** ✅ **shipped**; Story **6.1** ✅; Story **6.6** ✅; **Epic 8 / Story 8.1** — shipped + **Murdock automated** ✅; Phase C remainder **6.3**–**6.4**; 7.1–7.2; Phase B closed

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 export type TaskStatus = 'pending' | 'in-progress' | 'completed' | 'blocked';
 
@@ -26,6 +26,7 @@ export function TaskForm({
   onSubmit,
   onCancel,
   submitError,
+  initialFocusField,
 }: {
   title: string;
   initialValues: TaskFormValues;
@@ -34,11 +35,20 @@ export function TaskForm({
   onSubmit: (values: TaskFormSubmitValues) => void | Promise<void>;
   onCancel: () => void;
   submitError?: string | null;
+  /** Story 6.2 — open edit from “Tasks awaiting estimates” with focus on hours field */
+  initialFocusField?: 'estimatedHours';
 }) {
   const [values, setValues] = useState<TaskFormValues>(initialValues);
   const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof TaskFormValues, string>>>(
     {}
   );
+  const estimatedHoursRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    if (initialFocusField === 'estimatedHours') {
+      estimatedHoursRef.current?.focus();
+    }
+  }, [initialFocusField, title]);
 
   const canSubmit = useMemo(() => !isSubmitting, [isSubmitting]);
 
@@ -114,6 +124,7 @@ export function TaskForm({
         <div className="space-y-2">
           <label className="text-sm font-medium">Estimated Hours (optional)</label>
           <input
+            ref={estimatedHoursRef}
             className="w-full rounded-md border bg-background px-3 py-2 text-sm"
             value={values.estimatedHours}
             onChange={(e) => setValues((s) => ({ ...s, estimatedHours: e.target.value }))}
