@@ -7,6 +7,7 @@ import { trpc } from '@/lib/trpc-client';
 import type { ProjectSummaryRow } from '@/lib/router-types';
 import { Modal } from '@/components/Modal';
 import { formatProjectBudgetHours } from '@/lib/budget-display';
+import { ProjectPastEndCue } from '@/components/ProjectPastEndCue';
 
 function ProjectsPageContent() {
   const utils = trpc.useUtils();
@@ -132,9 +133,12 @@ function ProjectsPageContent() {
                     return (
                     <tr key={p.projectId} className="border-b last:border-b-0">
                       <td className="py-3 px-4">
-                        <a className="font-medium hover:underline" href={`/projects/${p.projectId}`}>
-                          {p.projectName}
-                        </a>
+                        <div className="flex flex-wrap items-center gap-2">
+                          <a className="font-medium hover:underline" href={`/projects/${p.projectId}`}>
+                            {p.projectName}
+                          </a>
+                          <ProjectPastEndCue endDate={p.endDate} status={p.status} />
+                        </div>
                       </td>
                       <td className="py-3 px-4">
                         <select

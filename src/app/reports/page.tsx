@@ -5,6 +5,7 @@ import { useMemo, useState } from 'react';
 import { trpc } from '@/lib/trpc-client';
 import type { ProjectSummaryRow } from '@/lib/router-types';
 import { formatProjectBudgetHours } from '@/lib/budget-display';
+import { ProjectPastEndCue } from '@/components/ProjectPastEndCue';
 
 export default function ReportsPage() {
   const { data, isLoading, error, refetch } = trpc.report.projectsSummary.useQuery(undefined, {
@@ -110,15 +111,16 @@ export default function ReportsPage() {
                   return (
                     <tr key={p.projectId} className="border-b last:border-b-0">
                       <td className="py-3 px-4">
-                        <Link
-                          className="font-medium hover:underline"
-                          href={`/reports/${p.projectId}`}
-                        >
-                          {p.projectName}
-                        </Link>
-                        <div className="text-xs text-muted-foreground">
-                          {p.status}
+                        <div className="flex flex-wrap items-center gap-2">
+                          <Link
+                            className="font-medium hover:underline"
+                            href={`/reports/${p.projectId}`}
+                          >
+                            {p.projectName}
+                          </Link>
+                          <ProjectPastEndCue endDate={p.endDate} status={p.status} />
                         </div>
+                        <div className="text-xs text-muted-foreground mt-1">{p.status}</div>
                       </td>
                       <td className="py-3 px-4 text-right">
                         {formatProjectBudgetHours(p.estimatedHours)}

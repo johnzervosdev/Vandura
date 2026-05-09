@@ -1,6 +1,6 @@
 # Project Vandura — User Stories & Acceptance Criteria
 
-**Last Updated:** 2026-04-12 (Story **6.7** / **BUG-REPORT-001** ✅ shipped; Story **6.1** ✅; Story **6.6** ✅; **Epic 8 / Story 8.1** — Murdock automated ✅, **ready for Hannibal** pre-publish; Phase C remainder **6.5** → **6.2**–**6.4**; 7.1–7.2)  
+**Last Updated:** 2026-04-12 (Story **6.5** ✅; Story **6.7** / **BUG-REPORT-001** ✅; Story **6.1** ✅; Story **6.6** ✅; **Epic 8 / Story 8.1** — Murdock automated ✅; Phase C remainder **6.2**–**6.4**; 7.1–7.2)  
 **Owner:** B.A. (maintains ACs + implementation notes) | Murdock (updates QA checklists)
 
 > **Navigation:** [`van/project.md`](project.md) — project dashboard | [`van/qa.md`](qa.md) — test plans & results | **Bug backlog** — **`BUG-REPORT-001`** ✅ (**Story 6.7** shipped)
@@ -537,7 +537,7 @@ All **data queries** below use **`meta: { suppressGlobalError: true }`** → on 
 - **6.5 third:** Extends **`projectsSummary` / `project.get`** and multi-surface cues **after** 6.1 copy and cache behavior are stable.
 - **6.2 → 6.3 → 6.4:** Keeps **project-detail task work** contiguous. **Hannibal picks 6.3 before 6.4** (B.A.: either order acceptable): sort UI and migration land first; **6.4** then implements filter-after-sort per AC; Murdock still batches **6.3 + 6.4** regression.
 
-**Remaining queue after 6.1 + 6.6 + 6.7 shipped (Hannibal — 2026-04-12):** **6.5** → **6.2** → **6.3** → **6.4**. **6.7** (**BUG-REPORT-001**) — **shipped** (implicit **All Time** no longer clips to planning **`endDate`**).
+**Remaining queue after 6.1 + 6.5 + 6.6 + 6.7 shipped (Hannibal — 2026-04-12):** **6.2** → **6.3** → **6.4**. **6.5** (past planning **end date** cue) and **6.7** (**BUG-REPORT-001**) — **shipped**.
 
 **Epic 8 (parallel):** **Story 8.1** (bug FAB + backlog) — **not** in the Phase C sequence; slot by **Hannibal** (often **parallel** to **6.2–6.5** when feedback capture is prioritized).
 
@@ -733,10 +733,10 @@ All **data queries** below use **`meta: { suppressGlobalError: true }`** → on 
 ---
 
 ### Story 6.5: Past project end date — visual cue (non-completed) (P2) — **2–4h** (Hannibal informal) · **B.A.: 3–5h** (`projectsSummary` + dates on consumers + badge/icon + injectable-clock unit test) · **Murdock QA: 2–3h** · **Combined (planning): ~5–8h**
-**Status:** Not Started  
+**Status:** ✅ Complete — shipped **2026-04-12**  
 **Owner:** B.A.
 
-**Problem:** If **`projects.endDate`** is set and that **calendar date has passed**, but **`projects.status`** is still **`active`**, **`on-hold`**, or **`cancelled`** (anything other than **`completed`**), nothing in the UI calls out that the plan window is over. PMs want a **quick visual** without changing data automatically.
+**Problem:** If **`projects.endDate`** is set and that **calendar date has passed**, projects that are still **`active`** or **`on-hold`** do not automatically flip status — yet nothing in the UI calls out that the **planning window** is over. PMs want a **quick visual** without changing data automatically (**`cancelled`** is intentionally silent per Hannibal — see rules below).
 
 **Rule (Hannibal — v1):**
 - **Trigger:** `endDate != null` **and** the project’s end date is **strictly before today’s local calendar date** (inclusive end-of-day boundary — **match** date handling used elsewhere in the app, e.g. report presets).
@@ -754,21 +754,23 @@ All **data queries** below use **`meta: { suppressGlobalError: true }`** → on 
 **Visual (B.A. picks one or combines subtly):** e.g. **badge** (“Past end” / “End date passed”), **row or card left border** tint, **icon** beside project name, **tooltip** with the stored end date — must meet **contrast** and **accessibility** (not color-only; `title` or visible text).
 
 **Surfaces (all that show project + status + should reflect schedule):**
-- [ ] **`/projects`** list (uses `report.projectsSummary` today — **extend** summary payload with **`endDate`** (and **`startDate`** if needed for symmetry) so the client can compute **past end** without a second round-trip).
-- [ ] **Dashboard** (`/`) active-projects table (same `projectsSummary`).
-- [ ] **`/reports`** project picker / summary table if it lists projects from the same query.
-- [ ] **Project detail** header (`/projects/[id]`) — project already loaded via `project.get`; add cue near dates or title.
-- [ ] **Per-project actuals report** (`/reports/[projectId]`) — same cue near **project name / header** (Hannibal: do not omit deep-linked report).
+- [x] **`/projects`** list (uses `report.projectsSummary` today — **extend** summary payload with **`endDate`** (and **`startDate`** if needed for symmetry) so the client can compute **past end** without a second round-trip).
+- [x] **Dashboard** (`/`) active-projects table (same `projectsSummary`).
+- [x] **`/reports`** project picker / summary table if it lists projects from the same query.
+- [x] **Project detail** header (`/projects/[id]`) — project already loaded via `project.get`; add cue near dates or title.
+- [x] **Per-project actuals report** (`/reports/[projectId]`) — same cue near **project name / header** (Hannibal: do not omit deep-linked report).
 
 **Acceptance Criteria:**
-- [ ] Past-end + **`active`** → at least **one** clear visual on **each** surface in the list above.
-- [ ] Past-end + **`on-hold`** → **lighter** cue than **active** (per Hannibal rule), still non–color-only.
-- [ ] Past-end + **`cancelled`** → **no** cue (v1).
-- [ ] **`completed`** projects **never** show the overdue/past-end cue (even if `endDate` in the past).
-- [ ] **`endDate` null** → no cue.
-- [ ] **Tests:** Unit test for `isProjectPastEndDate({ endDate, status, now })` helper (inject clock) or equivalent — **timezone = local calendar day** per app convention; cover **`active`**, **`on-hold`**, **`cancelled`**, **`completed`**, and **inclusive end date** (last day = no cue).
+- [x] Past-end + **`active`** → at least **one** clear visual on **each** surface in the list above.
+- [x] Past-end + **`on-hold`** → **lighter** cue than **active** (per Hannibal rule), still non–color-only.
+- [x] Past-end + **`cancelled`** → **no** cue (v1).
+- [x] **`completed`** projects **never** show the overdue/past-end cue (even if `endDate` in the past).
+- [x] **`endDate` null** → no cue.
+- [x] **Tests:** Unit test for `isProjectPastEndDate({ endDate, status, now })` helper (inject clock) or equivalent — **timezone = local calendar day** per app convention; cover **`active`**, **`on-hold`**, **`cancelled`**, **`completed`**, and **inclusive end date** (last day = no cue).
 
 **Out of scope for 6.5:** Auto-flip status to completed; email/notifications; gantt timeline.
+
+**Implementation (shipped):** `ReportService.ProjectSummary` + `getAllProjectsSummary` — **`startDate`**, **`endDate`** (from `projects`). `src/lib/project-past-end-date.ts` — `getProjectPastEndCueLevel`, `isProjectPastEndDate` (local **start-of-day** compare). `src/components/ProjectPastEndCue.tsx` — **active** (“Past end date”) vs **on-hold** (“End date passed”, lighter). UI: `src/app/page.tsx`, `projects/page.tsx`, `reports/page.tsx`, `projects/[id]/page.tsx`, `reports/[projectId]/page.tsx`. Tests: `tests/project-past-end-date.test.ts`, `tests/story-6-5-project-past-end-cue-contract.test.ts`; `report-projects-summary-task-estimates` asserts dates on summary rows.
 
 ---
 
@@ -786,7 +788,7 @@ All **data queries** below use **`meta: { suppressGlobalError: true }`** → on 
 - **Optional subtext:** **Yes, one line is allowed** under the page title **or** directly under the link — **Hannibal approves** final product copy; B.A. may ship a draft (e.g. *“See hours, projects, and tasks by developer for a date range.”*); Murdock may flag a11y/length only — no separate PM beyond Hannibal for this microcopy.
 - **Placement:** **Primary:** top **action row**, **next to “Add developer”** (same visual band as other primary actions). **Do not** duplicate the same link in two places for 6.6 unless one is clearly secondary (Hannibal: **one** primary link is enough). **Mobile:** Prefer **one row** when it fits; if the row crowds, **stack** the link **below** the title + actions block so it remains **tappable** and **above the fold** when reasonable — not a hard AC.
 - **`/reports` hub:** **Strict:** no layout or navigation changes to **`/reports`** in **6.6** (AC unchanged).
-- **After 6.6 (Phase C order — superseded by shipped work):** **6.1** and **6.7** have shipped; see **Phase C — Remaining queue** above (**6.5** → **6.2**–**6.4**).
+- **After 6.6 (Phase C order — superseded by shipped work):** **6.1**, **6.5**, and **6.7** have shipped; see **Phase C — Remaining queue** above (**6.2**–**6.4**).
 - **Demo / sign-off bar:** Success = **one click** from **`/developers`** to **`/reports/productivity`**, link **keyboard-focusable**, **accessible name** reads sensibly in a screen reader (not “click here”). **1366×768 above the fold** is **desired** for the primary link, **not** a formal AC — ship the best default layout B.A. chooses within the placement rules above.
 
 **Acceptance Criteria:**
@@ -798,7 +800,7 @@ All **data queries** below use **`meta: { suppressGlobalError: true }`** → on 
 
 **Hannibal sign-off:** Likes the page. **Optional polish (not blockers):** (1) The app **shell** still renders an **h1** “Vandura” in `layout` while the page has its own **h1** (e.g. “Developers”) — **two top-level headings** is a **pre-existing** pattern across the app, **not** introduced by 6.6; fixing it would be a **global** nav / heading-level **a11y** pass, out of scope for 6.6. (2) The report **text link** is visually **lighter** than the **Add developer** primary button — **appropriate** so the main CTA stays “add” while the report stays discoverable.
 
-**Phase note:** **First** in Hannibal’s Phase C execution order (see **Planning** above) — small IA before budget/summary/task-board batch. **At the time 6.6 shipped, next was 6.1** — **current** remaining queue: **`van/stories.md` → Phase C “Remaining queue”** (**6.5** → **6.2**–**6.4**).
+**Phase note:** **First** in Hannibal’s Phase C execution order (see **Planning** above) — small IA before budget/summary/task-board batch. **At the time 6.6 shipped, next was 6.1** — **current** remaining queue: **`van/stories.md` → Phase C “Remaining queue”** (**6.2**–**6.4**).
 
 ---
 
@@ -808,7 +810,7 @@ All **data queries** below use **`meta: { suppressGlobalError: true }`** → on 
 
 ### Story 8.1: In-app bug reports — floating control & backlog (P2 — cross-cutting UX)
 
-**Status:** ✅ Complete — **Murdock automated QA done** (**119** tests — **all pass**; **`npm run type-check`** + **`npm run lint`** clean — **2026-04-29**). **Ready for Hannibal** product review + manual DoD in [`van/qa.md`](qa.md) → Story **8.1** before **publish** / calling release notes final.  
+**Status:** ✅ Complete — **Murdock automated QA done** (**130** tests — **all pass**; **`npm run type-check`** + **`npm run lint`** clean — **2026-04-29**). **Ready for Hannibal** product review + manual DoD in [`van/qa.md`](qa.md) → Story **8.1** before **publish** / calling release notes final.  
 **Owner:** B.A.
 
 **Hannibal informal:** **6–10h** · **B.A.: 8–14h** (SQLite **`bug_reports`** table + Drizzle migration; **`bugReport` tRPC router**: create, list **open**, close; **`BugReportButton`** + modal in **root layout**; **clipart-style** bug **image** in **`public/`** or inline **SVG**; tests) · **Murdock QA: 2–4h** · **Combined (planning): ~10–18h**
@@ -1052,4 +1054,4 @@ These items are **on record for planning** but are **not** committed deliverable
 ---
 
 **End of Document**  
-Last Updated: 2026-04-12 — **Story 6.7** / **BUG-REPORT-001** ✅ **shipped**; Story **6.1** ✅; Story **6.6** ✅; **Epic 8 / Story 8.1** — shipped + **Murdock automated** ✅ (**119** tests, **all pass**); **Hannibal** pre-publish checklist in **`van/qa.md`**; Phase C remainder **6.5** → **6.2**–**6.4**; 7.1–7.2; Phase B closed
+Last Updated: 2026-04-12 — Story **6.5** past-end cue ✅; **Story 6.7** / **BUG-REPORT-001** ✅ **shipped**; Story **6.1** ✅; Story **6.6** ✅; **Epic 8 / Story 8.1** — shipped + **Murdock automated** ✅; Phase C remainder **6.2**–**6.4**; 7.1–7.2; Phase B closed

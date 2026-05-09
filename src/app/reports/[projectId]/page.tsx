@@ -7,6 +7,7 @@ import { trpc } from '@/lib/trpc-client';
 import type { ProjectSummaryRow } from '@/lib/router-types';
 import { type DatePreset, endOfDay, getPresetRange, startOfDay } from '@/lib/date-utils';
 import { formatProjectBudgetHours, formatTaskEstimatedHours } from '@/lib/budget-display';
+import { ProjectPastEndCue } from '@/components/ProjectPastEndCue';
 
 function downloadTextFile(filename: string, content: string, mime = 'text/plain') {
   const blob = new Blob([content], { type: mime });
@@ -129,9 +130,21 @@ export default function ProjectReportPage() {
       <div className="flex items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold">Actuals vs Estimates</h1>
+          <div className="mt-2 flex flex-wrap items-center gap-2 text-muted-foreground">
+            <span>
+              <span className="font-medium text-foreground">
+                {projectRow?.projectName ?? `Project #${projectId}`}
+              </span>
+              <span className="mx-1.5">—</span>
+              <span>#{projectId}</span>
+            </span>
+            {projectRow ? (
+              <ProjectPastEndCue endDate={projectRow.endDate} status={projectRow.status} />
+            ) : null}
+          </div>
           <p className="text-muted-foreground mt-2">
-            Project #{projectId} — project row uses <span className="text-foreground">budget</span>; task
-            rows use per-task <span className="text-foreground">estimated</span> hours.
+            Project row uses <span className="text-foreground">budget</span>; task rows use per-task{' '}
+            <span className="text-foreground">estimated</span> hours.
           </p>
         </div>
         <div className="flex items-center gap-3">

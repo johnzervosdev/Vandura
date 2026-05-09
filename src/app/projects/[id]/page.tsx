@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { trpc } from '@/lib/trpc-client';
 import { TasksSection } from './_components/TasksSection';
 import { formatProjectBudgetHours, taskEstimatesTotal, taskEstimatesTotalDisplay } from '@/lib/budget-display';
+import { ProjectPastEndCue } from '@/components/ProjectPastEndCue';
 
 export default function ProjectDetailPage() {
   const params = useParams();
@@ -59,7 +60,10 @@ export default function ProjectDetailPage() {
     <div className="space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold">{data.name}</h1>
+          <div className="flex flex-wrap items-center gap-3">
+            <h1 className="text-3xl font-bold">{data.name}</h1>
+            <ProjectPastEndCue endDate={data.endDate} status={data.status} />
+          </div>
           {data.description ? <p className="text-muted-foreground mt-2">{data.description}</p> : null}
           <p className="text-sm text-muted-foreground mt-2 max-w-2xl">
             <span className="text-foreground font-medium">Budget</span> (below) is the project hour cap

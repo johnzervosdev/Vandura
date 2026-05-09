@@ -89,6 +89,38 @@ test('Story 6.1: projectsSummary taskEstimatesTotal is 0 for project with no tas
     assert.ok(row);
     assert.equal(row.taskEstimatesTotal, 0);
     assert.equal(row.taskCount, 0);
+    assert.equal(row.startDate, null);
+    assert.equal(row.endDate, null);
+  } finally {
+    if (projectId) await db.delete(projects).where(eq(projects.id, projectId));
+  }
+});
+
+test('Story 6.5: projectsSummary startDate and endDate round-trip when set on project', async () => {
+  const tag = `ps65-dates-${Date.now()}`;
+  let projectId: number | null = null;
+  const startDate = new Date('2026-02-10T15:30:00.000Z');
+  const endDate = new Date('2026-08-20T08:00:00.000Z');
+
+  try {
+    const [project] = await db
+      .insert(projects)
+      .values({
+        name: `${tag}-proj`,
+        status: 'active',
+        startDate,
+        endDate,
+      })
+      .returning();
+    projectId = project.id;
+
+    const rows = await reportService.getAllProjectsSummary();
+    const row = rows.find((r) => r.projectId === projectId);
+    assert.ok(row, 'summary row for seeded project');
+    assert.ok(row.startDate instanceof Date);
+    assert.ok(row.endDate instanceof Date);
+    assert.equal(row.startDate.getTime(), startDate.getTime());
+    assert.equal(row.endDate.getTime(), endDate.getTime());
   } finally {
     if (projectId) await db.delete(projects).where(eq(projects.id, projectId));
   }

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { trpc } from '@/lib/trpc-client';
 import type { ProjectSummaryRow } from '@/lib/router-types';
 import { formatProjectBudgetHours, totalActiveProjectBudget } from '@/lib/budget-display';
+import { ProjectPastEndCue } from '@/components/ProjectPastEndCue';
 
 export default function HomePage() {
   const { data: projects, isLoading, error, refetch } = trpc.report.projectsSummary.useQuery(undefined, {
@@ -132,12 +133,15 @@ export default function HomePage() {
                     return (
                       <tr key={project.projectId} className="border-b hover:bg-muted/50">
                         <td className="py-3 px-4">
-                          <Link
-                            href={`/projects/${project.projectId}`}
-                            className="font-medium hover:text-primary"
-                          >
-                            {project.projectName}
-                          </Link>
+                          <div className="flex flex-wrap items-center gap-2">
+                            <Link
+                              href={`/projects/${project.projectId}`}
+                              className="font-medium hover:text-primary"
+                            >
+                              {project.projectName}
+                            </Link>
+                            <ProjectPastEndCue endDate={project.endDate} status={project.status} />
+                          </div>
                         </td>
                         <td className="text-right py-3 px-4">
                           {formatProjectBudgetHours(project.estimatedHours)}

@@ -15,6 +15,9 @@ export interface ProjectSummary {
   projectId: number;
   projectName: string;
   status: string;
+  /** Planning bounds (`projects.start_date` / `end_date`) — Story 6.5 past-end cue on clients. */
+  startDate: Date | null;
+  endDate: Date | null;
   /** Project cap (`projects.estimatedHours`). */
   estimatedHours: number | null;
   /**
@@ -100,6 +103,8 @@ export class ReportService {
           projectId: projects.id,
           projectName: projects.name,
           status: projects.status,
+          startDate: projects.startDate,
+          endDate: projects.endDate,
           estimatedHours: projects.estimatedHours,
           totalMinutes: timeAgg.totalMinutes,
           developerCount: timeAgg.developerCount,
@@ -127,6 +132,8 @@ export class ReportService {
           projectId: r.projectId,
           projectName: r.projectName,
           status: r.status,
+          startDate: r.startDate ?? null,
+          endDate: r.endDate ?? null,
           estimatedHours,
           taskEstimatesTotal,
           actualHours,

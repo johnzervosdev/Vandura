@@ -1,6 +1,6 @@
 # Project Vandura — QA Strategy, Test Plans & Results
 
-**Last Updated:** 2026-04-12 (Story **6.7** / **BUG-REPORT-001** ✅ — **`npm test` 119** all pass; **`npm run type-check`** + **`npm run lint`**; Story **8.1** — Hannibal pre-publish; Story **6.1** ✅; Story **6.6**; Story **5.2**)  
+**Last Updated:** 2026-04-12 (Story **6.5** past-end cue ✅; Story **6.7** / **BUG-REPORT-001** ✅ — **`npm test` 130** all pass; **`npm run type-check`**; Story **8.1** — Hannibal pre-publish; Story **6.1** ✅; Story **6.6**; Story **5.2**)  
 **Owner:** Murdock
 
 > **Navigation:** [`van/project.md`](project.md) — project dashboard | [`van/stories.md`](stories.md) — story ACs & QA checklists
@@ -48,7 +48,7 @@ Per-story testing focus and an **informal Murdock time rollup (~12–18h for Sto
 
 - **Status (`van/stories.md`):** Story **6.1** acceptance criteria **complete**; **Murdock QA** and **Hannibal** definition-of-done satisfied for merge.
 - **Scope to verify:** **`report.projectsSummary`** exposes **`taskEstimatesTotal`** (Hannibal **B** — numeric sum only when every task has a set `estimatedHours`; else **TBD**). **UI:** **`/`** (active-projects table), **`/projects`**, **`/reports`** — columns **Budget**, **Task est. total**, **Actual**; project **Variance** is **TBD** when project budget is unset. **`/reports/[projectId]`** — top summary **four** cards, including **Task est. total** (from `projectsSummary` for the selected project). **Invalidation:** `report.projectsSummary` refreshes after project create/edit/delete, timesheet create/update/delete and Excel import, task **create** (modal), task **edit** (modal), and task **delete**; inline status-only task updates do not change summary roll-ups (no extra invalidate).
-- **Automated evidence:** Full suite **`npm test`** — **119** tests (**all pass**); **`tests/budget-display.test.ts`** — `formatProjectBudgetHours`, `taskEstimatesTotal`, `totalActiveProjectBudget`, **`taskEstimatesTotalFromRollup`**; **`tests/report-projects-summary-task-estimates.test.ts`** — `getAllProjectsSummary` **SQL roll-up** vs Hannibal **B**; `report-service` CSV; `report.projectsSummary` smoke (`tests/report-projects-summary-error.test.ts`); **`tests/aggregation-actuals-report-date-range.test.ts`** — explicit wide-range + implicit **All Time** (**BUG-REPORT-001** / **Story 6.7**). **`npm run type-check`** — clean.
+- **Automated evidence:** Full suite **`npm test`** — **130** tests (**all pass**); **`tests/budget-display.test.ts`** — `formatProjectBudgetHours`, `taskEstimatesTotal`, `totalActiveProjectBudget`, **`taskEstimatesTotalFromRollup`**; **`tests/report-projects-summary-task-estimates.test.ts`** — `getAllProjectsSummary` **SQL roll-up** vs Hannibal **B** + **`startDate`/`endDate`** on summary rows (**Story 6.5**); `report-service` CSV; `report.projectsSummary` smoke (`tests/report-projects-summary-error.test.ts`); **`tests/aggregation-actuals-report-date-range.test.ts`** — explicit wide-range + implicit **All Time** (**BUG-REPORT-001** / **Story 6.7**); **`tests/project-past-end-date.test.ts`** — **Story 6.5** local calendar rule; **`tests/story-6-5-project-past-end-cue-contract.test.ts`** — copy + surface wiring. **`npm run type-check`** — clean.
 - **Screenshots / README images:** **Out of scope for this handoff** (Hannibal — skip recapture; pixels may lag new column labels until a later polish). Murdock: **do not** block 6.1 on `docs/screenshots/*` updates.
 - **Optional Murdock follow-ups (not 6.1 blockers):** (1) Manual spot-check that **`taskEstimatesTotal`** matches project-detail **Task estimates total** for the same project. (2) **Whole-sheet** / duplicate-import behavior still **7.x** — unchanged.
 - **Optional follow-ups for Hannibal (Murdock suggestions — not 6.1 blockers):** (1) **tRPC smoke on `projectsSummary`** — redundant with service integration tests unless we want a thin wire-shape assertion. (2) **React Query `invalidate` after mutations** — no automated coverage today; guarding it would need a component harness, E2E (e.g. Playwright: create task → second tab or navigation sees updated **Task est. total** without hard refresh), or brittle source assertions — **recommend Playwright only if Phase B+ wants UI contract tests.** (3) **`AggregationEngine` vs `projectsSummary`** — **BUG-REPORT-001** / **Story 6.7** ✅ shipped (**implicit All Time** aligns with summary — see **`van/stories.md`**). (4) Keep **CSV + README legend** as the integrator contract unless B.A. explicitly opts into header renames with release notes.
@@ -63,11 +63,17 @@ Per-story testing focus and an **informal Murdock time rollup (~12–18h for Sto
 - **Status (`van/stories.md`):** **Shipped** **2026-04-12** — Hannibal rules locked; **`AggregationEngine.getActualsVsEstimates`** uses full entry window when both dates omitted.
 - **Automated evidence:** **`tests/aggregation-actuals-report-date-range.test.ts`** — explicit wide range + implicit **`undefined`** range (**1h** after **`projects.endDate`**).
 
+#### Story 6.5 — Past planning **end date** cue (non-completed) ✅
+
+- **Status (`van/stories.md`):** **Shipped** **2026-04-12** — **`projectsSummary`** exposes **`startDate`** / **`endDate`**; **`ProjectPastEndCue`** on **`/`**, **`/projects`**, **`/reports`**, **`/projects/[id]`**, **`/reports/[projectId]`**; **active** vs **on-hold** weighting per Hannibal.
+- **Automated evidence:** **`tests/project-past-end-date.test.ts`** — `getProjectPastEndCueLevel` / `isProjectPastEndDate` (inclusive end day, **completed** / **cancelled** / unknown status); **`tests/story-6-5-project-past-end-cue-contract.test.ts`** — **ProjectPastEndCue** copy + surface imports.
+- **Murdock manual (optional):** Spot-check **active** project with **`endDate`** yesterday → **“Past end date”**; **on-hold** → lighter **“End date passed”**; **cancelled** + past end → **no** badge.
+
 #### Story 8.1 — Epic 8 — In-app bug reports (**Murdock automated ✅** — **ready for Hannibal review before publish**)
 
-- **Status (`van/stories.md`):** Acceptance criteria **complete** in code; **Murdock automated** regression (**2026-04-29**) — **`npm test`** **119** (**all pass**), **`npm run type-check`**, **`npm run lint`** all clean. **Hannibal** — product pass + any remaining **manual DoD** (multi-route FAB, **375px**, **Esc**, migration on clean clone) before calling the story **published** / release notes final.
+- **Status (`van/stories.md`):** Acceptance criteria **complete** in code; **Murdock automated** regression (**2026-04-29**) — **`npm test`** **127** (**all pass**), **`npm run type-check`**, **`npm run lint`** all clean. **Hannibal** — product pass + any remaining **manual DoD** (multi-route FAB, **375px**, **Esc**, migration on clean clone) before calling the story **published** / release notes final.
 - **Scope to verify:** **`bug_reports`** table migrated; **`bugReport`** router — `create`, `listOpen` (open only, newest first), `close` (idempotent failure if missing/already closed). **UI:** **`BugReportFab`** fixed bottom-right (`z-40`), **`Modal`** — new report form, open backlog, close with optional note; **`providers.tsx`** mounts FAB inside **`QueryClientProvider`** (global tRPC). **Persistence:** local **`./data/vandura.db`** only — no remote telemetry.
-- **Automated evidence:** **`tests/story-8-1-bug-report.test.ts`** — create → listOpen → close; missing / double close; **`createBugReportSchema` / `closeBugReportSchema`** (empty fields, max lengths, invalid `id`); **trim** + optional **`pagePath`** → null; **`closeNote`** optional → null; **`listOpen`** sort (**`createdAt` desc**) via seeded timestamps; shared **`db`** **`finally`** cleanup. **`tests/story-8-1-providers-bug-fab.test.ts`** — `BugReportFab` in **`providers.tsx`**; **`appRouter.bugReport`**; **`BugReportFab.tsx`** source guards (`aria-label`, fixed position, **Esc**, empty copy, **`max-h-56`**, modal heading). Full suite **`npm test`** — **119** (**all pass**).
+- **Automated evidence:** **`tests/story-8-1-bug-report.test.ts`** — create → listOpen → close; missing / double close; **`createBugReportSchema` / `closeBugReportSchema`** (empty fields, max lengths, invalid `id`); **trim** + optional **`pagePath`** → null; **`closeNote`** optional → null; **`listOpen`** sort (**`createdAt` desc**) via seeded timestamps; shared **`db`** **`finally`** cleanup. **`tests/story-8-1-providers-bug-fab.test.ts`** — `BugReportFab` in **`providers.tsx`**; **`appRouter.bugReport`**; **`BugReportFab.tsx`** source guards (`aria-label`, fixed position, **Esc**, empty copy, **`max-h-56`**, modal heading). Full suite **`npm test`** — **130** (**all pass**).
 - **Manual Murdock pass (Story 8.1 DoD — Hannibal / pre-publish):** FAB visible on **multiple routes** (`/`, `/projects`, `/reports`, `/timesheets/upload`); **375px** viewport — FAB does not obscure primary CTAs; keyboard — **Esc** closes modal, FAB has **`aria-label`**; **`npm run db:migrate`** on clean clone before dev server; spot-check **create → list → close** in browser once. **Production build:** run **`npm run build`** before publish — **`/projects`** wraps `useSearchParams` in **`<Suspense>`** (Next.js 15 prerender); full build **green** after that fix (**2026-04-29**).
 
 ---
@@ -94,11 +100,13 @@ Per-story testing focus and an **informal Murdock time rollup (~12–18h for Sto
 | `tests/developer-router.test.ts` | Developer schema + isolated-DB queries (active-only, toggle `isActive`) | ✅ Passing |
 | `tests/excel-grid.test.ts` | Weekly grid `parseFile` (Mon–Fri + Hours column); preview-mode JZER/Variable-style project validation; **import-mode tests clean up via `parser-db-cleanup`** | ✅ Passing |
 | `tests/excel-parser.test.ts` | Row `parseRows` + `parseFile` (dates, durations, preview vs import, case-sensitive tasks); **shared DB cleanup in `finally`** | ✅ Passing |
+| `tests/project-past-end-date.test.ts` | Story **6.5:** `getProjectPastEndCueLevel` / `isProjectPastEndDate` — local calendar day, **active** / **on-hold** / **completed** / **cancelled** / inclusive end | ✅ Passing |
+| `tests/story-6-5-project-past-end-cue-contract.test.ts` | Story **6.5:** `ProjectPastEndCue` labels + **`title`**; import + usage on **`/`**, **`/projects`**, **`/reports`**, **`/projects/[id]`**, **`/reports/[projectId]`** | ✅ Passing |
 | `tests/project-router.test.ts` | Story 2.1: project CRUD against temp DB; **create-via-router path cleans shared DB**; cascade test **deletes orphan developer + any leftover rows in `finally`** before unlink | ✅ Passing |
 | `tests/project-validation.test.ts` | `createProjectSchema` (name, estimated hours, status enum) | ✅ Passing |
 | `tests/report-developer-productivity.test.ts` | Story 4.3: `report.developerProductivity` + `getDeveloperProductivity` — smoke, inactive omitted, inclusive dates, metrics, null `taskId`, empty-range row, tRPC args; **`finally` cleanup** | ✅ Passing |
 | `tests/report-projects-summary-error.test.ts` | `reportRouter.projectsSummary` SQL alias regression (Issue #4) | ✅ Passing |
-| `tests/report-projects-summary-task-estimates.test.ts` | Story **6.1:** `getAllProjectsSummary` **`taskEstimatesTotal`** roll-up (Hannibal **B**) on shared `db` — `finally` cleanup | ✅ Passing |
+| `tests/report-projects-summary-task-estimates.test.ts` | Story **6.1:** `getAllProjectsSummary` **`taskEstimatesTotal`** roll-up (Hannibal **B**) on shared `db`; **`startDate`/`endDate`** on row (**Story 6.5**) — `finally` cleanup | ✅ Passing |
 | `tests/report-router.test.ts` | `exportCSV` filename + mocked actuals | ✅ Passing |
 | `tests/report-service.test.ts` | `exportToCSV` escaping / zero estimates | ✅ Passing |
 | `tests/task-router.test.ts` | Story 2.2: tasks + time-entry cascade on temp DB; **create-via-router path cleans leaked task on shared DB**; delete-task test **clears entry / project / developer in `finally`** before unlink | ✅ Passing |
@@ -117,7 +125,7 @@ Per-story testing focus and an **informal Murdock time rollup (~12–18h for Sto
 | `tests/trpc-error-sanitize.test.ts` | Story 5.1: `sanitizeTrpcShapeForClient` production heuristics (INTERNAL unsafe/safe, BAD_REQUEST+zod, SQLite cause) | ✅ Passing |
 | `tests/validators.test.ts` | Schema validation (createProject, createTask, createTimeEntry) | ✅ Passing |
 
-**Suite status:** **119** tests — **119** passing, **0** skipped — **26** test files under `tests/*.test.ts` (last full run: **2026-04-12** — includes **Story 6.7** / BUG-REPORT-001).
+**Suite status:** **130** tests — **130** passing, **0** skipped — **28** test files under `tests/*.test.ts` (last full run: **2026-04-12** — includes **Story 6.5**, **6.7** / BUG-REPORT-001).
 
 **Story 5.1 production sanitize sign-off:** Hannibal — **`tests/trpc-error-sanitize.test.ts` green in CI** plus **code review** of the production error path satisfies sign-off **layer (2)**. A separate `next build` + `next start` + forced failure smoke is **optional** (nice-to-have), not a second gate. Full wording: **`van/stories.md` → Story 5.1** (AC, Murdock checklist, **QA expectations — Hannibal**).
 
@@ -156,7 +164,7 @@ Committed paths under **`docs/screenshots/`** (referenced from **README** / docs
 
 **`VANDURA_ARCHITECTURE.md` (5.2 accuracy):** Hannibal **spot-check** of B.A.’s refresh vs current repo: stack, App Router + tRPC, SQLite/Drizzle, core services (`TimesheetService`, `ExcelParser`, `ReportService`, `AggregationEngine`), and testing/CI framing vs `scripts/run-tests.mjs` / this file. **No conflicting claims** surfaced during sign-off.
 
-**Automated suite:** **`npm test`** — **119** tests (**all pass**) (**2026-04-12**); includes Story **6.1** rollup tests, Story **6.7** actuals date regression, Story **8.1** bug-report suite, Story **6.6** link test, and prior suites. **`npm run type-check`** and **`npm run lint`** — clean on same pass.
+**Automated suite:** **`npm test`** — **127** tests (**all pass**) (**2026-04-12**); includes Story **6.1** rollup tests, Story **6.5** past-end helper, Story **6.7** actuals date regression, Story **8.1** bug-report suite, Story **6.6** link test, and prior suites. **`npm run type-check`** and **`npm run lint`** — clean on same pass.
 
 ### Next Test Targets (Deferred to Phase B)
 The following were explicitly deferred during Phase A — known debt, not a blocker:
@@ -405,4 +413,4 @@ The following were explicitly deferred during Phase A — known debt, not a bloc
 - **Description length (time entry):** unconstrained in M1 (PM ruling 2026-04-12).
 
 **End of Document**  
-Last Updated: 2026-04-12 — automated registry **119** tests (**all pass**), **26** `tests/*.test.ts` files; Story **6.1** ✅; Story **6.7** / **BUG-REPORT-001** ✅; Story **8.1** Murdock automated ✅ — see **`van/stories.md`**.
+Last Updated: 2026-04-12 — automated registry **130** tests (**all pass**), **28** `tests/*.test.ts` files; Story **6.1** ✅; Story **6.5** ✅; Story **6.7** / **BUG-REPORT-001** ✅; Story **8.1** Murdock automated ✅ — see **`van/stories.md`**.
