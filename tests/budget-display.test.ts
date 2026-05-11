@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 import {
   formatProjectBudgetHours,
   formatTaskEstimatedHours,
+  formatTaskStoryNumber,
   taskEstimatesTotal,
   taskEstimatesTotalDisplay,
   totalActiveProjectBudget,
@@ -14,6 +15,12 @@ test('Story 6.1: project budget null → TBD, zero → 0.0h', () => {
   assert.equal(formatProjectBudgetHours(undefined), 'TBD');
   assert.equal(formatProjectBudgetHours(0), '0.0h');
   assert.equal(formatProjectBudgetHours(10), '10.0h');
+});
+
+test('Story 6.3: formatTaskStoryNumber null → TBD', () => {
+  assert.equal(formatTaskStoryNumber(null), 'TBD');
+  assert.equal(formatTaskStoryNumber(undefined), 'TBD');
+  assert.equal(formatTaskStoryNumber(12), '12');
 });
 
 test('Story 6.1: task estimates total TBD if any task null', () => {

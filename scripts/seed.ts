@@ -58,24 +58,28 @@ async function seed() {
         {
           projectId: project1.id,
           name: 'API Development',
+          storyNumber: 101,
           estimatedHours: 60,
           status: 'in-progress',
         },
         {
           projectId: project1.id,
           name: 'Frontend UI',
+          storyNumber: 102,
           estimatedHours: 50,
           status: 'in-progress',
         },
         {
           projectId: project1.id,
           name: 'Database Design',
+          storyNumber: 103,
           estimatedHours: 30,
           status: 'completed',
         },
         {
           projectId: project2.id,
           name: 'Mobile UI/UX',
+          storyNumber: 201,
           estimatedHours: 80,
           status: 'in-progress',
         },

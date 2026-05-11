@@ -241,3 +241,77 @@ test('Story 2.2: Delete task unassigns time entries', async () => {
     fs.unlinkSync(dbPath);
   }
 });
+
+function isTrpcBadRequest(e: unknown, messageIncludes: string): boolean {
+  return (
+    typeof e === 'object' &&
+    e !== null &&
+    (e as { code?: string }).code === 'BAD_REQUEST' &&
+    typeof (e as { message?: string }).message === 'string' &&
+    (e as { message: string }).message.includes(messageIncludes)
+  );
+}
+
+test('Story 6.3: duplicate story # on create — BAD_REQUEST with UX copy', async () => {
+  const caller = taskRouter.createCaller({ headers: new Headers() });
+  const tag = `t63-dup-create-${Date.now()}`;
+  const projectName = `${tag}-proj`;
+  let projectId: number | null = null;
+  try {
+    const [p] = await sharedDb.insert(schema.projects).values({ name: projectName, status: 'active' }).returning();
+    projectId = p.id;
+    await caller.create({
+      projectId: p.id,
+      name: `${tag}-a`,
+      status: 'pending',
+      storyNumber: 7,
+    });
+    await assert.rejects(
+      () =>
+        caller.create({
+          projectId: p.id,
+          name: `${tag}-b`,
+          status: 'pending',
+          storyNumber: 7,
+        }),
+      (e: unknown) => isTrpcBadRequest(e, 'Another task in this project already uses that Story #')
+    );
+  } finally {
+    if (projectId != null) {
+      await sharedDb.delete(tasks).where(eq(tasks.projectId, projectId));
+      await sharedDb.delete(schema.projects).where(eq(schema.projects.id, projectId));
+    }
+  }
+});
+
+test('Story 6.3: duplicate story # on update — BAD_REQUEST with UX copy', async () => {
+  const caller = taskRouter.createCaller({ headers: new Headers() });
+  const tag = `t63-dup-upd-${Date.now()}`;
+  const projectName = `${tag}-proj`;
+  let projectId: number | null = null;
+  try {
+    const [p] = await sharedDb.insert(schema.projects).values({ name: projectName, status: 'active' }).returning();
+    projectId = p.id;
+    await caller.create({
+      projectId: p.id,
+      name: `${tag}-a`,
+      status: 'pending',
+      storyNumber: 1,
+    });
+    const b = await caller.create({
+      projectId: p.id,
+      name: `${tag}-b`,
+      status: 'pending',
+      storyNumber: 2,
+    });
+    await assert.rejects(
+      () => caller.update({ id: b.id, data: { storyNumber: 1 } }),
+      (e: unknown) => isTrpcBadRequest(e, 'Another task in this project already uses that Story #')
+    );
+  } finally {
+    if (projectId != null) {
+      await sharedDb.delete(tasks).where(eq(tasks.projectId, projectId));
+      await sharedDb.delete(schema.projects).where(eq(schema.projects.id, projectId));
+    }
+  }
+});

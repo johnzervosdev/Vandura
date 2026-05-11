@@ -1,5 +1,5 @@
 import { sql } from 'drizzle-orm';
-import { integer, text, real, sqliteTable, index } from 'drizzle-orm/sqlite-core';
+import { integer, text, real, sqliteTable, index, uniqueIndex } from 'drizzle-orm/sqlite-core';
 import { relations } from 'drizzle-orm';
 
 /**
@@ -49,6 +49,8 @@ export const tasks = sqliteTable(
     name: text('name').notNull(),
     description: text('description'),
     estimatedHours: real('estimated_hours'),
+    /** Story 6.3 — optional backlog/story id for sorting (≥1 when set; null = unset / display TBD) */
+    storyNumber: integer('story_number'),
     parentTaskId: integer('parent_task_id'), // Self-referential for subtasks
     status: text('status', { enum: ['pending', 'in-progress', 'completed', 'blocked'] })
       .notNull()
@@ -59,6 +61,10 @@ export const tasks = sqliteTable(
   (table) => ({
     projectIdIdx: index('tasks_project_id_idx').on(table.projectId),
     parentTaskIdIdx: index('tasks_parent_task_id_idx').on(table.parentTaskId),
+    /** Non-null story # unique per project (SQLite partial unique index) — Story 6.3 */
+    projectStoryNumberUidx: uniqueIndex('tasks_project_id_story_number_uidx')
+      .on(table.projectId, table.storyNumber)
+      .where(sql`${table.storyNumber} is not null`),
   })
 );
 

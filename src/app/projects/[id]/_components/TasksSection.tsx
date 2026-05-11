@@ -10,27 +10,32 @@ import {
 } from '../../_components/TaskForm';
 import { Modal } from '@/components/Modal';
 import type { TaskByProjectRow } from '@/lib/router-types';
-import { formatTaskEstimatedHours } from '@/lib/budget-display';
+import { formatTaskEstimatedHours, formatTaskStoryNumber } from '@/lib/budget-display';
 import { tasksAwaitingEstimatesSorted } from '@/lib/tasks-awaiting-estimates';
+import type { TaskListSortBy, TaskListSortDir } from '@/lib/task-list-sort';
 
 export function TasksSection({
   projectId,
   onTaskCountChange,
+  tasks,
+  tasksLoading,
+  tasksError,
+  refetchTasks,
+  sortBy,
+  sortDir,
+  onToggleSort,
 }: {
   projectId: number;
   onTaskCountChange?: (count: number) => void;
+  tasks: TaskByProjectRow[];
+  tasksLoading: boolean;
+  tasksError: { message: string } | null;
+  refetchTasks: () => void;
+  sortBy: TaskListSortBy;
+  sortDir: TaskListSortDir;
+  onToggleSort: (key: TaskListSortBy) => void;
 }) {
   const utils = trpc.useUtils();
-
-  const {
-    data: tasks,
-    isLoading: tasksLoading,
-    error: tasksError,
-    refetch: refetchTasks,
-  } = trpc.task.listByProject.useQuery(
-    { projectId },
-    { enabled: Number.isFinite(projectId), meta: { suppressGlobalError: true } }
-  );
 
   const [toast, setToast] = useState<string | null>(null);
   const [createOpen, setCreateOpen] = useState(false);
@@ -43,6 +48,7 @@ export function TasksSection({
         name: string;
         description: string | null;
         estimatedHours: number | null;
+        storyNumber: number | null;
         status: TaskStatus;
       }
   >(null);
@@ -50,7 +56,7 @@ export function TasksSection({
 
   const createTask = trpc.task.create.useMutation({
     onSuccess: async () => {
-      await utils.task.listByProject.invalidate({ projectId });
+      await utils.task.listByProject.invalidate();
       await utils.report.projectsSummary.invalidate();
       setToast('Task created.');
       setCreateOpen(false);
@@ -61,7 +67,7 @@ export function TasksSection({
   /** Modal edit: inline `submitError` + suppress global toast (avoid double-notify). */
   const updateTaskFromModal = trpc.task.update.useMutation({
     onSuccess: async () => {
-      await utils.task.listByProject.invalidate({ projectId });
+      await utils.task.listByProject.invalidate();
       await utils.report.projectsSummary.invalidate();
       setToast('Task updated.');
       setEditFocusEstimate(false);
@@ -73,7 +79,7 @@ export function TasksSection({
   /** Table status dropdown: no modal error region → global toast on failure (Story 5.1). */
   const updateTaskInline = trpc.task.update.useMutation({
     onSuccess: async () => {
-      await utils.task.listByProject.invalidate({ projectId });
+      await utils.task.listByProject.invalidate();
       setToast('Task updated.');
       setEditTask(null);
     },
@@ -81,20 +87,34 @@ export function TasksSection({
 
   const deleteTask = trpc.task.delete.useMutation({
     onSuccess: async () => {
-      await utils.task.listByProject.invalidate({ projectId });
+      await utils.task.listByProject.invalidate();
       await utils.report.projectsSummary.invalidate();
       setToast('Task deleted.');
       setConfirmDelete(null);
     },
   });
 
-  const taskRows = useMemo(() => (tasks ?? []) as TaskByProjectRow[], [tasks]);
+  const taskRows = useMemo(() => tasks as TaskByProjectRow[], [tasks]);
   const taskCount = useMemo(() => taskRows.length, [taskRows.length]);
   const awaitingRows = useMemo(() => tasksAwaitingEstimatesSorted(taskRows), [taskRows]);
 
   useEffect(() => {
     onTaskCountChange?.(taskCount);
   }, [onTaskCountChange, taskCount]);
+
+  function sortHeader(label: string, key: TaskListSortBy) {
+    const active = sortBy === key;
+    return (
+      <button
+        type="button"
+        className="inline-flex items-center gap-1 font-medium text-left hover:underline underline-offset-4"
+        onClick={() => onToggleSort(key)}
+      >
+        {label}
+        {active ? (sortDir === 'asc' ? ' ↑' : ' ↓') : null}
+      </button>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -146,6 +166,7 @@ export function TasksSection({
                         name: t.name,
                         description: t.description ?? null,
                         estimatedHours: t.estimatedHours ?? null,
+                        storyNumber: t.storyNumber ?? null,
                         status: t.status as TaskStatus,
                       });
                     }}
@@ -194,15 +215,17 @@ export function TasksSection({
               <table className="w-full text-sm">
                 <thead>
                   <tr className="border-b">
-                    <th className="text-left py-3 px-4">Name</th>
-                    <th className="text-left py-3 px-4">Status</th>
-                    <th className="text-right py-3 px-4">Estimated Hours</th>
+                    <th className="text-left py-3 px-4">{sortHeader('Story #', 'story_number')}</th>
+                    <th className="text-left py-3 px-4">{sortHeader('Name', 'name')}</th>
+                    <th className="text-left py-3 px-4">{sortHeader('Status', 'status')}</th>
+                    <th className="text-right py-3 px-4">{sortHeader('Estimated Hours', 'estimated_hours')}</th>
                     <th className="text-right py-3 px-4">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
                   {taskRows.map((t: TaskByProjectRow) => (
                     <tr key={t.id} className="border-b last:border-b-0">
+                      <td className="py-3 px-4 tabular-nums">{formatTaskStoryNumber(t.storyNumber)}</td>
                       <td className="py-3 px-4">
                         <div className="font-medium">{t.name}</div>
                         {t.description ? (
@@ -242,6 +265,7 @@ export function TasksSection({
                                 name: t.name,
                                 description: t.description ?? null,
                                 estimatedHours: t.estimatedHours ?? null,
+                                storyNumber: t.storyNumber ?? null,
                                 status: t.status as TaskStatus,
                               });
                             }}
@@ -270,9 +294,11 @@ export function TasksSection({
         <Modal onClose={() => setCreateOpen(false)} closeOnBackdrop showCloseButton>
           <TaskForm
             title="New Task"
+            variant="create"
             initialValues={
               {
                 name: '',
+                storyNumber: '',
                 description: '',
                 estimatedHours: '',
                 status: 'pending',
@@ -285,7 +311,11 @@ export function TasksSection({
             onSubmit={async (values: TaskFormSubmitValues) => {
               await createTask.mutateAsync({
                 projectId,
-                ...values,
+                name: values.name,
+                description: values.description,
+                estimatedHours: values.estimatedHours,
+                status: values.status,
+                ...(values.storyNumber != null ? { storyNumber: values.storyNumber } : {}),
               });
             }}
           />
@@ -304,8 +334,13 @@ export function TasksSection({
           <TaskForm
             key={editTask.id}
             title={`Edit Task: ${editTask.name}`}
+            variant="edit"
             initialValues={{
               name: editTask.name,
+              storyNumber:
+                editTask.storyNumber === null || editTask.storyNumber === undefined
+                  ? ''
+                  : String(editTask.storyNumber),
               description: editTask.description ?? '',
               estimatedHours:
                 editTask.estimatedHours === null || editTask.estimatedHours === undefined
@@ -362,4 +397,3 @@ export function TasksSection({
     </div>
   );
 }
-

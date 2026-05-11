@@ -1,8 +1,8 @@
 # Project Vandura — Project Dashboard
 
-**Last Updated:** 2026-05-05  
+**Last Updated:** 2026-05-06  
 **Milestone:** M1 - MVP Showcase  
-**Status:** Phase B complete — Story **5.2** shipped. **Phase C:** **6.1** ✅ + **6.2** ✅ + **6.5** ✅ + **6.6** ✅ + **6.7** (**BUG-REPORT-001**) ✅ + **Epic 8 / 8.1** ✅. **Next B.A. priority:** **6.3**–**6.4** (see **`van/stories.md`** Phase C **Remaining queue**). **Epic 8.2+** remains optional parallel work.
+**Status:** Phase B complete — Story **5.2** shipped. **Phase C:** **6.1** ✅ + **6.2** ✅ + **6.3** ✅ + **6.5** ✅ + **6.6** ✅ + **6.7** (**BUG-REPORT-001**) ✅ + **Epic 8 / 8.1** ✅. **Next B.A. priority:** **6.4** (see **`van/stories.md`** Phase C **Remaining queue**). **Epic 8.2+** remains optional parallel work.
 
 > **Navigation:** This is the entry point. Read this first for project context.  
 > Story details → [`van/stories.md`](stories.md) | QA strategy & results → [`van/qa.md`](qa.md)
@@ -86,6 +86,7 @@
 **Phase C (in flight — see [`van/stories.md`](stories.md) Phase C):**
 - ✅ Story **6.1** — **`projectsSummary.taskEstimatesTotal`** (SQL + `taskEstimatesTotalFromRollup`); **`/`**, **`/projects`**, **`/reports`** show **Budget**, **Task est. total**, **Actual**; actuals report top row adds **Task est. total** card; **TBD** + variance **TBD** when no project budget; CSV **Note** row; `tests/budget-display.test.ts` (incl. rollup) + `ReportService` / `projectsSummary` path — **QA complete** (`van/qa.md` → Story 6.1)
 - ✅ Story **6.2** — **Tasks awaiting estimates** card on **`/projects/[id]`** (`tasks-awaiting-estimates.ts`, **`TaskForm`** `initialFocusField`; `tests/tasks-awaiting-estimates.test.ts` — see **`van/qa.md`** → Story 6.2)
+- ✅ Story **6.3** — **`tasks.story_number`** (unique **within** project when set; **same** # **across** projects OK) + **`task.listByProject`** sort (`task-list-sort.ts`, **`TaskForm`** Story #, **`task-sort-storage.ts`**, **`TasksSection`** headers); **`tests/task-list-sort.test.ts`**, **`tests/task-sort-storage.test.ts`** — see **`van/qa.md`** → Story 6.3
 - ✅ Story **6.6** — **`/developers`** → **`/reports/productivity`** link (top action row, Hannibal copy + B.A. draft subline; `tests/story-6-6-developers-productivity-link.test.ts`)
 - ✅ Story **6.5** — past planning **end date** visual cue (`ProjectPastEndCue`, `project-past-end-date`, `projectsSummary.startDate`/`endDate`; `tests/project-past-end-date.test.ts`)
 - ✅ Story **6.7** — **BUG-REPORT-001**: actuals **`/reports/[projectId]`** implicit **All Time** matches **`projectsSummary`** (`tests/aggregation-actuals-report-date-range.test.ts`; `van/qa.md` → Story 6.7)
@@ -95,7 +96,6 @@
 - _(none — Phase B backlog cleared.)_
 
 **Phase C (remaining — planned, in-repo; order provisional)** — per-story **B.A. estimates** in [`van/stories.md`](stories.md) → Phase C:
-- **Story 6.3** — **Story #** column + migration; sortable **Story #, Name, Status, Estimated hours**. Hannibal **3–5h** · **B.A. 5–8h**.
 - **Story 6.4** — Hide/show **`completed`** tasks (client + optional **localStorage**). Hannibal **2–3h** · **B.A. 2–3h**.
 - **Story 8.2+** (**Epic 8**) — follow-ups from [`van/stories.md`](stories.md) **Epic 8** (optional; **8.1** shipped).
 - **Backlog (not sequenced in Phase C):** Pie/donut **budget vs task status** — [`van/stories.md`](stories.md) → **Captured ideas**.
@@ -106,7 +106,7 @@
 - _(none)_
 
 ### What's PLANNED 📋
-- **Phase C:** **6.1** + **6.2** + **6.5** + **6.6** + **6.7** + **8.1** shipped; **6.3**–**6.4** remaining (**execution order** in [`van/stories.md`](stories.md)); **Epic 8.2+** optional. Phase C band **~34–54h** (**6.1–6.6**) — **M1 ~20h** triage in stories **Planning** + optional candidates. **+ ~10–18h** for **8.1** is **spent** if counted against epic capacity.
+- **Phase C:** **6.1** + **6.2** + **6.3** + **6.5** + **6.6** + **6.7** + **8.1** shipped; **6.4** remaining (**execution order** in [`van/stories.md`](stories.md)); **Epic 8.2+** optional. Phase C band **~34–54h** (**6.1–6.6**) — **M1 ~20h** triage in stories **Planning** + optional candidates. **+ ~10–18h** for **8.1** is **spent** if counted against epic capacity.
 - **Story 7.1** — Excel import **duplicate policy** — **B.A. 10–22h** (scope-dependent) — [`van/stories.md`](stories.md) **Import integrity** (not Phase C unless triaged in).
 - **Story 7.2** — **Whole-timesheet** / **discard import** — **B.A. ~10–26h** (fork A/B/C) — same section; **7.1+7.2 ~24–45h** combined if both ship.
 - **M2 / hosting**, **Story 1.2** (dev hardening), **Story 3.4** (parse remediation), and other **deferred** work — see [`van/stories.md`](stories.md) Deferred section.
@@ -143,7 +143,7 @@
 - **Batch size:** 1000 rows per transaction
 
 ### Data Relationships
-- **Task scope:** Tasks are unique per project (name is unique within project)
+- **Task scope:** Tasks are unique per project (name is unique within project). Optional **Story #** (`tasks.story_number`): when set (**≥ 1**), values are **unique within that project only** — different projects may reuse the same story number.
 - **Cascade deletes:** Deleting project deletes tasks and time entries
 - **Auto-creation:** Excel import auto-creates developers/projects/tasks if missing
 
@@ -216,7 +216,7 @@
 
 **Sequence (Epic 8):** **8.1** slots **independently** — often **parallel** to Phase C **6.3–6.4** or post-MVP work when feedback capture is prioritized.
 
-**Deliverable — Phase C:** **(6.1)** Budget vs estimates + **TBD** copy + **`projectsSummary`** invalidation. **(6.2)** ✅ Tasks missing estimates card — **shipped**. **(6.3)** Story # + full column sort. **(6.4)** Hide completed tasks. **(6.5)** Past **end date** visual + summary **`endDate`**. **(6.6)** **`/developers`** link to **Developer productivity** report.
+**Deliverable — Phase C:** **(6.1)** Budget vs estimates + **TBD** copy + **`projectsSummary`** invalidation. **(6.2)** ✅ Tasks missing estimates card — **shipped**. **(6.3)** ✅ Story # + full column sort — **shipped**. **(6.4)** Hide completed tasks. **(6.5)** Past **end date** visual + summary **`endDate`**. **(6.6)** **`/developers`** link to **Developer productivity** report.
 
 **Deliverable — Epic 8:** **(8.1)** Global **bug** control + **open** backlog + **close** workflow (SQLite + modal).
 
@@ -392,4 +392,4 @@ _Log questions and blockers here. Tag the owner._
 ---
 
 **End of Document**  
-Last Updated: 2026-05-05 — Story **6.2** shipped (tasks awaiting estimates card); Phase C remainder **6.3–6.4** per `van/stories.md`; Stories **7.1–7.2** import integrity; Phase B closed; Story 5.2 sign-off in `van/qa.md`
+Last Updated: 2026-05-06 — Story **6.3** shipped (task **`story_number`** + sort + **`localStorage`**); Phase C remainder **6.4** per `van/stories.md`; Stories **7.1–7.2** import integrity; Phase B closed; Story 5.2 sign-off in `van/qa.md`

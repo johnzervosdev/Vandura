@@ -1,11 +1,17 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { trpc } from '@/lib/trpc-client';
 import { TasksSection } from './_components/TasksSection';
 import { formatProjectBudgetHours, taskEstimatesTotal, taskEstimatesTotalDisplay } from '@/lib/budget-display';
 import { ProjectPastEndCue } from '@/components/ProjectPastEndCue';
+import type { TaskListSortBy } from '@/lib/task-list-sort';
+import {
+  DEFAULT_TASK_LIST_SORT,
+  readTaskListSortFromStorage,
+  writeTaskListSortToStorage,
+} from '@/lib/task-sort-storage';
 
 export default function ProjectDetailPage() {
   const params = useParams();
@@ -16,11 +22,47 @@ export default function ProjectDetailPage() {
     { id: projectId },
     { enabled: Number.isFinite(projectId), meta: { suppressGlobalError: true } }
   );
-  const { data: projectTasks } = trpc.task.listByProject.useQuery(
-    { projectId },
-    { enabled: Number.isFinite(projectId), meta: { suppressGlobalError: true } }
+
+  const [taskSort, setTaskSort] = useState(DEFAULT_TASK_LIST_SORT);
+
+  useEffect(() => {
+    if (!Number.isFinite(projectId)) return;
+    setTaskSort(readTaskListSortFromStorage(projectId));
+  }, [projectId]);
+
+  useEffect(() => {
+    if (!Number.isFinite(projectId)) return;
+    writeTaskListSortToStorage(projectId, taskSort);
+  }, [projectId, taskSort]);
+
+  const taskListQueryInput = useMemo(
+    () => ({
+      projectId,
+      sortBy: taskSort.sortBy,
+      sortDir: taskSort.sortDir,
+    }),
+    [projectId, taskSort.sortBy, taskSort.sortDir]
   );
+
+  const {
+    data: projectTasks,
+    isLoading: tasksLoading,
+    error: tasksError,
+    refetch: refetchTasks,
+  } = trpc.task.listByProject.useQuery(taskListQueryInput, {
+    enabled: Number.isFinite(projectId),
+    meta: { suppressGlobalError: true },
+  });
+
   const [taskCount, setTaskCount] = useState<number>(0);
+
+  function toggleTaskSort(key: TaskListSortBy) {
+    setTaskSort((prev) =>
+      prev.sortBy === key
+        ? { sortBy: key, sortDir: prev.sortDir === 'asc' ? 'desc' : 'asc' }
+        : { sortBy: key, sortDir: 'asc' }
+    );
+  }
 
   if (!Number.isFinite(projectId)) {
     return <div className="text-destructive">Invalid project id.</div>;
@@ -48,10 +90,11 @@ export default function ProjectDetailPage() {
 
   const tasks = projectTasks ?? [];
   const budgetLabel = formatProjectBudgetHours(data.estimatedHours);
-  const taskTotalLine = taskEstimatesTotalDisplay(tasks);
-  const taskSum = taskEstimatesTotal(tasks);
+  const taskTotalLine = tasksLoading ? '…' : taskEstimatesTotalDisplay(tasks);
+  const taskSum = tasksLoading ? null : taskEstimatesTotal(tasks);
   const budgetNum = data.estimatedHours;
   const showCompare =
+    taskSum !== null &&
     taskSum.kind === 'hours' &&
     typeof budgetNum === 'number' &&
     Math.abs(budgetNum - taskSum.value) > 0.001;
@@ -110,7 +153,7 @@ export default function ProjectDetailPage() {
               <div className="text-lg font-semibold mt-1">{taskTotalLine}</div>
             </div>
           </div>
-          {showCompare && taskSum.kind === 'hours' && typeof budgetNum === 'number' ? (
+          {showCompare && taskSum !== null && taskSum.kind === 'hours' && typeof budgetNum === 'number' ? (
             <p className="text-sm text-muted-foreground mt-3">
               Task estimates total {taskSum.value.toFixed(1)}h · Project budget {budgetNum.toFixed(1)}h
             </p>
@@ -122,7 +165,17 @@ export default function ProjectDetailPage() {
         </div>
       </div>
 
-      <TasksSection projectId={projectId} onTaskCountChange={setTaskCount} />
+      <TasksSection
+        projectId={projectId}
+        onTaskCountChange={setTaskCount}
+        tasks={tasks}
+        tasksLoading={tasksLoading}
+        tasksError={tasksError ? { message: tasksError.message } : null}
+        refetchTasks={() => void refetchTasks()}
+        sortBy={taskSort.sortBy}
+        sortDir={taskSort.sortDir}
+        onToggleSort={toggleTaskSort}
+      />
     </div>
   );
 }

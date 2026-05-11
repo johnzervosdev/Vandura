@@ -1,6 +1,6 @@
 # Project Vandura — User Stories & Acceptance Criteria
 
-**Last Updated:** 2026-05-05 (Story **6.2** ✅; Story **6.5** ✅; Story **6.7** / **BUG-REPORT-001** ✅; Story **6.1** ✅; Story **6.6** ✅; **Epic 8 / Story 8.1** — Murdock automated ✅; Phase C remainder **6.3**–**6.4**; 7.1–7.2)  
+**Last Updated:** 2026-05-06 (Story **6.3** ✅ shipped — task sort + **`story_number`**; Story **6.2** ✅; Story **6.5** ✅; Story **6.7** / **BUG-REPORT-001** ✅; Story **6.1** ✅; Story **6.6** ✅; **Epic 8 / Story 8.1** — Murdock automated ✅; Phase C remainder **6.4** only; 7.1–7.2)  
 **Owner:** B.A. (maintains ACs + implementation notes) | Murdock (updates QA checklists)
 
 > **Navigation:** [`van/project.md`](project.md) — project dashboard | [`van/qa.md`](qa.md) — test plans & results | **Bug backlog** — **`BUG-REPORT-001`** ✅ (**Story 6.7** shipped)
@@ -466,11 +466,11 @@ All **data queries** below use **`meta: { suppressGlobalError: true }`** → on 
 | Dashboard `/` | `report.projectsSummary` |
 | Projects `/projects` | `report.projectsSummary` |
 | Developers `/developers` | `developer.list` |
-| Timesheets `/timesheets` | `timesheet.list`, `developer.list` ×2, `project.list` ×2, `task.listByProject` (task dropdown) |
+| Timesheets `/timesheets` | `timesheet.list`, `developer.list` ×2, `project.list` ×2, `task.listByProject` (task dropdown; default **Story # asc**) |
 | Reports `/reports` | `report.projectsSummary` |
 | Reports productivity | `report.developerProductivity` |
 | Report detail `/reports/[projectId]` | `report.projectsSummary`, `report.actualsVsEstimates` |
-| Project detail `/projects/[id]` | `project.get`, `task.listByProject` (TasksSection) |
+| Project detail `/projects/[id]` | `project.get`, `task.listByProject` (**sort** args + **`localStorage`**) |
 | Edit project `/projects/[id]/edit` | `project.get` |
 
 **Mutations with `meta: { suppressGlobalToast: true }`** → on failure: **no global toast**; failure is shown **in-context** (modal `submitError`, form strip, or upload page `error` / export `exportError`):
@@ -537,9 +537,9 @@ All **data queries** below use **`meta: { suppressGlobalError: true }`** → on 
 - **6.5 third:** Extends **`projectsSummary` / `project.get`** and multi-surface cues **after** 6.1 copy and cache behavior are stable.
 - **6.2 → 6.3 → 6.4:** Keeps **project-detail task work** contiguous. **Hannibal picks 6.3 before 6.4** (B.A.: either order acceptable): sort UI and migration land first; **6.4** then implements filter-after-sort per AC; Murdock still batches **6.3 + 6.4** regression.
 
-**Remaining queue after 6.1 + 6.2 + 6.5 + 6.6 + 6.7 shipped (Hannibal — 2026-04-12):** **6.3** → **6.4**. **6.2** (tasks awaiting estimates card) — **shipped**.
+**Remaining queue after 6.1 + 6.2 + 6.3 + 6.5 + 6.6 + 6.7 shipped (Hannibal — 2026-04-12):** **6.4** only. Story **6.3** (task list sort + optional Story #) — **shipped** **2026-05-06**.
 
-**Epic 8 (parallel):** **Story 8.1** (bug FAB + backlog) — **not** in the Phase C sequence; slot by **Hannibal** (often **parallel** to Phase C **6.3–6.4** or post-MVP work when feedback capture is prioritized).
+**Epic 8 (parallel):** **Story 8.1** (bug FAB + backlog) — **not** in the Phase C sequence; slot by **Hannibal** (often **parallel** to Phase C **6.4** or post-MVP work when feedback capture is prioritized).
 
 **B.A. Phase C rollup (6.1–6.6, dev only):** ~**23–35h** (upper band mainly if **6.2** includes the dashboard “tasks TBD” stretch **and/or** B.A. does an optional **post–6.1** **`budget_hours`** migration PR — **6.1** itself is **copy-only**, no migration).
 
@@ -688,10 +688,10 @@ All **data queries** below use **`meta: { suppressGlobalError: true }`** → on 
 ---
 
 ### Story 6.3: Task list sorting & optional story number (P2) — **3–5h** (Hannibal informal) · **B.A.: 5–8h** (Drizzle migration + `listByProject` sort args + nulls-last + table headers + TaskForm story # + ≥2 router/SQL ordering tests) · **Murdock QA: 2–4h** · **Combined (planning): ~7–12h**
-**Status:** Not Started  
+**Status:** ✅ Complete — shipped **2026-05-06**  
 **Owner:** B.A.
 
-**Context:** `/projects/[id]` task table today has **no** `orderBy` in `task.listByProject` — row order is effectively arbitrary. There is **no** `story_number` column on **`tasks`** today; “sort by story number” needs a **stored, optional** field (parsing story IDs from free-text **`name`** is **out of scope** — fragile).
+**Context:** Before **6.3**, `task.listByProject` had no stable **`ORDER BY`** and **`tasks`** had no **`story_number`** column. **Story #** for sorting requires a **stored, optional** field (parsing story IDs from free-text **`name`** is **out of scope** — fragile).
 
 **Product choice (Hannibal):** Use a **dedicated Story # column** (not embedded-only in task name) — clearer for imports, sorting, and reporting.
 
@@ -700,18 +700,56 @@ All **data queries** below use **`meta: { suppressGlobalError: true }`** → on 
 **Default** when opening a project: **story number ascending, nulls last** (tasks without a story number after numbered ones).
 
 **Scope:**
-- **Schema:** Add nullable **`story_number`** `INTEGER` on `tasks` (Drizzle + SQL migration); seed updates if sample tasks should demo sorting.
+- **Schema:** Add nullable **`story_number`** `INTEGER` on `tasks` (Drizzle + SQL migration); seed updates if sample tasks should demo sorting. Enforce **uniqueness of non-null `story_number` per `project_id`** (e.g. SQLite **partial unique index** on **`(project_id, story_number)`** where **`story_number IS NOT NULL`** — B.A. documents exact DDL in migration).
+- **Integrity checks (in scope for 6.3 — Hannibal):** **`story_number`** validation on **create** and **update**: **`null`** or empty = cleared; when set, integer **≥ 1** only (**reject `0`** and negatives with clear validation copy). **Duplicate** non-null **`story_number`** within the **same project** must **fail** with a **user-visible error** (modal / inline + tRPC error shape Murdock can assert). Map DB unique violations to the same UX message where practical.
 - **API:** Extend **`task.listByProject`** with sort key + direction (validated enum covering **`story_number`**, **`name`**, **`status`**, **`estimated_hours`**); stable tie-breaker (e.g. `id` or `name`) when values equal; **nulls-last** policy for story # and for estimated hours when sorting those columns (document in PR).
 - **UI (`TasksSection` / `TaskForm`):** Dedicated **Story #** column (optional on create/edit); **all four** data columns have **sortable** headers; **Story #** and **estimated hours** cells use **TBD** when null (aligned with **6.1**).
 - **Surfaces:** **Project detail** task table is **required** for 6.3 v1; any other task lists — **document** in PR if touched or explicitly “unchanged.”
 
+**B.A. scope questions — Hannibal responses (locked):**
+
+1. **Story 6.2 “Tasks awaiting estimates” card vs table sort:** Story **6.2** locked card row order to **`name` ascending until 6.3**. Once the main table has user-chosen sort, should the card rows **(A)** stay **name A→Z** only, **(B)** match the **same column + direction** as the main task table, or **(C)** always use the **6.3 default** (story # asc, nulls last) regardless of table sort?
+   - **Hannibal response:** **(A)** — Keep the card **name A→Z** always. The card is a **focused work queue** (“who still needs an estimate?”); stable alphabetical order makes scanning predictable and matches the shipped **6.2** behavior. **Do not** tie card order to the main table’s sort — switching table sort should not reshuffle the estimates queue. The **main table** owns user-controlled ordering; the **card** stays independent.
+
+2. **`story_number = 0`:** Should **0** be allowed when set (non-negative semantics), or should a set story number be **≥ 1** only (treat unset as null / empty)?
+   - **Hannibal response:** **≥ 1 only** when set; **`null`** (unset) in storage/UI empty state. **Do not** treat **`0`** as a real story number — reject or coerce empty in validation (same spirit as “Story numbers start at 1”; avoids ambiguous **`0`** rows in imports and sorts).
+
+3. **Duplicate Story # within a project:** May two tasks share the same non-null **`story_number`** under one project, or should non-null values be **unique per project**?
+   - **Hannibal response (product rule — shipped):** **Unique per project.** Two tasks on the **same** project **cannot** share the same non-null **`story_number`** (create/update **fail** with clear UX). **Different projects** may each use the **same** story number — uniqueness is **`(project_id, story_number)`**, not global. Enforced by SQLite **partial unique index** **`tasks_project_id_story_number_uidx`** on **`(project_id, story_number)`** where **`story_number IS NOT NULL`**. **`task.listByProject`** still uses stable **`id`** as tie-breaker after **`story_number`** in **`ORDER BY`** for deterministic sorting when values compare equal (e.g. **`null`** rows).
+
+4. **Sort order for Status column:** Sort **alphabetically** by stored status string, or use a fixed **workflow order** (e.g. pending → in-progress → blocked → completed)?
+   - **Hannibal response:** **Fixed workflow order**, not alphabetical. **Ascending:** **`pending` → `in-progress` → `blocked` → `completed`**. **Descending:** reverse that chain. Matches how PMs scan a board left-to-right / pipeline semantics; alphabetical would scramble **`blocked`** vs **`in-progress`** arbitrarily.
+
+5. **Persist user’s sort:** Should last chosen **sort column + direction** persist across reloads (e.g. **`localStorage` per `projectId`**), or **reset to default** each time the project detail page is opened?
+   - **Hannibal response:** **Persist** **`sortColumn` + `sortDirection`** per **`projectId`** in **`localStorage`** (e.g. key pattern aligned with **6.4** hide-toggle keys — **`vandura.tasks.sort.{projectId}`** or equivalent JSON). Same rationale as remembering **hide completed**: repeat visitors keep their preferred board view; **default** on first visit remains **story number asc, nulls last**.
+
+**Decisions (Hannibal — Story 6.3, B.A. Q&A — locked):**
+
+- **6.2 estimates card row order:** **Name A→Z** always — **not** linked to main table sort or **6.3** default sort.
+- **`story_number`:** **`null`** unset; when present, integer **≥ 1** — **`0`** invalid/out of scope for a stored value.
+- **`story_number` uniqueness:** **Required** for **6.3** — non-null **`story_number`** **unique per `project_id`** (DB + API checks), **not** across projects — two projects may both use story **5**; duplicate save **fails** only **within** the same project; **`0`** / negatives **rejected** (see **`story_number`** bullet above).
+- **Status column SQL/UI ordering:** Fixed pipeline rank **`pending` < `in-progress` < `blocked` < `completed`** for ascending; descending reverses.
+- **Sort persistence:** **`localStorage` per `projectId`** for last column + direction; first visit uses **story # asc, nulls last**.
+
 **Acceptance Criteria:**
-- [ ] Migration applied; existing tasks have `story_number` **null** — no data loss.
-- [ ] Create/edit task can set/clear **story number** (integer validation: non-negative or positive-only — **B.A. documents** in PR).
-- [ ] Task table: **every** of **Story #**, **Name**, **Status**, **Estimated hours** is **sortable** (asc/desc + indicator); **default** sort **story number asc, nulls last**; **Actions** not sortable.
-- [ ] **Tests:** Ordering covered for **at least two** keys (e.g. `story_number` + `status` or `estimated_hours`) at router/SQL level — expand if cheap.
+- [x] Migration applied; existing tasks have `story_number` **null** — no data loss.
+- [x] Create/edit task can set/clear **story number** (integer validation: **≥ 1** when set, **`null`** when cleared — **Hannibal** decision above; document edge cases in PR).
+- [x] **Integrity:** **`story_number = 0`** (or negative) **rejected** with clear validation message. **Duplicate** non-null **`story_number`** within the **same project** **rejected** on create and update (DB constraint + handled UX); message is **actionable** (e.g. indicates conflict, not raw SQLite text).
+- [x] Task table: **every** of **Story #**, **Name**, **Status**, **Estimated hours** is **sortable** (asc/desc + indicator); **default** sort **story number asc, nulls last**; **Actions** not sortable.
+- [x] **Tests:** Ordering covered for **at least two** keys (e.g. `story_number` + `status` or `estimated_hours`) at router/SQL level — expand if cheap. **Plus:** tests (or focused cases in existing task-router tests) that assert **reject `0`**, **reject duplicate story # per project**, and **allow the same story number on different projects** (no cross-project uniqueness).
 
 **Out of scope for 6.3:** Parse story numbers from **task name**; Excel import mapping into `story_number` (**capture** under parse/Excel backlog if wanted); **parent/child** tree sort (`parentTaskId` exists; flat-task MVP unchanged unless expanded); **hide completed tasks** (**Story 6.4**).
+
+**Implementation (shipped):** Migration **`src/server/db/migrations/0002_first_ego.sql`** — nullable **`tasks.story_number`**, partial unique index **`tasks_project_id_story_number_uidx`**. **`src/server/db/schema.ts`**, **`src/lib/task-list-sort.ts`** (`listByProjectInputSchema`, **`taskListOrderBy`**, pipeline **status** rank), **`src/lib/task-sort-storage.ts`** (**`localStorage`** key **`vandura.tasks.sort.{projectId}`** JSON). **`taskRouter`** — **`listByProject`** `{ sortBy, sortDir }` + **`id`** tie-break; **`create`**/**`update`** **`storyNumber`**; **`TRPCError` BAD_REQUEST** on duplicate (maps SQLite unique). **`TaskForm`** Story # + **`variant`** create/edit (clear on edit); **`TasksSection`** sortable headers (estimates card stays **name A→Z** per Hannibal); **`projects/[id]/page.tsx`** persisted sort + single **`listByProject`** query; **`/timesheets`** passes default **`sortBy`/`sortDir`**. **`scripts/seed.ts`** sample **`story_number`** values. Tests: **`tests/task-list-sort.test.ts`**, **`tests/task-sort-storage.test.ts`**, **`tests/task-validation.test.ts`**, **`tests/budget-display.test.ts`** (`formatTaskStoryNumber`), **`tests/story-6-3-task-list-contract.test.ts`**.
+
+**Hannibal final review (manual DoD — Murdock, normal for “final review” before release tag):** Murdock automated coverage is ✅ per **`van/qa.md`** → Story **6.3** (`npm test`, task-list sort + validation suites). **Hannibal** still completes this **short browser sweep** on top of CI (same bar as Story **8.1** pre-publish manual list):
+
+- **`/projects/[id]`:** Sort headers show **↑ / ↓** (or equivalent) on **Story #**, **Name**, **Status**, **Estimated hours**; click cycles asc/desc; **Actions** not sortable. Clear **`localStorage`** key **`vandura.tasks.sort.{projectId}`** and confirm **first visit** defaults to **story # asc, nulls last**.
+- **Story #:** Create / edit / **clear**; **`0`** and negatives **blocked** with clear field copy; **duplicate** story # **within** the project shows **actionable** message in the **modal** (not raw SQLite).
+- **Persisted sort:** Change sort, **hard refresh** — same column + direction restored.
+- **Story 6.2 card:** With the main table on a **non-default** sort, **Tasks awaiting estimates** rows stay **name A→Z** (independent of table).
+- **Story 6.5 past-end cue (optional):** If no recent QA pass on **`/`**, **`/projects`**, **`/reports`**, **`/projects/[id]`**, **`/reports/[projectId]`**, one quick smoke for **active** / **on-hold** / **cancelled** + **`endDate`** per Story **6.5** (not a full **6.5** re-QA).
+- **Doc / tag alignment:** **`Implementation (shipped)`** above and **shipped date `2026-05-06`** match the **git tag / release notes** line for **6.3** (migration filename, index name, file list).
 
 ---
 
@@ -798,7 +836,7 @@ All **data queries** below use **`meta: { suppressGlobalError: true }`** → on 
 - **Optional subtext:** **Yes, one line is allowed** under the page title **or** directly under the link — **Hannibal approves** final product copy; B.A. may ship a draft (e.g. *“See hours, projects, and tasks by developer for a date range.”*); Murdock may flag a11y/length only — no separate PM beyond Hannibal for this microcopy.
 - **Placement:** **Primary:** top **action row**, **next to “Add developer”** (same visual band as other primary actions). **Do not** duplicate the same link in two places for 6.6 unless one is clearly secondary (Hannibal: **one** primary link is enough). **Mobile:** Prefer **one row** when it fits; if the row crowds, **stack** the link **below** the title + actions block so it remains **tappable** and **above the fold** when reasonable — not a hard AC.
 - **`/reports` hub:** **Strict:** no layout or navigation changes to **`/reports`** in **6.6** (AC unchanged).
-- **After 6.6 (Phase C order — superseded by shipped work):** **6.1**, **6.2**, **6.5**, and **6.7** have shipped; see **Phase C — Remaining queue** above (**6.3**–**6.4**).
+- **After 6.6 (Phase C order — superseded by shipped work):** **6.1**, **6.2**, **6.3**, **6.5**, and **6.7** have shipped; see **Phase C — Remaining queue** above (**6.4** only).
 - **Demo / sign-off bar:** Success = **one click** from **`/developers`** to **`/reports/productivity`**, link **keyboard-focusable**, **accessible name** reads sensibly in a screen reader (not “click here”). **1366×768 above the fold** is **desired** for the primary link, **not** a formal AC — ship the best default layout B.A. chooses within the placement rules above.
 
 **Acceptance Criteria:**
@@ -810,7 +848,7 @@ All **data queries** below use **`meta: { suppressGlobalError: true }`** → on 
 
 **Hannibal sign-off:** Likes the page. **Optional polish (not blockers):** (1) The app **shell** still renders an **h1** “Vandura” in `layout` while the page has its own **h1** (e.g. “Developers”) — **two top-level headings** is a **pre-existing** pattern across the app, **not** introduced by 6.6; fixing it would be a **global** nav / heading-level **a11y** pass, out of scope for 6.6. (2) The report **text link** is visually **lighter** than the **Add developer** primary button — **appropriate** so the main CTA stays “add” while the report stays discoverable.
 
-**Phase note:** **First** in Hannibal’s Phase C execution order (see **Planning** above) — small IA before budget/summary/task-board batch. **At the time 6.6 shipped, next was 6.1** — **current** remaining queue: **`van/stories.md` → Phase C “Remaining queue”** (**6.3**–**6.4**).
+**Phase note:** **First** in Hannibal’s Phase C execution order (see **Planning** above) — small IA before budget/summary/task-board batch. **At the time 6.6 shipped, next was 6.1** — **current** remaining queue: **`van/stories.md` → Phase C “Remaining queue”** (**6.4**).
 
 ---
 
@@ -1064,4 +1102,4 @@ These items are **on record for planning** but are **not** committed deliverable
 ---
 
 **End of Document**  
-Last Updated: 2026-05-05 — Story **6.2** ✅ **shipped**; Story **6.5** past-end cue ✅; **Story 6.7** / **BUG-REPORT-001** ✅ **shipped**; Story **6.1** ✅; Story **6.6** ✅; **Epic 8 / Story 8.1** — shipped + **Murdock automated** ✅; Phase C remainder **6.3**–**6.4**; 7.1–7.2; Phase B closed
+Last Updated: 2026-05-06 — Story **6.3** ✅ **shipped** (task **`story_number`** + **`listByProject`** sort + **`localStorage`**); Story **6.2** ✅ **shipped**; Story **6.5** past-end cue ✅; **Story 6.7** / **BUG-REPORT-001** ✅ **shipped**; Story **6.1** ✅; Story **6.6** ✅; **Epic 8 / Story 8.1** — shipped + **Murdock automated** ✅; Phase C remainder **6.4**; 7.1–7.2; Phase B closed

@@ -22,15 +22,31 @@ export const createProjectSchema = z.object({
   status: z.enum(['active', 'completed', 'on-hold', 'cancelled']).default('active'),
 });
 
+const storyNumberFieldSchema = z
+  .number()
+  .int()
+  .min(1, 'Story # must be 1 or greater')
+  .describe('Story 6.3 — null/omit when unset; reject 0');
+
 export const createTaskSchema = z.object({
   projectId: z.number().int().positive(),
   name: z.string().min(1, 'Task name is required').max(200),
   description: z.string().optional(),
   // Allow 0 for MVP (explicit "0h" tasks are valid)
   estimatedHours: z.number().nonnegative().optional(),
+  /** Story 6.3 — omit or undefined => unset (null in DB) */
+  storyNumber: storyNumberFieldSchema.optional(),
   parentTaskId: z.number().int().positive().optional(),
   status: z.enum(['pending', 'in-progress', 'completed', 'blocked']).default('pending'),
 });
+
+/** Story 6.3 — partial update; use `storyNumber: null` to clear */
+export const updateTaskDataSchema = createTaskSchema
+  .partial()
+  .omit({ projectId: true })
+  .extend({
+    storyNumber: z.union([storyNumberFieldSchema, z.null()]).optional(),
+  });
 
 export const createTimeEntrySchema = z.object({
   projectId: z.number().int().positive(),

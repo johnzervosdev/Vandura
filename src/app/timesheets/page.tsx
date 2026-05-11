@@ -74,7 +74,7 @@ export default function TimesheetsPage() {
   const [formError, setFormError] = useState<string | null>(null);
 
   const tasksByProject = trpc.task.listByProject.useQuery(
-    { projectId: formProjectId ?? 0 },
+    { projectId: formProjectId ?? 0, sortBy: 'story_number', sortDir: 'asc' },
     {
       enabled: typeof formProjectId === 'number' && Number.isFinite(formProjectId),
       meta: { suppressGlobalError: true },

@@ -13,6 +13,12 @@ export function formatTaskEstimatedHours(h: number | null | undefined): string {
   return `${h.toFixed(1)}h`;
 }
 
+/** Story 6.3 — optional story # on tasks (null → TBD, aligned with estimates copy). */
+export function formatTaskStoryNumber(n: number | null | undefined): string {
+  if (n === null || n === undefined) return 'TBD';
+  return String(n);
+}
+
 export type TaskEstimatesTotalResult =
   | { kind: 'tbd' }
   | { kind: 'hours'; value: number };

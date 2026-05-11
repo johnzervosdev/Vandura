@@ -1,0 +1,2 @@
+ALTER TABLE `tasks` ADD `story_number` integer;--> statement-breakpoint
+CREATE UNIQUE INDEX `tasks_project_id_story_number_uidx` ON `tasks` (`project_id`,`story_number`) WHERE "tasks"."story_number" is not null;

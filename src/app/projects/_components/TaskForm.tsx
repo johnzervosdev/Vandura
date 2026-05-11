@@ -6,6 +6,8 @@ export type TaskStatus = 'pending' | 'in-progress' | 'completed' | 'blocked';
 
 export interface TaskFormValues {
   name: string;
+  /** Story 6.3 — optional; empty string = omit (create) or clear (edit) */
+  storyNumber: string;
   description: string;
   estimatedHours: string; // string for controlled input
   status: TaskStatus;
@@ -15,6 +17,8 @@ export interface TaskFormSubmitValues {
   name: string;
   description?: string;
   estimatedHours?: number;
+  /** undefined = omit on create; null on edit clears DB column */
+  storyNumber?: number | null;
   status: TaskStatus;
 }
 
@@ -27,6 +31,8 @@ export function TaskForm({
   onCancel,
   submitError,
   initialFocusField,
+  /** Story 6.3 — edit modal clears story # when field emptied */
+  variant = 'create',
 }: {
   title: string;
   initialValues: TaskFormValues;
@@ -37,12 +43,18 @@ export function TaskForm({
   submitError?: string | null;
   /** Story 6.2 — open edit from “Tasks awaiting estimates” with focus on hours field */
   initialFocusField?: 'estimatedHours';
+  variant?: 'create' | 'edit';
 }) {
   const [values, setValues] = useState<TaskFormValues>(initialValues);
-  const [fieldErrors, setFieldErrors] = useState<Partial<Record<keyof TaskFormValues, string>>>(
-    {}
-  );
+  const [fieldErrors, setFieldErrors] = useState<
+    Partial<Record<keyof TaskFormValues, string>>
+  >({});
   const estimatedHoursRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    setValues(initialValues);
+    setFieldErrors({});
+  }, [initialValues]);
 
   useEffect(() => {
     if (initialFocusField === 'estimatedHours') {
@@ -56,6 +68,12 @@ export function TaskForm({
     const next: Partial<Record<keyof TaskFormValues, string>> = {};
 
     if (!v.name.trim()) next.name = 'Name is required';
+
+    if (v.storyNumber.trim()) {
+      const sn = Number(v.storyNumber);
+      if (!Number.isInteger(sn)) next.storyNumber = 'Story # must be a whole number';
+      else if (sn < 1) next.storyNumber = 'Story # must be 1 or greater';
+    }
 
     if (v.estimatedHours.trim()) {
       const n = Number(v.estimatedHours);
@@ -72,12 +90,20 @@ export function TaskForm({
     setFieldErrors(nextErrors);
     if (Object.keys(nextErrors).length > 0) return;
 
+    let storyNumber: number | null | undefined;
+    if (!values.storyNumber.trim()) {
+      storyNumber = variant === 'edit' ? null : undefined;
+    } else {
+      storyNumber = Number(values.storyNumber);
+    }
+
     const payload: TaskFormSubmitValues = {
       name: values.name.trim(),
       description: values.description.trim() ? values.description.trim() : undefined,
       estimatedHours: values.estimatedHours.trim() ? Number(values.estimatedHours) : undefined,
       status: values.status,
     };
+    if (storyNumber !== undefined) payload.storyNumber = storyNumber;
 
     await onSubmit(payload);
   }
@@ -105,6 +131,20 @@ export function TaskForm({
             placeholder="e.g. API Integration"
           />
           {fieldErrors.name ? <div className="text-sm text-destructive">{fieldErrors.name}</div> : null}
+        </div>
+
+        <div className="space-y-2">
+          <label className="text-sm font-medium">Story # (optional)</label>
+          <input
+            className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+            value={values.storyNumber}
+            onChange={(e) => setValues((s) => ({ ...s, storyNumber: e.target.value }))}
+            inputMode="numeric"
+            placeholder="e.g. 42 — leave empty if unset"
+          />
+          {fieldErrors.storyNumber ? (
+            <div className="text-sm text-destructive">{fieldErrors.storyNumber}</div>
+          ) : null}
         </div>
 
         <div className="space-y-2">
@@ -167,4 +207,3 @@ export function TaskForm({
     </div>
   );
 }
-

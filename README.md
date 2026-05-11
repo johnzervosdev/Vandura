@@ -14,7 +14,7 @@ Teams track time in spreadsheets. At the end of a sprint, a project manager comp
 Upload an `.xlsx` file and see a preview of what will be imported before anything is saved. Vandura parses each row, validates the data, flags issues as errors or warnings, and loads all entries into the database in a single transaction. It handles two common Excel timesheet layouts automatically, including weekly-grid formats where days of the week are columns rather than rows.
 
 **Track projects and tasks**
-Each project has a **budget** (hour cap) stored on the project; **tasks** have their own **estimated hours** for forecasting. Those are independent — the app never auto-syncs them. As timesheets are imported, **actuals** roll up from time entries automatically.
+Each project has a **budget** (hour cap) stored on the project; **tasks** have their own **estimated hours** for forecasting. Those are independent — the app never auto-syncs them. Optional **Story #** on a task is **unique within that project** when set; **another project** may use the **same** story number. As timesheets are imported, **actuals** roll up from time entries automatically.
 
 **Actuals vs. Estimates Reports**
 The project summary line uses **budget** (actuals vs. project cap). Per-**task** rows use **estimated** hours. Variance is color-coded green (under) or red (over). Filter by date presets or a custom range. Unset values show **TBD** (to be filled in), not a fake zero.
