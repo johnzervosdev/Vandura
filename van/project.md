@@ -1,8 +1,8 @@
 # Project Vandura — Project Dashboard
 
-**Last Updated:** 2026-05-06  
+**Last Updated:** 2026-05-11  
 **Milestone:** M1 - MVP Showcase  
-**Status:** Phase B complete — Story **5.2** shipped. **Phase C:** **6.1** ✅ + **6.2** ✅ + **6.3** ✅ + **6.5** ✅ + **6.6** ✅ + **6.7** (**BUG-REPORT-001**) ✅ + **Epic 8 / 8.1** ✅. **Next B.A. priority:** **6.4** (see **`van/stories.md`** Phase C **Remaining queue**). **Epic 8.2+** remains optional parallel work.
+**Status:** Phase B complete — Story **5.2** shipped. **Phase C:** **6.1** ✅ + **6.2** ✅ + **6.3** ✅ + **6.4** ✅ + **6.5** ✅ + **6.6** ✅ + **6.7** (**BUG-REPORT-001**) ✅ + **Epic 8 / 8.1** ✅. **Next B.A. priority:** **Stories 7.1–7.2** (import integrity — [`van/stories.md`](stories.md)). **Epic 8.2+** remains optional parallel work.
 
 > **Navigation:** This is the entry point. Read this first for project context.  
 > Story details → [`van/stories.md`](stories.md) | QA strategy & results → [`van/qa.md`](qa.md)
@@ -96,7 +96,7 @@
 - _(none — Phase B backlog cleared.)_
 
 **Phase C (remaining — planned, in-repo; order provisional)** — per-story **B.A. estimates** in [`van/stories.md`](stories.md) → Phase C:
-- **Story 6.4** — Hide/show **`completed`** tasks (client + optional **localStorage**). Hannibal **2–3h** · **B.A. 2–3h**.
+- ✅ Story **6.4** — Hide **`completed`** on **`/projects/[id]`** main task table (client filter after **6.3** sort); **`vandura.tasks.hideCompleted.{projectId}`**; **`task-hide-completed.ts`** + **`task-hide-completed-storage.ts`**; **`tests/task-hide-completed.test.ts`** — see **`van/qa.md`** → Story 6.4
 - **Story 8.2+** (**Epic 8**) — follow-ups from [`van/stories.md`](stories.md) **Epic 8** (optional; **8.1** shipped).
 - **Backlog (not sequenced in Phase C):** Pie/donut **budget vs task status** — [`van/stories.md`](stories.md) → **Captured ideas**.
 
@@ -106,7 +106,7 @@
 - _(none)_
 
 ### What's PLANNED 📋
-- **Phase C:** **6.1** + **6.2** + **6.3** + **6.5** + **6.6** + **6.7** + **8.1** shipped; **6.4** remaining (**execution order** in [`van/stories.md`](stories.md)); **Epic 8.2+** optional. Phase C band **~34–54h** (**6.1–6.6**) — **M1 ~20h** triage in stories **Planning** + optional candidates. **+ ~10–18h** for **8.1** is **spent** if counted against epic capacity.
+- **Phase C:** **6.1** + **6.2** + **6.3** + **6.4** + **6.5** + **6.6** + **6.7** + **8.1** ✅ shipped (**execution order** in [`van/stories.md`](stories.md)); **Epic 8.2+** optional. Phase C band **~34–54h** (**6.1–6.6**) — **M1 ~20h** triage in stories **Planning** + optional candidates. **+ ~10–18h** for **8.1** is **spent** if counted against epic capacity.
 - **Story 7.1** — Excel import **duplicate policy** — **B.A. 10–22h** (scope-dependent) — [`van/stories.md`](stories.md) **Import integrity** (not Phase C unless triaged in).
 - **Story 7.2** — **Whole-timesheet** / **discard import** — **B.A. ~10–26h** (fork A/B/C) — same section; **7.1+7.2 ~24–45h** combined if both ship.
 - **M2 / hosting**, **Story 1.2** (dev hardening), **Story 3.4** (parse remediation), and other **deferred** work — see [`van/stories.md`](stories.md) Deferred section.
@@ -214,9 +214,9 @@
 
 **Sequence (Hannibal — Phase C):** **6.6 → 6.1 → 6.5 → 6.2 → 6.3 → 6.4** _(B.A.: **6.6** first; **6.3**/**6.4** may be flipped for schedule—Hannibal uses **6.3→6.4** for sort-before-hide; [`van/stories.md`](stories.md) Phase C **Planning**.)_
 
-**Sequence (Epic 8):** **8.1** slots **independently** — often **parallel** to Phase C **6.3–6.4** or post-MVP work when feedback capture is prioritized.
+**Sequence (Epic 8):** **8.1** slots **independently** — often **parallel** to **7.x** import work or post-MVP when feedback capture is prioritized.
 
-**Deliverable — Phase C:** **(6.1)** Budget vs estimates + **TBD** copy + **`projectsSummary`** invalidation. **(6.2)** ✅ Tasks missing estimates card — **shipped**. **(6.3)** ✅ Story # + full column sort — **shipped**. **(6.4)** Hide completed tasks. **(6.5)** Past **end date** visual + summary **`endDate`**. **(6.6)** **`/developers`** link to **Developer productivity** report.
+**Deliverable — Phase C:** **(6.1)** Budget vs estimates + **TBD** copy + **`projectsSummary`** invalidation. **(6.2)** ✅ Tasks missing estimates card — **shipped**. **(6.3)** ✅ Story # + full column sort — **shipped**. **(6.4)** ✅ Hide completed tasks — **shipped**. **(6.5)** Past **end date** visual + summary **`endDate`**. **(6.6)** **`/developers`** link to **Developer productivity** report.
 
 **Deliverable — Epic 8:** **(8.1)** Global **bug** control + **open** backlog + **close** workflow (SQLite + modal).
 
@@ -392,4 +392,4 @@ _Log questions and blockers here. Tag the owner._
 ---
 
 **End of Document**  
-Last Updated: 2026-05-06 — Story **6.3** shipped (task **`story_number`** + sort + **`localStorage`**); Phase C remainder **6.4** per `van/stories.md`; Stories **7.1–7.2** import integrity; Phase B closed; Story 5.2 sign-off in `van/qa.md`
+Last Updated: 2026-05-11 — Story **6.4** shipped (hide **`completed`** + **`vandura.tasks.hideCompleted.{projectId}`**); Story **6.3** + Phase C **6.1–6.6** complete per `van/stories.md`; Stories **7.1–7.2** import integrity; Phase B closed; Story 5.2 sign-off in `van/qa.md`

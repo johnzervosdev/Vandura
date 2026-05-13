@@ -1,7 +1,7 @@
 'use client';
 
 import { useParams } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { trpc } from '@/lib/trpc-client';
 import { TasksSection } from './_components/TasksSection';
 import { formatProjectBudgetHours, taskEstimatesTotal, taskEstimatesTotalDisplay } from '@/lib/budget-display';
@@ -12,6 +12,10 @@ import {
   readTaskListSortFromStorage,
   writeTaskListSortToStorage,
 } from '@/lib/task-sort-storage';
+import {
+  readHideCompletedFromStorage,
+  writeHideCompletedToStorage,
+} from '@/lib/task-hide-completed-storage';
 
 export default function ProjectDetailPage() {
   const params = useParams();
@@ -24,10 +28,25 @@ export default function ProjectDetailPage() {
   );
 
   const [taskSort, setTaskSort] = useState(DEFAULT_TASK_LIST_SORT);
+  const [hideCompleted, setHideCompletedState] = useState(false);
+
+  const setHideCompleted = useCallback(
+    (next: boolean | ((prev: boolean) => boolean)) => {
+      setHideCompletedState((prev) => {
+        const resolved = typeof next === 'function' ? (next as (p: boolean) => boolean)(prev) : next;
+        if (Number.isFinite(projectId)) {
+          writeHideCompletedToStorage(projectId, resolved);
+        }
+        return resolved;
+      });
+    },
+    [projectId]
+  );
 
   useEffect(() => {
     if (!Number.isFinite(projectId)) return;
     setTaskSort(readTaskListSortFromStorage(projectId));
+    setHideCompletedState(readHideCompletedFromStorage(projectId));
   }, [projectId]);
 
   useEffect(() => {
@@ -175,6 +194,8 @@ export default function ProjectDetailPage() {
         sortBy={taskSort.sortBy}
         sortDir={taskSort.sortDir}
         onToggleSort={toggleTaskSort}
+        hideCompleted={hideCompleted}
+        setHideCompleted={setHideCompleted}
       />
     </div>
   );

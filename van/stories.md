@@ -1,6 +1,6 @@
 # Project Vandura — User Stories & Acceptance Criteria
 
-**Last Updated:** 2026-05-06 (Story **6.3** ✅ shipped — task sort + **`story_number`**; Story **6.2** ✅; Story **6.5** ✅; Story **6.7** / **BUG-REPORT-001** ✅; Story **6.1** ✅; Story **6.6** ✅; **Epic 8 / Story 8.1** — Murdock automated ✅; Phase C remainder **6.4** only; 7.1–7.2)  
+**Last Updated:** 2026-05-11 (Story **6.4** ✅ shipped — hide **`completed`** on project task table; Story **6.3** ✅; Story **6.2** ✅; Story **6.5** ✅; Story **6.7** / **BUG-REPORT-001** ✅; Story **6.1** ✅; Story **6.6** ✅; **Epic 8 / Story 8.1** — Murdock automated ✅; **Phase C (6.1–6.6)** ✅; next **7.1–7.2** import integrity)  
 **Owner:** B.A. (maintains ACs + implementation notes) | Murdock (updates QA checklists)
 
 > **Navigation:** [`van/project.md`](project.md) — project dashboard | [`van/qa.md`](qa.md) — test plans & results | **Bug backlog** — **`BUG-REPORT-001`** ✅ (**Story 6.7** shipped)
@@ -470,7 +470,7 @@ All **data queries** below use **`meta: { suppressGlobalError: true }`** → on 
 | Reports `/reports` | `report.projectsSummary` |
 | Reports productivity | `report.developerProductivity` |
 | Report detail `/reports/[projectId]` | `report.projectsSummary`, `report.actualsVsEstimates` |
-| Project detail `/projects/[id]` | `project.get`, `task.listByProject` (**sort** args + **`localStorage`**) |
+| Project detail `/projects/[id]` | `project.get`, `task.listByProject` (**sort** + **hide completed** prefs in **`localStorage`**) |
 | Edit project `/projects/[id]/edit` | `project.get` |
 
 **Mutations with `meta: { suppressGlobalToast: true }`** → on failure: **no global toast**; failure is shown **in-context** (modal `submitError`, form strip, or upload page `error` / export `exportError`):
@@ -537,9 +537,9 @@ All **data queries** below use **`meta: { suppressGlobalError: true }`** → on 
 - **6.5 third:** Extends **`projectsSummary` / `project.get`** and multi-surface cues **after** 6.1 copy and cache behavior are stable.
 - **6.2 → 6.3 → 6.4:** Keeps **project-detail task work** contiguous. **Hannibal picks 6.3 before 6.4** (B.A.: either order acceptable): sort UI and migration land first; **6.4** then implements filter-after-sort per AC; Murdock still batches **6.3 + 6.4** regression.
 
-**Remaining queue after 6.1 + 6.2 + 6.3 + 6.5 + 6.6 + 6.7 shipped (Hannibal — 2026-04-12):** **6.4** only. Story **6.3** (task list sort + optional Story #) — **shipped** **2026-05-06**.
+**Remaining queue (Phase C — Hannibal):** **6.1–6.6** ✅ **complete** (execution order **6.6 → 6.1 → 6.5 → 6.2 → 6.3 → 6.4**). **Next product slice:** **Stories 7.1–7.2** (import integrity — see **Deferred** / Excel sections). **Epic 8.2+** optional parallel work.
 
-**Epic 8 (parallel):** **Story 8.1** (bug FAB + backlog) — **not** in the Phase C sequence; slot by **Hannibal** (often **parallel** to Phase C **6.4** or post-MVP work when feedback capture is prioritized).
+**Epic 8 (parallel):** **Story 8.1** (bug FAB + backlog) — **not** in the Phase C sequence; slot by **Hannibal** (often **parallel** to **7.x** or post-MVP when feedback capture is prioritized).
 
 **B.A. Phase C rollup (6.1–6.6, dev only):** ~**23–35h** (upper band mainly if **6.2** includes the dashboard “tasks TBD” stretch **and/or** B.A. does an optional **post–6.1** **`budget_hours`** migration PR — **6.1** itself is **copy-only**, no migration).
 
@@ -754,7 +754,7 @@ All **data queries** below use **`meta: { suppressGlobalError: true }`** → on 
 ---
 
 ### Story 6.4: Hide / show completed tasks (project task board) (P2) — **2–3h** (Hannibal informal) · **B.A.: 2–3h** · **Murdock QA: 1.5–2h** · **Combined (planning): ~3.5–5h**
-**Status:** Not Started  
+**Status:** ✅ Complete — shipped **2026-05-11**  
 **Owner:** B.A.
 
 **Goal:** On **`/projects/[id]`** task table, let users **temporarily hide** rows where **`status === 'completed'`** so the board stays readable; one control to **toggle** visibility without deleting data.
@@ -767,16 +767,46 @@ All **data queries** below use **`meta: { suppressGlobalError: true }`** → on 
 **Implementation notes:**
 - **Schedule:** Phase plan uses **6.3** then **6.4** (sort UI before hide toggle). B.A.: **either** merge order is acceptable; if **6.4** lands first, keep behavior consistent with **filter-after-sort** once **6.3** exists (see Phase C **Planning**).
 - **v1 preference:** **Client-side** filter on the data already loaded by `task.listByProject` (no API change required) — apply **after** sort from **6.3** so order stays stable for visible rows.
-- **Persistence (recommended):** Remember choice **per project** in **`localStorage`** (e.g. key `vandura.tasks.hideCompleted.{projectId}`) so refresh keeps state; **session-only** is acceptable if B.A. wants zero persistence — document in PR.
-- **Story 6.2 card:** **Decisions (Story 6.2)** define which rows appear (**null** estimates, non-completed statuses — see **`van/stories.md`**). When **6.4** ships, the hide-completed **toggle** affects the **main table only** by default; **6.2 card** logic stays per Story **6.2** unless Hannibal revises.
+- **Persistence (Hannibal — v1):** **`localStorage` per `projectId`** — key pattern **`vandura.tasks.hideCompleted.{projectId}`** (boolean or string as B.A. implements), so **refresh** restores choice. **Session-only** is **out for v1** — align with **6.3** sort persistence; one predictable persistence model on project detail.
+- **Story 6.2 card:** **Decisions (Story 6.2)** define which rows appear (**null** estimates, non-completed statuses — see **`van/stories.md`**). Per **Hannibal — Story 6.4** (locked): hide-completed affects the **main table only**; the **6.2** card is **not** tied to the toggle.
+
+**B.A. scope questions — Hannibal responses (locked):**
+
+1. **Main table vs Story 6.2 card:** Confirm **v1:** hide-completed applies **only** to the **main task table** on **`/projects/[id]`**, and the **Tasks awaiting estimates** card keeps **Story 6.2** behavior with **no** link to the toggle — **or** should hiding completed also **dim / collapse / mirror** the card when it would feel inconsistent (e.g. user expects “everything on the board” to respect one control)?
+   - **Hannibal response:** **Main table only.** The **6.2** card is a **separate work queue** (pipeline tasks missing **estimates**); it already **excludes `completed`**. Wiring the toggle to the card adds coupling and confuses “hide done work on the board” vs “who still needs an estimate.” **No** dim/collapse/mirror of the card for **6.4**.
+
+2. **Persistence:** Prefer **`localStorage` per `projectId`** (recommended in notes) so refresh keeps state — **or** **session-only** (tab memory, no disk) for v1? (Either is buildable; QA expectations differ.)
+   - **Hannibal response:** **`localStorage` per `projectId`** for **v1** — same product bar as **6.3** persisted sort. Users returning to a project should see the same board filter after refresh.
+
+3. **Empty visible set:** If the toggle is **on** (completed hidden) and **every** task on the project is **`completed`** (or the only rows left are filtered), should the UI show **explicit empty copy** (e.g. hint to show completed / add tasks), or is a **bare empty table** acceptable?
+   - **Hannibal response:** **Explicit empty copy** — one short line in the table area (e.g. that **all listed tasks are completed** and to **show completed tasks** to see them, or equivalent). Avoid a **silent** empty table; link the copy mentally to the **eye** control (B.A. may add a text button **Show completed** in the empty state if it aids discovery — optional polish, not a second toggle).
+
+4. **`cancelled` vs `completed`:** Confirm **`cancelled`** tasks stay **visible** when “hide completed” is on (toggle affects **`completed`** only — not “all terminal states”). If Hannibal wants **`cancelled`** hidden together with **`completed`**, that is a **scope change** (multi-status filter — currently **out of scope**).
+   - **Hannibal response:** **`cancelled` stays visible** when completed are hidden. The toggle is **literally “hide `completed`”** only — **not** “hide all done-like states.” Multi-status filtering stays **out of scope** for **6.4** (see **Out of scope** below).
+
+5. **Other routes:** Confirm **no** change in v1 to **`/timesheets`** task dropdown, exports, or reports — they keep listing tasks **independent** of this toggle (only **project detail table** UX).
+   - **Hannibal response:** **Confirmed — no change** in **6.4** to **`/timesheets`**, exports, reports, or other routes. This is **project-detail main table** UX only; other surfaces keep full task lists for operational correctness.
+
+**Decisions (Hannibal — Story 6.4, B.A. Q&A — locked):**
+
+- **Toggle surface:** **Main task table** on **`/projects/[id]`** only — **not** the **6.2** **Tasks awaiting estimates** card (card rules unchanged).
+- **Persistence:** **`localStorage` per `projectId`** — **not** session-only for v1.
+- **Empty table:** When the filter hides **all** visible rows, show **explicit helper copy** (and optional **Show completed** affordance in copy — not a second icon).
+- **Statuses hidden:** **`completed`** only; **`cancelled`** (and all non-completed statuses) **remain visible** when the toggle hides completed.
+- **Other routes:** **Unchanged** — timesheets, exports, reports, etc.
 
 **Acceptance Criteria:**
-- [ ] Toggle hides **only** tasks with status **`completed`**; all other statuses always visible in v1.
-- [ ] Icon state reflects mode (eye vs struck / eye-off — **B.A. picks** icon set consistent with app; avoid ambiguous icons).
-- [ ] Toggling does **not** mutate server data; completed tasks reappear when shown again.
-- [ ] **Tests:** Optional lightweight test of filter helper or component state; **Murdock:** manual check hide + edit completed task + unhide.
+- [x] Toggle hides **only** tasks with status **`completed`**; all other statuses always visible in v1.
+- [x] Icon state reflects mode (eye vs struck / eye-off — **B.A. picks** icon set consistent with app; avoid ambiguous icons).
+- [x] When hide-completed is **on** and **no** rows remain visible, show **explicit empty-state copy** (per **Hannibal** — hint to show completed / add tasks; exact string in PR).
+- [x] Toggling does **not** mutate server data; completed tasks reappear when shown again.
+- [x] **Tests:** **`tests/task-hide-completed.test.ts`** (`visibleTasksForMainTable`); **`tests/task-hide-completed-storage.test.ts`**; **`tests/story-6-4-hide-completed-contract.test.ts`**; **Murdock:** manual check hide + edit completed task + unhide.
 
 **Out of scope for 6.4:** Multi-status filters (e.g. hide blocked); hiding on other pages; server-side `includeCompleted` query param (**defer** unless needed for performance).
+
+**Implementation (shipped):** **`src/lib/task-hide-completed.ts`** — `visibleTasksForMainTable` (client filter **after** server sort). **`src/lib/task-hide-completed-storage.ts`** — `parseHideCompletedStoredValue`, `readHideCompletedFromStorage` / write on user toggle only via page wrapper (avoids clobbering **`localStorage`** before hydration read on **`projectId`** change); key **`vandura.tasks.hideCompleted.{projectId}`** (`true` / `false`). **`src/app/projects/[id]/page.tsx`** — state + `setHideCompleted` callback. **`TasksSection`** — **Status** header: sort control + eye / eye-off toggle (`aria-pressed`, `title`, **`sr-only`** label); **Show completed tasks** text action in empty filtered state. Tests: **`tests/task-hide-completed.test.ts`**, **`tests/task-hide-completed-storage.test.ts`**, **`tests/story-6-4-hide-completed-contract.test.ts`**.
+
+**Hannibal final review (manual DoD — Murdock, before release tag):** Automated coverage ✅ per **`van/qa.md`** → Story **6.4**. **Hannibal** short browser sweep: toggle hide/show; **refresh** restores **`localStorage`**; **empty** state copy + **Show completed tasks** control; **6.2** card row order **unchanged** when toggle flips; **`cancelled`** (if present in fixtures) **still visible** when completed hidden; **`/timesheets`** task list unchanged; **doc** — **`Implementation (shipped)`** + date **`2026-05-11`** match tag/release notes.
 
 ---
 
@@ -836,7 +866,7 @@ All **data queries** below use **`meta: { suppressGlobalError: true }`** → on 
 - **Optional subtext:** **Yes, one line is allowed** under the page title **or** directly under the link — **Hannibal approves** final product copy; B.A. may ship a draft (e.g. *“See hours, projects, and tasks by developer for a date range.”*); Murdock may flag a11y/length only — no separate PM beyond Hannibal for this microcopy.
 - **Placement:** **Primary:** top **action row**, **next to “Add developer”** (same visual band as other primary actions). **Do not** duplicate the same link in two places for 6.6 unless one is clearly secondary (Hannibal: **one** primary link is enough). **Mobile:** Prefer **one row** when it fits; if the row crowds, **stack** the link **below** the title + actions block so it remains **tappable** and **above the fold** when reasonable — not a hard AC.
 - **`/reports` hub:** **Strict:** no layout or navigation changes to **`/reports`** in **6.6** (AC unchanged).
-- **After 6.6 (Phase C order — superseded by shipped work):** **6.1**, **6.2**, **6.3**, **6.5**, and **6.7** have shipped; see **Phase C — Remaining queue** above (**6.4** only).
+- **After 6.6 (Phase C order — superseded by shipped work):** **6.1** through **6.6** (including **6.4**) and **6.7** have shipped; see **Phase C — Remaining queue** above (**7.1–7.2** next product slice).
 - **Demo / sign-off bar:** Success = **one click** from **`/developers`** to **`/reports/productivity`**, link **keyboard-focusable**, **accessible name** reads sensibly in a screen reader (not “click here”). **1366×768 above the fold** is **desired** for the primary link, **not** a formal AC — ship the best default layout B.A. chooses within the placement rules above.
 
 **Acceptance Criteria:**
@@ -848,7 +878,7 @@ All **data queries** below use **`meta: { suppressGlobalError: true }`** → on 
 
 **Hannibal sign-off:** Likes the page. **Optional polish (not blockers):** (1) The app **shell** still renders an **h1** “Vandura” in `layout` while the page has its own **h1** (e.g. “Developers”) — **two top-level headings** is a **pre-existing** pattern across the app, **not** introduced by 6.6; fixing it would be a **global** nav / heading-level **a11y** pass, out of scope for 6.6. (2) The report **text link** is visually **lighter** than the **Add developer** primary button — **appropriate** so the main CTA stays “add” while the report stays discoverable.
 
-**Phase note:** **First** in Hannibal’s Phase C execution order (see **Planning** above) — small IA before budget/summary/task-board batch. **At the time 6.6 shipped, next was 6.1** — **current** remaining queue: **`van/stories.md` → Phase C “Remaining queue”** (**6.4**).
+**Phase note:** **First** in Hannibal’s Phase C execution order (see **Planning** above) — small IA before budget/summary/task-board batch. **Phase C (6.1–6.6)** is **complete**; see **`van/stories.md` → Phase C “Remaining queue”** for **7.1–7.2**.
 
 ---
 
@@ -1102,4 +1132,4 @@ These items are **on record for planning** but are **not** committed deliverable
 ---
 
 **End of Document**  
-Last Updated: 2026-05-06 — Story **6.3** ✅ **shipped** (task **`story_number`** + **`listByProject`** sort + **`localStorage`**); Story **6.2** ✅ **shipped**; Story **6.5** past-end cue ✅; **Story 6.7** / **BUG-REPORT-001** ✅ **shipped**; Story **6.1** ✅; Story **6.6** ✅; **Epic 8 / Story 8.1** — shipped + **Murdock automated** ✅; Phase C remainder **6.4**; 7.1–7.2; Phase B closed
+Last Updated: 2026-05-11 — Story **6.4** ✅ **shipped** (hide **`completed`** on **`/projects/[id]`** main table + **`vandura.tasks.hideCompleted.{projectId}`**); Story **6.3** ✅; Story **6.2** ✅; Story **6.5** past-end cue ✅; **Story 6.7** / **BUG-REPORT-001** ✅; Story **6.1** ✅; Story **6.6** ✅; **Epic 8 / Story 8.1** — shipped + **Murdock automated** ✅; **Phase C (6.1–6.6)** ✅; **7.1–7.2**; Phase B closed

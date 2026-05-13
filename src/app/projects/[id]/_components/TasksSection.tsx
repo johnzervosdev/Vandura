@@ -13,6 +13,50 @@ import type { TaskByProjectRow } from '@/lib/router-types';
 import { formatTaskEstimatedHours, formatTaskStoryNumber } from '@/lib/budget-display';
 import { tasksAwaitingEstimatesSorted } from '@/lib/tasks-awaiting-estimates';
 import type { TaskListSortBy, TaskListSortDir } from '@/lib/task-list-sort';
+import { visibleTasksForMainTable } from '@/lib/task-hide-completed';
+
+function EyeIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
+  );
+}
+
+function EyeOffIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      xmlns="http://www.w3.org/2000/svg"
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.75"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M10.7 5.1A10.3 10.3 0 0 1 12 5c6.5 0 10 7 10 7a18.8 18.8 0 0 1-2.9 4.3M6.6 6.6A18.8 18.8 0 0 0 2 12s3.5 7 10 7a9.7 9.7 0 0 0 4.2-.9" />
+      <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2" />
+      <path d="m2 2 20 20" />
+    </svg>
+  );
+}
 
 export function TasksSection({
   projectId,
@@ -24,6 +68,8 @@ export function TasksSection({
   sortBy,
   sortDir,
   onToggleSort,
+  hideCompleted,
+  setHideCompleted,
 }: {
   projectId: number;
   onTaskCountChange?: (count: number) => void;
@@ -34,6 +80,8 @@ export function TasksSection({
   sortBy: TaskListSortBy;
   sortDir: TaskListSortDir;
   onToggleSort: (key: TaskListSortBy) => void;
+  hideCompleted: boolean;
+  setHideCompleted: (next: boolean | ((prev: boolean) => boolean)) => void;
 }) {
   const utils = trpc.useUtils();
 
@@ -95,6 +143,10 @@ export function TasksSection({
   });
 
   const taskRows = useMemo(() => tasks as TaskByProjectRow[], [tasks]);
+  const tableRows = useMemo(
+    () => visibleTasksForMainTable(taskRows, hideCompleted),
+    [taskRows, hideCompleted]
+  );
   const taskCount = useMemo(() => taskRows.length, [taskRows.length]);
   const awaitingRows = useMemo(() => tasksAwaitingEstimatesSorted(taskRows), [taskRows]);
 
@@ -217,72 +269,116 @@ export function TasksSection({
                   <tr className="border-b">
                     <th className="text-left py-3 px-4">{sortHeader('Story #', 'story_number')}</th>
                     <th className="text-left py-3 px-4">{sortHeader('Name', 'name')}</th>
-                    <th className="text-left py-3 px-4">{sortHeader('Status', 'status')}</th>
+                    <th className="text-left py-3 px-4">
+                      <div className="flex items-center justify-between gap-2 min-w-0">
+                        <span className="min-w-0">{sortHeader('Status', 'status')}</span>
+                        <button
+                          type="button"
+                          className="shrink-0 rounded-md border border-border p-1.5 text-foreground hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                          aria-pressed={hideCompleted}
+                          title={
+                            hideCompleted ? 'Show completed tasks in the table' : 'Hide completed tasks'
+                          }
+                          onClick={() => setHideCompleted((v) => !v)}
+                        >
+                          <span className="sr-only">
+                            {hideCompleted ? 'Show completed tasks' : 'Hide completed tasks'}
+                          </span>
+                          {hideCompleted ? (
+                            <EyeOffIcon className="block text-muted-foreground" />
+                          ) : (
+                            <EyeIcon className="block" />
+                          )}
+                        </button>
+                      </div>
+                    </th>
                     <th className="text-right py-3 px-4">{sortHeader('Estimated Hours', 'estimated_hours')}</th>
                     <th className="text-right py-3 px-4">Actions</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {taskRows.map((t: TaskByProjectRow) => (
-                    <tr key={t.id} className="border-b last:border-b-0">
-                      <td className="py-3 px-4 tabular-nums">{formatTaskStoryNumber(t.storyNumber)}</td>
-                      <td className="py-3 px-4">
-                        <div className="font-medium">{t.name}</div>
-                        {t.description ? (
-                          <div className="text-muted-foreground text-xs mt-1">{t.description}</div>
-                        ) : null}
-                      </td>
-                      <td className="py-3 px-4">
-                        <select
-                          className="rounded-md border bg-background px-2 py-1 text-sm"
-                          value={t.status}
-                          onChange={(e) =>
-                            updateTaskInline.mutate({
-                              id: t.id,
-                              data: { status: e.target.value as TaskStatus },
-                            })
-                          }
-                          disabled={updateTaskInline.isPending}
-                        >
-                          <option value="pending">pending</option>
-                          <option value="in-progress">in-progress</option>
-                          <option value="completed">completed</option>
-                          <option value="blocked">blocked</option>
-                        </select>
-                      </td>
-                      <td className="py-3 px-4 text-right">
-                        {formatTaskEstimatedHours(t.estimatedHours)}
-                      </td>
-                      <td className="py-3 px-4 text-right">
-                        <div className="inline-flex gap-2">
+                  {tableRows.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} className="py-8 px-4">
+                        <div className="max-w-lg rounded-md border border-dashed bg-muted/30 p-4 text-sm text-muted-foreground">
+                          <p>
+                            Every task on this project is <span className="text-foreground font-medium">completed</span>{' '}
+                            and is hidden from the table. Use the eye control in the{' '}
+                            <span className="text-foreground font-medium">Status</span> column header to show them again,
+                            or add a new task.
+                          </p>
                           <button
                             type="button"
-                            className="rounded-md border px-3 py-1 hover:bg-muted"
-                            onClick={() => {
-                              setEditFocusEstimate(false);
-                              setEditTask({
-                                id: t.id,
-                                name: t.name,
-                                description: t.description ?? null,
-                                estimatedHours: t.estimatedHours ?? null,
-                                storyNumber: t.storyNumber ?? null,
-                                status: t.status as TaskStatus,
-                              });
-                            }}
+                            className="mt-3 text-sm font-medium text-primary underline underline-offset-2 hover:no-underline"
+                            onClick={() => setHideCompleted(false)}
                           >
-                            Edit
-                          </button>
-                          <button
-                            type="button"
-                            className="rounded-md border border-destructive/40 px-3 py-1 text-destructive hover:bg-destructive/10"
-                            onClick={() => setConfirmDelete({ id: t.id, name: t.name })}
-                          >
-                            Delete
+                            Show completed tasks
                           </button>
                         </div>
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    tableRows.map((t: TaskByProjectRow) => (
+                      <tr key={t.id} className="border-b last:border-b-0">
+                        <td className="py-3 px-4 tabular-nums">{formatTaskStoryNumber(t.storyNumber)}</td>
+                        <td className="py-3 px-4">
+                          <div className="font-medium">{t.name}</div>
+                          {t.description ? (
+                            <div className="text-muted-foreground text-xs mt-1">{t.description}</div>
+                          ) : null}
+                        </td>
+                        <td className="py-3 px-4">
+                          <select
+                            className="rounded-md border bg-background px-2 py-1 text-sm"
+                            value={t.status}
+                            onChange={(e) =>
+                              updateTaskInline.mutate({
+                                id: t.id,
+                                data: { status: e.target.value as TaskStatus },
+                              })
+                            }
+                            disabled={updateTaskInline.isPending}
+                          >
+                            <option value="pending">pending</option>
+                            <option value="in-progress">in-progress</option>
+                            <option value="completed">completed</option>
+                            <option value="blocked">blocked</option>
+                          </select>
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          {formatTaskEstimatedHours(t.estimatedHours)}
+                        </td>
+                        <td className="py-3 px-4 text-right">
+                          <div className="inline-flex gap-2">
+                            <button
+                              type="button"
+                              className="rounded-md border px-3 py-1 hover:bg-muted"
+                              onClick={() => {
+                                setEditFocusEstimate(false);
+                                setEditTask({
+                                  id: t.id,
+                                  name: t.name,
+                                  description: t.description ?? null,
+                                  estimatedHours: t.estimatedHours ?? null,
+                                  storyNumber: t.storyNumber ?? null,
+                                  status: t.status as TaskStatus,
+                                });
+                              }}
+                            >
+                              Edit
+                            </button>
+                            <button
+                              type="button"
+                              className="rounded-md border border-destructive/40 px-3 py-1 text-destructive hover:bg-destructive/10"
+                              onClick={() => setConfirmDelete({ id: t.id, name: t.name })}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
             </div>
